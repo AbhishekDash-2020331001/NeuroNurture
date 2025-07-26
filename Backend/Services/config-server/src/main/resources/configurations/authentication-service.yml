@@ -1,0 +1,31 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/neuronurture
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: 1071741181540-qseioooi5rqsu488e1ac3c8um9ee2jbp.apps.googleusercontent.com
+            client-secret: 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
+            scope:
+              - email
+              - profile
+
+jwt:
+  secret: 8cf840b09b43b5fc6a7d3cfb8311200b67ff362f449e7b3cbde066e56abccd10a99981544fb73910833668fe470b22f6e7e30d2acb66d84e82bc960ac404c63d
+
+server:
+  port: 8080
