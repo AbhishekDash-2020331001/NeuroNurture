@@ -1,20 +1,24 @@
 package com.example.jwt_auth.config;
 
-import com.example.jwt_auth.user.User;
-import com.example.jwt_auth.user.UserRepository;
+import java.util.Collections;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.*;
-import org.springframework.security.config.annotation.authentication.configuration.*;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.*;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.*;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-import java.util.Collections;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import com.example.jwt_auth.user.UserRepository;
 
 @Configuration
 @EnableMethodSecurity
@@ -47,7 +51,20 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**")
+                        .allowedOrigins("http://localhost:8081")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowCredentials(true);
+            }
+        };
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, CustomOAuth2SuccessHandler oAuth2SuccessHandler) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
@@ -59,8 +76,9 @@ public class SecurityConfig {
                     "/auth/refresh-token",
                     "/login/oauth2/code/google",
                     "/oauth2/**",
+                    "/auth/session", // Allow unauthenticated access to session check
+                    "/auth/me", // Allow unauthenticated access to user info
                     "/"
-                    
                 ).permitAll()
                 // Protected endpoints require authentication
                 .anyRequest().authenticated()
@@ -68,8 +86,7 @@ public class SecurityConfig {
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             // OAuth2 login configuration
             .oauth2Login(oauth2 -> oauth2
-                //.loginPage("/oauth2/authorization/google")
-                .defaultSuccessUrl("/auth/oauth2/success", true)
+                .successHandler(oAuth2SuccessHandler)
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 

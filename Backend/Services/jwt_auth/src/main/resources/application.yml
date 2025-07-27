@@ -3,5 +3,5 @@ spring:
     import: optional:configserver:http://localhost:8888
   application:
     name: authentication-service
-  server:
-    port: 8081
+server:
+  port: 8080

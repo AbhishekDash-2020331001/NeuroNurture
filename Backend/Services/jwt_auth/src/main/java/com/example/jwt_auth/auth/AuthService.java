@@ -1,19 +1,23 @@
 package com.example.jwt_auth.auth;
 
+import java.time.Instant;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.jwt_auth.JwtUtil;
 import com.example.jwt_auth.token.RefreshToken;
 import com.example.jwt_auth.token.RefreshTokenRepository;
 import com.example.jwt_auth.user.User;
 import com.example.jwt_auth.user.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.*;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-
-import java.time.Instant;
-import java.util.UUID;
 
 @Service
+@Transactional(readOnly = true)
 public class AuthService {
 
     @Autowired private AuthenticationManager authManager;
@@ -21,7 +25,7 @@ public class AuthService {
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private JwtUtil jwtUtil;
     @Autowired private RefreshTokenRepository refreshTokenRepository;
-
+    @Transactional
     public void register(AuthRequest request) {
         if (userRepository.findByUsername(request.username).isPresent()) {
             throw new RuntimeException("User already exists");
@@ -31,7 +35,7 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.password));
         userRepository.save(user);
     }
-
+    @Transactional
     public AuthResponse loginWithTokens(AuthRequest request) {
         authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.username, request.password)
@@ -47,7 +51,7 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return passwordEncoder.matches(password, user.getPassword());
     }
-
+    @Transactional
     public void changePassword(String username, String oldPassword, String newPassword) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -57,7 +61,7 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
-
+    @Transactional
     public String createRefreshToken(User user) {
         refreshTokenRepository.deleteByUser(user);
 
@@ -79,8 +83,12 @@ public class AuthService {
 
         return jwtUtil.generateToken(refreshToken.getUser().getUsername());
     }
-
+    @Transactional
     public void invalidateRefreshToken(User user) {
         refreshTokenRepository.deleteByUser(user);
+    }
+
+    public boolean validateToken(String token) {
+        return jwtUtil.validateToken(token);
     }
 }
