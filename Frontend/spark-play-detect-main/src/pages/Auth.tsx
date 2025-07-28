@@ -1,4 +1,5 @@
 import { AuthLayout } from '@/components/auth/AuthLayout';
+import { AuthSuccessHandler } from '@/components/auth/AuthSuccessHandler';
 import { SignInForm } from '@/components/auth/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm';
 import { useEffect, useState } from 'react';
@@ -6,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Auth() {
   const [isSignIn, setIsSignIn] = useState(true);
+  const [showAuthHandler, setShowAuthHandler] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -13,20 +15,28 @@ export default function Auth() {
       .then(res => res.json())
       .then(authenticated => {
         if (authenticated) {
-          navigate('/dashboard');
+          setShowAuthHandler(true);
         }
       });
   }, [navigate]);
 
   const handleAuthSuccess = () => {
-    // Redirect to dashboard after successful authentication
-    navigate('/dashboard');
+    // Show the auth handler to determine where to redirect
+    setShowAuthHandler(true);
   };
+
+  if (showAuthHandler) {
+    return <AuthSuccessHandler onComplete={() => setShowAuthHandler(false)} />;
+  }
 
   return (
     <AuthLayout
-      title={isSignIn ? "Welcome Back!" : "Join KidsPlay!"}
-      subtitle={isSignIn ? "Sign in to continue your learning adventure" : "Create your account to start playing"}
+      title={isSignIn ? "Welcome Back!" : "Join NeuroNurture!"}
+      subtitle={
+        isSignIn 
+          ? "Sign in to continue your learning adventure!" 
+          : "Create an account to start your journey!"
+      }
     >
       {isSignIn ? (
         <SignInForm

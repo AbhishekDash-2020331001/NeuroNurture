@@ -49,7 +49,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-        // Redirect to frontend dashboard
-        response.sendRedirect("http://localhost:8081/dashboard");
+        // Redirect to frontend auth page to let AuthSuccessHandler determine the flow
+        response.sendRedirect("http://localhost:8081/auth");
     }
 } 

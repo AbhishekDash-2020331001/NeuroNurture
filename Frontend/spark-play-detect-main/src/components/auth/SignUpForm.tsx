@@ -11,7 +11,6 @@ interface SignUpFormProps {
 
 export const SignUpForm = ({ onSuccess, onSwitchToSignIn }: SignUpFormProps) => {
   const [formData, setFormData] = useState({
-    name: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -27,7 +26,7 @@ export const SignUpForm = ({ onSuccess, onSwitchToSignIn }: SignUpFormProps) => 
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+    if (!formData.email || !formData.password || !formData.confirmPassword) {
       toast({
         title: "Oops! 😅",
         description: "Please fill in all fields",
@@ -66,8 +65,8 @@ export const SignUpForm = ({ onSuccess, onSwitchToSignIn }: SignUpFormProps) => 
         throw new Error("Registration failed");
       }
       toast({
-        title: "Welcome to KidsPlay! 🎉",
-        description: "Account created successfully! Let's start playing!",
+        title: "Welcome to NeuroNurture! 🎉",
+        description: "Account created successfully! Let's start learning!",
       });
       // Auto-login after registration
       const loginRes = await fetch("http://localhost:8080/auth/login", {
@@ -126,19 +125,6 @@ export const SignUpForm = ({ onSuccess, onSwitchToSignIn }: SignUpFormProps) => 
 
       {/* Email Sign Up Form */}
       <form onSubmit={handleEmailSignUp} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name" className="font-comic text-foreground">Name</Label>
-          <Input
-            id="name"
-            type="text"
-            placeholder="Your awesome name"
-            value={formData.name}
-            onChange={(e) => updateFormData('name', e.target.value)}
-            className="input-fun"
-            disabled={isLoading}
-          />
-        </div>
-
         <div className="space-y-2">
           <Label htmlFor="email" className="font-comic text-foreground">Email</Label>
           <Input

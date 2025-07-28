@@ -1,21 +1,43 @@
 import heroImage from '@/assets/hero-children.jpg';
 import mascotImage from '@/assets/mascot.jpg';
+import { AuthSuccessHandler } from '@/components/auth/AuthSuccessHandler';
 import { Button } from '@/components/ui/button';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
   const navigate = useNavigate();
+  const [showAuthHandler, setShowAuthHandler] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetch('http://localhost:8080/auth/session', { credentials: 'include' })
       .then(res => res.json())
       .then(authenticated => {
         if (authenticated) {
-          navigate('/dashboard');
+          setShowAuthHandler(true);
         }
+      })
+      .catch(error => {
+        console.error('Error checking authentication:', error);
+        // If there's an error checking auth, just show the landing page
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   }, [navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-soft flex items-center justify-center">
+        <div className="text-2xl font-comic">Loading... 🌟</div>
+      </div>
+    );
+  }
+
+  if (showAuthHandler) {
+    return <AuthSuccessHandler onComplete={() => setShowAuthHandler(false)} />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -25,16 +47,16 @@ const Index = () => {
           <div className="flex items-center justify-center space-x-4 mb-8">
             <img 
               src={mascotImage} 
-              alt="KidsPlay Mascot" 
+                              alt="NeuroNurture Mascot" 
               className="w-20 h-20 animate-wiggle"
             />
             <h1 className="text-6xl lg:text-7xl font-playful text-primary">
-              KidsPlay
+              NeuroNurture
             </h1>
           </div>
           
           <h2 className="text-2xl lg:text-3xl font-comic text-foreground max-w-4xl mx-auto">
-            Where Fun Meets Learning! 🌟
+            Where Fun Meets Learning! 🌟 🌟 🌟 
           </h2>
           
           <p className="text-lg lg:text-xl text-muted-foreground font-comic max-w-3xl mx-auto">

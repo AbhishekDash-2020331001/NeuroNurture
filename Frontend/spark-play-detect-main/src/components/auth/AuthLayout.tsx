@@ -1,6 +1,6 @@
-import { ReactNode } from 'react';
 import heroImage from '@/assets/hero-children.jpg';
 import mascotImage from '@/assets/mascot.jpg';
+import { ReactNode } from 'react';
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -18,15 +18,15 @@ export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
             <div className="flex items-center justify-center lg:justify-start space-x-4">
               <img 
                 src={mascotImage} 
-                alt="KidsPlay Mascot" 
+                alt="NeuroNurture Mascot" 
                 className="w-16 h-16 animate-wiggle"
               />
               <h1 className="text-4xl lg:text-5xl font-playful text-primary">
-                KidsPlay
+                NeuroNurture
               </h1>
             </div>
             <p className="text-xl text-muted-foreground font-comic">
-              Fun games that help kids grow and learn! 🌟
+              Nurturing Brains, Brightening Futures! 🌟
             </p>
           </div>
           

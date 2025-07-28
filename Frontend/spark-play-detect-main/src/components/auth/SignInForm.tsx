@@ -130,7 +130,7 @@ export const SignInForm = ({ onSuccess, onSwitchToSignUp }: SignInFormProps) => 
 
       <div className="text-center">
         <p className="text-muted-foreground font-comic">
-          New to KidsPlay?{' '}
+          New to NeuroNurture?{' '}
           <button
             onClick={onSwitchToSignUp}
             className="text-primary hover:text-primary-dark font-bold transition-colors"
