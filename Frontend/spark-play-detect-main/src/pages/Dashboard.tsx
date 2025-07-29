@@ -57,18 +57,20 @@ export default function Dashboard() {
 
   const games = [
     {
-      title: "Puzzle Adventures",
-      description: "Fun puzzles that help develop problem-solving skills",
-      icon: "🧩",
+      title: "Gesture Recognizing Game",
+      description: "Play and learn by recognizing hand gestures!",
+      icon: " 44B", // 👋
       color: "bg-fun-purple",
-      progress: 75
+      progress: 75,
+      route: "/games/gesture"
     },
     {
-      title: "Memory Match",
-      description: "Match cards to improve memory and concentration",
-      icon: "🎴",
+      title: "Mirror Posture Game",
+      description: "Mimic facial expressions and postures for fun!",
+      icon: " 60E", // 😎
       color: "bg-fun-orange",
-      progress: 45
+      progress: 45,
+      route: "/games/mirror-posture"
     },
     {
       title: "Shape Sorter",
@@ -247,7 +249,7 @@ export default function Dashboard() {
                   </div>
                   <Button 
                     className="w-full btn-bounce font-comic text-sm py-2 relative z-20"
-                    onClick={() => console.log(`Playing ${game.title}`)}
+                    onClick={() => game.route ? navigate(game.route) : console.log(`Playing ${game.title}`)}
                   >
                     Play Now! 🎮
                   </Button>
