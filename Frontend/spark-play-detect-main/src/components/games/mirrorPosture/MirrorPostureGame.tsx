@@ -25,7 +25,7 @@ const FACIAL_EXPRESSIONS = [
 const ROUND_DURATION = 15; // seconds
 
 type GameState = 'idle' | 'playing' | 'finished';
-type GameScreen = 'instructions' | 'game' | 'loading';
+type GameScreen = 'instructions' | 'game' | 'loading' | 'countdown';
 
 interface GameStats {
   currentRound: number;
@@ -66,6 +66,8 @@ interface SimplifiedGameStats {
 const MirrorPostureGame: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>('idle');
   const [currentScreen, setCurrentScreen] = useState<GameScreen>('instructions');
+  const [countdown, setCountdown] = useState<number>(5);
+  const [isCountdownActive, setIsCountdownActive] = useState<boolean>(false);
   const [gameStats, setGameStats] = useState<GameStats>({
     currentRound: 0,
     score: 0,
@@ -80,8 +82,12 @@ const MirrorPostureGame: React.FC = () => {
   const [roundStartTime, setRoundStartTime] = useState<number>(0);
   const [showCompletionAnimation, setShowCompletionAnimation] = useState(false);
   const [simplifiedStats, setSimplifiedStats] = useState<SimplifiedGameStats | null>(null);
+  const [roundCountdown, setRoundCountdown] = useState<number>(2);
+  const [isRoundCountdownActive, setIsRoundCountdownActive] = useState<boolean>(false);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownRef = useRef<NodeJS.Timeout | null>(null);
+  const roundCountdownRef = useRef<NodeJS.Timeout | null>(null);
   const gameRounds = useRef(FACIAL_EXPRESSIONS.slice());
 
   // Cleanup effect to ensure camera is stopped when component unmounts or screen changes
@@ -91,8 +97,66 @@ const MirrorPostureGame: React.FC = () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
+      // Clear countdown timer
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+      }
+      // Clear round countdown timer
+      if (roundCountdownRef.current) {
+        clearInterval(roundCountdownRef.current);
+      }
       // Camera will be stopped by WebcamCapture component when isActive becomes false
     };
+  }, []);
+
+  // Start countdown
+  const startCountdown = useCallback(() => {
+    setIsCountdownActive(true);
+    setCountdown(3);
+    setCurrentScreen('countdown');
+    
+    // Initialize camera during countdown
+    setIsWebcamReady(false);
+    
+    countdownRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          // Countdown finished, start the game
+          if (countdownRef.current) {
+            clearInterval(countdownRef.current);
+            countdownRef.current = null;
+          }
+          setIsCountdownActive(false);
+          setCurrentScreen('game');
+          // Call startGame directly here
+          startGame();
+          return 3; // Reset for next time
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  // Start round countdown
+  const startRoundCountdown = useCallback(() => {
+    setIsRoundCountdownActive(true);
+    setRoundCountdown(2);
+    
+    roundCountdownRef.current = setInterval(() => {
+      setRoundCountdown(prev => {
+        if (prev <= 1) {
+          // Round countdown finished, start the next round
+          if (roundCountdownRef.current) {
+            clearInterval(roundCountdownRef.current);
+            roundCountdownRef.current = null;
+          }
+          setIsRoundCountdownActive(false);
+          startRoundTimer();
+          return 2; // Reset for next time
+        }
+        return prev - 1;
+      });
+    }, 1000);
   }, []);
 
   // Shuffle expressions for random order
@@ -128,13 +192,25 @@ const MirrorPostureGame: React.FC = () => {
     console.log('Start game called, isWebcamReady:', isWebcamReady);
     console.log('FACIAL_EXPRESSIONS.length:', FACIAL_EXPRESSIONS.length);
     
+    // Clear any existing timers first
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (roundCountdownRef.current) {
+      clearInterval(roundCountdownRef.current);
+      roundCountdownRef.current = null;
+    }
+    
     // Reset camera state to allow fresh initialization
     setIsWebcamReady(false);
-    
-    // Allow starting even if camera isn't ready - it will be initialized when game starts
-    shuffleExpressions();
-    setGameState('playing');
     setIsProcessingRound(false);
+    
+    // Shuffle expressions for fresh game
+    shuffleExpressions();
+    
+    // Reset game state
+    setGameState('playing');
     setGameStats({
       currentRound: 0,
       score: 0,
@@ -155,7 +231,10 @@ const MirrorPostureGame: React.FC = () => {
     setGameSession(newSession);
     setRoundStartTime(Date.now());
     
-    startRoundTimer();
+    // Start the first round timer after 1 second delay
+    setTimeout(() => {
+      startRoundTimer();
+    }, 1000);
   }, [shuffleExpressions, createSessionId, createSimplifiedStats]);
 
   // Start round timer
@@ -168,6 +247,11 @@ const MirrorPostureGame: React.FC = () => {
     
     timerRef.current = setInterval(() => {
       setGameStats(prev => {
+        // Don't continue if game is already finished
+        if (gameState === 'finished') {
+          return prev;
+        }
+        
         const newTimeLeft = prev.timeLeft - 1;
         
         if (newTimeLeft <= 0) {
@@ -177,78 +261,77 @@ const MirrorPostureGame: React.FC = () => {
             timerRef.current = null;
           }
           
-                     console.log('Timer check - currentRound:', prev.currentRound, 'FACIAL_EXPRESSIONS.length:', FACIAL_EXPRESSIONS.length);
-                     console.log('Will end game?', (prev.currentRound + 1 >= FACIAL_EXPRESSIONS.length));
-                                           if (prev.currentRound + 1 >= FACIAL_EXPRESSIONS.length) {
-              // Game finished - complete session
-              // First add the incomplete final round to session
-              const currentExpression = gameRounds.current[prev.currentRound];
-              if (currentExpression) {
-                const roundStats: RoundStats = {
-                  roundNumber: prev.currentRound + 1,
-                  expressionName: currentExpression.name,
-                  expressionImage: currentExpression.image,
-                  timeTaken: ROUND_DURATION,
-                  completed: false
-                };
-                
-                console.log('Adding incomplete final round:', roundStats);
-                
-                setGameSession(currentSession => {
-                  if (currentSession) {
-                    const sessionWithFinalRound = {
-                      ...currentSession,
-                      rounds: [...currentSession.rounds, roundStats],
-                      endTime: new Date()
-                    };
-                    const stats = createSimplifiedStats(sessionWithFinalRound);
-                    setSimplifiedStats(stats);
-                    console.log('Simplified Game Stats:', stats);
-                    console.log('Final Game Session Rounds:', sessionWithFinalRound.rounds);
-                    return sessionWithFinalRound;
-                  }
-                  return currentSession;
-                });
-              }
-              setGameState('finished');
-              // Show animation after a short delay to avoid lag
-              setTimeout(() => {
-                setShowCompletionAnimation(true);
-              }, 500);
-              return prev;
-            } else {
+          console.log('Timer check - currentRound:', prev.currentRound, 'FACIAL_EXPRESSIONS.length:', FACIAL_EXPRESSIONS.length);
+          console.log('Will end game?', (prev.currentRound + 1 >= FACIAL_EXPRESSIONS.length));
+          
+          if (prev.currentRound + 1 >= FACIAL_EXPRESSIONS.length) {
+            // Game finished - complete session
+            // First add the incomplete final round to session
+            const currentExpression = gameRounds.current[prev.currentRound];
+            if (currentExpression) {
+              const roundStats: RoundStats = {
+                roundNumber: prev.currentRound + 1,
+                expressionName: currentExpression.name,
+                expressionImage: currentExpression.image,
+                timeTaken: ROUND_DURATION,
+                completed: false
+              };
+              
+              console.log('Adding incomplete final round:', roundStats);
+              
+              setGameSession(currentSession => {
+                if (currentSession) {
+                  const sessionWithFinalRound = {
+                    ...currentSession,
+                    rounds: [...currentSession.rounds, roundStats],
+                    endTime: new Date()
+                  };
+                  const stats = createSimplifiedStats(sessionWithFinalRound);
+                  setSimplifiedStats(stats);
+                  console.log('Simplified Game Stats:', stats);
+                  console.log('Final Game Session Rounds:', sessionWithFinalRound.rounds);
+                  return sessionWithFinalRound;
+                }
+                return currentSession;
+              });
+            }
+            setGameState('finished');
+            // Show animation after a short delay to avoid lag
+            setTimeout(() => {
+              setShowCompletionAnimation(true);
+            }, 500);
+            return prev;
+          } else {
             // Add incomplete round to session
-            if (gameSession) {
-              const currentExpression = gameRounds.current[prev.currentRound];
-              if (currentExpression) {
-                const roundStats: RoundStats = {
-                  roundNumber: prev.currentRound + 1,
-                  expressionName: currentExpression.name,
-                  expressionImage: currentExpression.image,
-                  timeTaken: ROUND_DURATION,
-                  completed: false
-                };
-                
-                console.log('Adding incomplete round:', roundStats);
-                console.log('Current round index:', prev.currentRound);
-                
-                setGameSession(prev => {
-                  if (prev) {
-                    const updatedSession = {
-                      ...prev,
-                      rounds: [...prev.rounds, roundStats]
-                    };
-                    console.log('Updated session rounds count after incomplete:', updatedSession.rounds.length);
-                    return updatedSession;
-                  }
-                  return null;
-                });
-              }
+            const currentExpression = gameRounds.current[prev.currentRound];
+            if (currentExpression) {
+              const roundStats: RoundStats = {
+                roundNumber: prev.currentRound + 1,
+                expressionName: currentExpression.name,
+                expressionImage: currentExpression.image,
+                timeTaken: ROUND_DURATION,
+                completed: false
+              };
+              
+              console.log('Adding incomplete round:', roundStats);
+              console.log('Current round index:', prev.currentRound);
+              
+              setGameSession(currentSession => {
+                if (currentSession) {
+                  const updatedSession = {
+                    ...currentSession,
+                    rounds: [...currentSession.rounds, roundStats]
+                  };
+                  console.log('Updated session rounds count after incomplete:', updatedSession.rounds.length);
+                  return updatedSession;
+                }
+                return currentSession;
+              });
             }
             
             // Next round - restart timer after a short delay
             setTimeout(() => {
-              startRoundTimer();
+              startRoundCountdown();
             }, 1000);
             
             return {
@@ -266,7 +349,7 @@ const MirrorPostureGame: React.FC = () => {
         };
       });
     }, 1000);
-  }, []);
+  }, [gameState, createSimplifiedStats]);
 
 
 
@@ -289,32 +372,30 @@ const MirrorPostureGame: React.FC = () => {
       // Calculate time taken for this round
       const timeTaken = ROUND_DURATION - gameStats.timeLeft;
       
-             // Update session with round stats
-       if (gameSession) {
-         const roundStats: RoundStats = {
-           roundNumber: gameStats.currentRound + 1,
-           expressionName: currentExpression.name,
-           expressionImage: currentExpression.image,
-           timeTaken,
-           completed: true
-         };
-         
-         console.log('Adding completed round:', roundStats);
-         console.log('Current gameStats.currentRound:', gameStats.currentRound);
-         
-         setGameSession(prev => {
-           if (prev) {
-             const updatedSession = {
-               ...prev,
-               rounds: [...prev.rounds, roundStats],
-               totalScore: prev.totalScore + 1
-             };
-             console.log('Updated session rounds count:', updatedSession.rounds.length);
-             return updatedSession;
-           }
-           return null;
-         });
-       }
+      // Update session with round stats
+      const roundStats: RoundStats = {
+        roundNumber: gameStats.currentRound + 1,
+        expressionName: currentExpression.name,
+        expressionImage: currentExpression.image,
+        timeTaken,
+        completed: true
+      };
+      
+      console.log('Adding completed round:', roundStats);
+      console.log('Current gameStats.currentRound:', gameStats.currentRound);
+      
+      setGameSession(prev => {
+        if (prev) {
+          const updatedSession = {
+            ...prev,
+            rounds: [...prev.rounds, roundStats],
+            totalScore: prev.totalScore + 1
+          };
+          console.log('Updated session rounds count:', updatedSession.rounds.length);
+          return updatedSession;
+        }
+        return prev;
+      });
       
       // Correct expression - stop the timer immediately
       if (timerRef.current) {
@@ -376,7 +457,7 @@ const MirrorPostureGame: React.FC = () => {
         });
         
         // Start timer for next round
-        startRoundTimer();
+        startRoundCountdown();
       }, 2000);
     } else if (expression && expression !== currentExpression.id) {
       // Wrong expression
@@ -386,7 +467,7 @@ const MirrorPostureGame: React.FC = () => {
         variant: "destructive",
       });
     }
-  }, [gameState, startRoundTimer, isProcessingRound, gameStats.timeLeft, gameStats.currentRound, gameSession, createSimplifiedStats]);
+  }, [gameState, startRoundTimer, isProcessingRound, gameStats.timeLeft, gameStats.currentRound, createSimplifiedStats]);
 
   // Get current expression
   const getCurrentExpression = () => {
@@ -395,7 +476,27 @@ const MirrorPostureGame: React.FC = () => {
 
   // Reset game
   const resetGame = useCallback(() => {
+    // Clear all timers
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+      countdownRef.current = null;
+    }
+    if (roundCountdownRef.current) {
+      clearInterval(roundCountdownRef.current);
+      roundCountdownRef.current = null;
+    }
+    
+    // Reset all state
     setGameState('idle');
+    setCurrentScreen('game');
+    setCountdown(3);
+    setIsCountdownActive(false);
+    setRoundCountdown(2);
+    setIsRoundCountdownActive(false);
     setGameStats({
       currentRound: 0,
       score: 0,
@@ -405,8 +506,13 @@ const MirrorPostureGame: React.FC = () => {
     setShowCompletionAnimation(false);
     setShowGameStats(false);
     setSimplifiedStats(null);
-    setIsWebcamReady(false); // Reset camera state
-    if (timerRef.current) clearInterval(timerRef.current);
+    setIsWebcamReady(false);
+    setIsProcessingRound(false);
+    setGameSession(null);
+    setRoundStartTime(0);
+    
+    // Reset game rounds
+    gameRounds.current = FACIAL_EXPRESSIONS.slice();
   }, []);
 
   // Cleanup on unmount
@@ -417,6 +523,31 @@ const MirrorPostureGame: React.FC = () => {
       }
     };
   }, []);
+
+  // Clear timer when game is finished
+  useEffect(() => {
+    if (gameState === 'finished') {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      if (roundCountdownRef.current) {
+        clearInterval(roundCountdownRef.current);
+        roundCountdownRef.current = null;
+      }
+    }
+  }, [gameState]);
+
+  // Auto-hide completion animation after 2 seconds
+  useEffect(() => {
+    if (showCompletionAnimation) {
+      const timer = setTimeout(() => {
+        setShowCompletionAnimation(false);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [showCompletionAnimation]);
 
   const currentExpression = getCurrentExpression();
 
@@ -516,14 +647,9 @@ const MirrorPostureGame: React.FC = () => {
             <div className="text-center">
               <button
                 onClick={() => {
-                  console.log('Start button clicked from instructions');
-                  setCurrentScreen('game');
-                  // Also start the game immediately when coming from instructions
-                  // Don't wait for camera to be ready - start the game and camera will initialize
-                  setTimeout(() => {
-                    console.log('Starting game after screen change');
-                    startGame();
-                  }, 100);
+                  setCurrentScreen('countdown');
+                  // Start countdown instead of directly starting game
+                  startCountdown();
                 }}
                 className="btn-fun font-comic text-2xl py-4 px-8 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white border-4 border-orange-300 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110"
               >
@@ -534,6 +660,87 @@ const MirrorPostureGame: React.FC = () => {
                   Camera will be activated when you start the game 📹
                 </p>
               )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Countdown Screen
+  if (currentScreen === 'countdown') {
+    return (
+      <div className="h-full flex flex-col relative overflow-hidden">
+        {/* Animated background */}
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-yellow-300 rounded-full animate-ping opacity-60"></div>
+          <div className="absolute top-3/4 right-1/4 w-2 h-2 bg-pink-300 rounded-full animate-ping opacity-60" style={{animationDelay: '0.5s'}}></div>
+          <div className="absolute bottom-1/4 left-1/3 w-2 h-2 bg-blue-300 rounded-full animate-ping opacity-60" style={{animationDelay: '1s'}}></div>
+          <div className="absolute top-1/2 right-1/3 w-2 h-2 bg-green-300 rounded-full animate-ping opacity-60" style={{animationDelay: '1.5s'}}></div>
+        </div>
+
+        {/* Hidden camera component for initialization */}
+        <div className="absolute top-0 left-0 w-1 h-1 overflow-hidden opacity-0">
+          <WebcamCapture 
+            onCameraReady={setIsWebcamReady}
+            onExpressionDetected={() => {}} // No detection during countdown
+            isActive={true}
+            detectedExpression={null}
+          />
+        </div>
+
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            {/* Main Countdown Display */}
+            <div className="mb-8">
+              <div className="text-8xl mb-6 animate-bounce">🎭</div>
+              <h1 className="text-6xl font-playful bg-gradient-to-r from-orange-600 via-pink-500 to-purple-600 bg-clip-text text-transparent mb-4">
+                Get Ready!
+              </h1>
+              <p className="text-2xl font-comic text-muted-foreground mb-8">
+                Camera is setting up... 📹
+              </p>
+            </div>
+
+            {/* Fascinating Countdown Number */}
+            <div className="relative">
+              {/* Background Circle */}
+              <div className="w-48 h-48 mx-auto mb-8 relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-pink-500 rounded-full animate-pulse"></div>
+                <div className="absolute inset-2 bg-white rounded-full flex items-center justify-center">
+                  <div className="text-center">
+                    <div className={`text-8xl font-bold ${countdown <= 3 ? 'text-red-500 animate-pulse' : 'text-primary'}`}>
+                      {countdown}
+                    </div>
+                    <div className="text-xl font-comic text-muted-foreground">
+                      {countdown === 3 && 'Starting...'}
+                      {countdown === 2 && 'Almost ready...'}
+                      {countdown === 1 && 'Go!'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating Elements */}
+              <div className="absolute top-0 left-1/4 text-4xl animate-bounce">✨</div>
+              <div className="absolute top-0 right-1/4 text-4xl animate-bounce" style={{animationDelay: '0.5s'}}>🌟</div>
+              <div className="absolute bottom-0 left-1/3 text-4xl animate-bounce" style={{animationDelay: '1s'}}>💫</div>
+              <div className="absolute bottom-0 right-1/3 text-4xl animate-bounce" style={{animationDelay: '1.5s'}}>🎪</div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-64 h-4 bg-gray-200 rounded-full mx-auto mb-8 overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-orange-500 to-pink-500 rounded-full transition-all duration-1000 ease-linear"
+                style={{ width: `${((3 - countdown) / 3) * 100}%` }}
+              ></div>
+            </div>
+
+            {/* Encouraging Messages */}
+            <div className="text-lg font-comic text-muted-foreground">
+              {countdown === 3 && '🎯 Camera is warming up...'}
+              {countdown === 2 && '📹 Getting your camera ready...'}
+              {countdown === 1 && '🚀 Let the magic begin!'}
             </div>
           </div>
         </div>
@@ -553,7 +760,7 @@ const MirrorPostureGame: React.FC = () => {
                   <WebcamCapture 
                     onCameraReady={setIsWebcamReady}
                     onExpressionDetected={handleExpressionDetected}
-                    isActive={gameState === 'playing'}
+                    isActive={gameState === 'playing' || isCountdownActive}
                     detectedExpression={gameStats.detectedExpression}
                   />
                   {!isWebcamReady && (
@@ -656,19 +863,73 @@ const MirrorPostureGame: React.FC = () => {
                )}
 
                                {gameState === 'playing' && currentExpression && (
-                  <div className="card-playful border-4 border-primary bg-gradient-to-r from-primary/20 to-secondary/20 p-6 text-center w-full h-full flex flex-col justify-center">
-                    <h3 className="text-2xl font-playful text-primary mb-4">Make this expression:</h3>
-                    <div className="text-2xl font-playful text-primary mb-3">{currentExpression.name}</div>
-                    <img 
-                      src={currentExpression.image} 
-                      alt={currentExpression.name}
-                      className="w-52 h-52 mx-auto rounded-xl border-4 border-primary shadow-2xl mb-4"
-                    />
-                    <div className="text-lg text-muted-foreground font-comic">
-                      {currentExpression.description}
-                    </div>
-                  </div>
-                )}
+                   <div className="card-playful border-4 border-primary bg-gradient-to-r from-primary/20 to-secondary/20 p-6 text-center w-full h-full flex flex-col justify-center">
+                     {isRoundCountdownActive ? (
+                       <>
+                         <h3 className="text-2xl font-playful text-primary mb-4">Get Ready!</h3>
+                         <div className="text-6xl mb-4 animate-bounce">🎯</div>
+                         <p className="text-lg text-muted-foreground font-comic mb-6">
+                           Next expression coming in {roundCountdown} seconds...
+                         </p>
+                         
+                         {/* Countdown Circle inside the reference box */}
+                         <div className="flex justify-center">
+                           <div className="relative w-32 h-32">
+                             {/* Background Circle */}
+                             <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
+                               <circle
+                                 cx="50"
+                                 cy="50"
+                                 r="40"
+                                 stroke="currentColor"
+                                 strokeWidth="8"
+                                 fill="none"
+                                 className="text-gray-200"
+                               />
+                               {/* Progress Circle */}
+                               <circle
+                                 cx="50"
+                                 cy="50"
+                                 r="40"
+                                 stroke="currentColor"
+                                 strokeWidth="8"
+                                 fill="none"
+                                 strokeLinecap="round"
+                                 className="text-orange-500 transition-all duration-1000 ease-linear"
+                                 style={{
+                                   strokeDasharray: `${2 * Math.PI * 40}`,
+                                   strokeDashoffset: `${2 * Math.PI * 40 * (1 - roundCountdown / 2)}`
+                                 }}
+                               />
+                             </svg>
+                             {/* Countdown Text */}
+                             <div className="absolute inset-0 flex items-center justify-center">
+                               <div className="text-center">
+                                 <div className="text-2xl font-bold text-orange-500">
+                                   {roundCountdown}s
+                                 </div>
+                                 <div className="text-xs text-muted-foreground font-comic">Next Round</div>
+                               </div>
+                             </div>
+                           </div>
+                         </div>
+                       </>
+                     ) : (
+                       <>
+                         <h3 className="text-2xl font-playful text-primary mb-4">Make this expression:</h3>
+                         <div className="text-2xl font-playful text-primary mb-3">{currentExpression.name}</div>
+                         <img 
+                           src={currentExpression.image} 
+                           alt={currentExpression.name}
+                           className="w-52 h-52 mx-auto rounded-xl border-4 border-primary shadow-2xl mb-4"
+                         />
+                         <div className="text-lg text-muted-foreground font-comic">
+                           {currentExpression.description}
+                         </div>
+                       </>
+                     )}
+                   </div>
+                 )}
 
                                {gameState === 'finished' && (
                   <div className="card-playful border-4 border-primary bg-gradient-to-r from-primary/10 to-secondary/10 p-6 text-center w-full h-full flex flex-col justify-center">
@@ -719,9 +980,9 @@ const MirrorPostureGame: React.FC = () => {
 
        {/* Game Stats Modal */}
        {showGameStats && gameSession && (
-         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-           <div className="bg-white rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-             <div className="text-center mb-6">
+         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
+           <div className="bg-white rounded-2xl p-6 max-w-4xl w-full max-h-[85vh] overflow-y-auto relative">
+             <div className="text-center mb-6 sticky top-0 bg-white pb-4 border-b border-gray-200">
                <h2 className="text-3xl font-playful text-primary mb-2">📊 Game Statistics</h2>
                <p className="text-muted-foreground font-comic">Session ID: {gameSession.sessionId}</p>
                <p className="text-muted-foreground font-comic">
@@ -732,7 +993,7 @@ const MirrorPostureGame: React.FC = () => {
 
              <div className="overflow-x-auto">
                <table className="w-full border-collapse">
-                 <thead>
+                 <thead className="sticky top-0 bg-white">
                    <tr className="bg-gradient-to-r from-primary/10 to-secondary/10">
                      <th className="border border-primary p-3 text-left font-playful text-primary">Round</th>
                      <th className="border border-primary p-3 text-left font-playful text-primary">Expression</th>
@@ -771,7 +1032,7 @@ const MirrorPostureGame: React.FC = () => {
                </table>
              </div>
 
-             <div className="flex justify-center gap-4 mt-6">
+             <div className="flex justify-center gap-4 mt-6 sticky bottom-0 bg-white pt-4 border-t border-gray-200">
                <Button 
                  onClick={() => setShowGameStats(false)}
                  className="btn-fun font-comic text-lg py-2 bg-secondary hover:bg-secondary/80"
@@ -785,56 +1046,48 @@ const MirrorPostureGame: React.FC = () => {
 
        {/* Game Completion Animation */}
        {showCompletionAnimation && (
-         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-           <div className="text-center text-white">
-             {/* Celebration Animation */}
-             <div className="mb-8">
-               <div className="text-9xl mb-4 animate-bounce">🎉</div>
-               <div className="text-6xl mb-4 animate-pulse">🏆</div>
-               <div className="text-4xl mb-4 animate-spin">⭐</div>
+         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] overflow-hidden">
+           {/* Quick Celebration Burst */}
+           <div className="text-center text-white relative z-10">
+             {/* Main Celebration Element */}
+             <div className="mb-4 animate-bounce">
+               <div className="text-8xl mb-2 animate-pulse">🎉</div>
+               <div className="text-6xl mb-2 animate-spin" style={{animationDuration: '1s'}}>🏆</div>
+               <div className="text-5xl animate-bounce" style={{animationDelay: '0.3s'}}>🌟</div>
              </div>
              
-             {/* Score Display */}
-             <div className="mb-8">
-               <h1 className="text-5xl font-playful mb-4 bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
+             {/* Quick Score Display */}
+             <div className="mb-4">
+               <h2 className="text-3xl font-playful mb-2 bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
                  Game Complete!
-               </h1>
-               <div className="text-3xl font-playful mb-2">
-                 Final Score: {gameStats.score}/5
+               </h2>
+               <div className="text-2xl font-playful mb-1">
+                 Score: {gameStats.score}/5
                </div>
-               <div className="text-xl font-comic">
-                 {gameStats.score === 5 ? "🌟 Perfect! You're an expression master! 🌟" : 
-                  gameStats.score >= 3 ? "👍 Great job! You're getting better! 👍" : 
-                  "💪 Keep practicing! You'll improve! 💪"}
+               <div className="text-lg font-comic">
+                 {gameStats.score === 5 ? "Perfect! 🌟" : 
+                  gameStats.score >= 3 ? "Great job! 👍" : 
+                  "Keep practicing! 💪"}
                </div>
              </div>
              
-             {/* Confetti Effect */}
+             {/* Quick Confetti Burst */}
              <div className="absolute inset-0 pointer-events-none">
                {[...Array(20)].map((_, i) => (
                  <div
-                   key={i}
+                   key={`confetti-${i}`}
                    className="absolute animate-bounce"
                    style={{
                      left: `${Math.random() * 100}%`,
                      top: `${Math.random() * 100}%`,
-                     animationDelay: `${Math.random() * 2}s`,
-                     animationDuration: `${1 + Math.random() * 2}s`
+                     animationDelay: `${Math.random() * 0.5}s`,
+                     animationDuration: `${0.8 + Math.random() * 0.4}s`,
+                     fontSize: `${12 + Math.random() * 16}px`
                    }}
                  >
                    {['🎊', '🎈', '🎉', '⭐', '✨'][Math.floor(Math.random() * 5)]}
                  </div>
                ))}
-             </div>
-             
-             {/* Continue Button */}
-             <div className="mt-8">
-               <Button 
-                 onClick={() => setShowCompletionAnimation(false)}
-                 className="btn-fun font-comic text-2xl py-4 px-8 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-4 border-yellow-300 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110"
-               >
-                 Continue to Results 🚀
-               </Button>
              </div>
            </div>
          </div>

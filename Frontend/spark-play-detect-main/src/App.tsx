@@ -27,12 +27,10 @@ const CameraCleanupHandler = () => {
     // Cleanup camera when navigating away from game routes
     const isGameRoute = location.pathname.startsWith('/games/');
     
-    return () => {
-      // If we're navigating away from a game route, stop all cameras
-      if (!isGameRoute) {
-        stopAllCameraStreams();
-      }
-    };
+    // If we're NOT on a game route, stop all cameras
+    if (!isGameRoute) {
+      stopAllCameraStreams();
+    }
   }, [location.pathname]);
 
   return null;

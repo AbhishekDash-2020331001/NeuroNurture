@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 interface AuthSuccessHandlerProps {
   onComplete: () => void;
@@ -7,6 +7,7 @@ interface AuthSuccessHandlerProps {
 
 export const AuthSuccessHandler = ({ onComplete }: AuthSuccessHandlerProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
@@ -21,6 +22,18 @@ export const AuthSuccessHandler = ({ onComplete }: AuthSuccessHandlerProps) => {
 
       try {
         console.log('AuthSuccessHandler: Starting parent info check...');
+        console.log('AuthSuccessHandler: Current location:', location.pathname);
+        
+        // If we're already on a valid authenticated page, don't redirect
+        const validAuthenticatedPages = ['/dashboard', '/children', '/add-child', '/parent-info', '/view-parent-info', '/games/gesture', '/games/mirror-posture'];
+        if (validAuthenticatedPages.includes(location.pathname)) {
+          console.log('AuthSuccessHandler: Already on valid authenticated page, not redirecting');
+          setIsChecking(false);
+          onComplete();
+          clearTimeout(timeoutId);
+          return;
+        }
+
         // Get user email from JWT
         const emailResponse = await fetch('http://localhost:8080/auth/me', { 
           credentials: 'include' 
@@ -60,7 +73,7 @@ export const AuthSuccessHandler = ({ onComplete }: AuthSuccessHandlerProps) => {
               navigate('/add-child');
             }
           } else {
-            // Error getting children, go to children page
+            // Error getting children, go to children page (not add-child)
             console.log('AuthSuccessHandler: Error getting children, redirecting to /children');
             navigate('/children');
           }
@@ -71,7 +84,7 @@ export const AuthSuccessHandler = ({ onComplete }: AuthSuccessHandlerProps) => {
         }
       } catch (error) {
         console.error('Error checking parent info:', error);
-        // On error, redirect to dashboard as fallback
+        // On error, redirect to dashboard as fallback (not add-child)
         console.log('AuthSuccessHandler: Error occurred, redirecting to /dashboard');
         navigate('/dashboard');
       } finally {
@@ -82,7 +95,7 @@ export const AuthSuccessHandler = ({ onComplete }: AuthSuccessHandlerProps) => {
     };
 
     checkParentInfo();
-  }, [navigate, onComplete]);
+  }, [navigate, onComplete, location.pathname]);
 
   if (isChecking) {
     return (
