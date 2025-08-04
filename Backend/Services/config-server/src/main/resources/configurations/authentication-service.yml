@@ -29,7 +29,7 @@ spring:
     host: smtp.sendgrid.net
     port: 587
     username: apikey  # This is always 'apikey' for SendGrid
-    password: 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  # Your SendGrid API Key (set as environment variable)
+    password: ${SENDGRID_API_KEY}  # Use environment variable
     properties:
       mail:
         smtp:
