@@ -70,6 +70,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
                 .requestMatchers(
+                    "/auth/verify-email",
+                    "/auth/resend-verification",
                     "/auth/register",
                     "/auth/login",
                     "/auth/oauth2/**",

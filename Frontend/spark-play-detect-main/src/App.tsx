@@ -1,3 +1,4 @@
+import { EmailVerificationGuard } from "@/components/auth/EmailVerificationGuard";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,6 +11,8 @@ import AddChild from "./pages/AddChild";
 import Auth from "./pages/Auth";
 import ChildrenProfiles from "./pages/ChildrenProfiles";
 import Dashboard from "./pages/Dashboard";
+import EmailVerificationPage from "./pages/EmailVerification";
+import EmailVerificationRequired from "./pages/EmailVerificationRequired";
 import GestureGame from "./pages/GestureGame";
 import Index from "./pages/Index";
 import MirrorPostureGamePage from "./pages/MirrorPostureGamePage";
@@ -46,29 +49,41 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/verify-email" element={<EmailVerificationPage />} />
+          <Route path="/email-verification-required" element={<EmailVerificationRequired />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
-              <Dashboard />
+              <EmailVerificationGuard>
+                <Dashboard />
+              </EmailVerificationGuard>
             </ProtectedRoute>
           } />
           <Route path="/parent-info" element={
             <ProtectedRoute>
-              <ParentInfo />
+              <EmailVerificationGuard>
+                <ParentInfo />
+              </EmailVerificationGuard>
             </ProtectedRoute>
           } />
           <Route path="/view-parent-info" element={
             <ProtectedRoute>
-              <ViewParentInfo />
+              <EmailVerificationGuard>
+                <ViewParentInfo />
+              </EmailVerificationGuard>
             </ProtectedRoute>
           } />
           <Route path="/children" element={
             <ProtectedRoute>
-              <ChildrenProfiles />
+              <EmailVerificationGuard>
+                <ChildrenProfiles />
+              </EmailVerificationGuard>
             </ProtectedRoute>
           } />
           <Route path="/add-child" element={
             <ProtectedRoute>
-              <AddChild />
+              <EmailVerificationGuard>
+                <AddChild />
+              </EmailVerificationGuard>
             </ProtectedRoute>
           } />
           <Route path="/games/gesture" element={<GestureGame />} />

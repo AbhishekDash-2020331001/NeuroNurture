@@ -35,8 +35,25 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
         String email = oauthToken.getPrincipal().getAttribute("email");
+        
         User user = userRepository.findByUsername(email)
-                .orElseGet(() -> userRepository.save(new User(null, email, "")));
+                .orElseGet(() -> {
+                    User newUser = new User();
+                    newUser.setUsername(email);
+                    newUser.setEmail(email);
+                    newUser.setPassword(""); // No password for OAuth users
+                    newUser.setEmailVerified(true); // Google emails are pre-verified
+                    newUser.setAuthProvider("GOOGLE");
+                    return userRepository.save(newUser);
+                });
+        
+        // If user exists but doesn't have auth provider set, update it
+        if (user.getAuthProvider() == null) {
+            user.setAuthProvider("GOOGLE");
+            user.setEmailVerified(true);
+            userRepository.save(user);
+        }
+        
         String token = jwtUtil.generateToken(user.getUsername());
         String refreshToken = authService.createRefreshToken(user);
 

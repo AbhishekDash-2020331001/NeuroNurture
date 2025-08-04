@@ -462,7 +462,7 @@ const GestureRecognizerComponent: React.FC = () => {
     if (currentScreen === 'instructions') {
         return (
             <div className="h-full flex flex-col">
-                <div className="flex-1 overflow-y-auto p-6">
+                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                     <div className="max-w-4xl mx-auto">
                         <div className="text-center mb-8">
                             <div className="text-8xl mb-4 animate-bounce">🎮</div>

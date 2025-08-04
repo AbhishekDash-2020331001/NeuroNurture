@@ -24,6 +24,28 @@ spring:
               - email
               - profile
 
+  # Email configuration - Using SendGrid for real verification
+  mail:
+    host: smtp.sendgrid.net
+    port: 587
+    username: apikey  # This is always 'apikey' for SendGrid
+    password: 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  # Your SendGrid API Key (set as environment variable)
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          timeout: 10000
+          connectiontimeout: 10000
+          writetimeout: 10000
+
+# Logging for debugging
+logging:
+  level:
+    org.springframework.mail: DEBUG
+    com.example.jwt_auth: DEBUG
+
 jwt:
   secret: 8cf840b09b43b5fc6a7d3cfb8311200b67ff362f449e7b3cbde066e56abccd10a99981544fb73910833668fe470b22f6e7e30d2acb66d84e82bc960ac404c63d
 

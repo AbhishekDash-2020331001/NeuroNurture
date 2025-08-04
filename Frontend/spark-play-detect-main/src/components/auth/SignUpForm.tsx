@@ -59,27 +59,29 @@ export const SignUpForm = ({ onSuccess, onSwitchToSignIn }: SignUpFormProps) => 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ username: formData.email, password: formData.password }),
+        body: JSON.stringify({ 
+          username: formData.email, 
+          password: formData.password,
+          email: formData.email 
+        }),
       });
+      
       if (!res.ok) {
+        const errorText = await res.text();
+        if (errorText.includes("Email already registered")) {
+          throw new Error("This email is already registered. Please use a different email or try signing in.");
+        }
         throw new Error("Registration failed");
       }
+      
       toast({
-        title: "Welcome to NeuroNurture! 🎉",
-        description: "Account created successfully! Let's start learning!",
+        title: "Account Created! 🎉",
+        description: "Please check your email to verify your account before signing in.",
       });
-      // Auto-login after registration
-      const loginRes = await fetch("http://localhost:8080/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ username: formData.email, password: formData.password }),
-      });
-      if (!loginRes.ok) {
-        throw new Error("Auto-login failed after registration");
-      }
+      
+      // Don't auto-login after registration since email needs to be verified
       setIsLoading(false);
-      onSuccess();
+      onSwitchToSignIn(); // Switch to sign in form
     } catch (err) {
       setIsLoading(false);
       toast({

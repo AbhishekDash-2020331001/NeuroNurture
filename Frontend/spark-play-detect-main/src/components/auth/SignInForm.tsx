@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface SignInFormProps {
   onSuccess: () => void;
@@ -14,6 +15,7 @@ export const SignInForm = ({ onSuccess, onSwitchToSignUp }: SignInFormProps) => 
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -39,9 +41,22 @@ export const SignInForm = ({ onSuccess, onSwitchToSignUp }: SignInFormProps) => 
         credentials: "include",
         body: JSON.stringify({ username: email, password }),
       });
+      
+      if (res.status === 401) {
+        // Check if it's an email verification issue
+        const errorText = await res.text();
+        if (errorText.includes("Please verify your email")) {
+          // Redirect to email verification required page
+          navigate(`/email-verification-required?email=${encodeURIComponent(email)}`);
+          setIsLoading(false);
+          return;
+        }
+      }
+      
       if (!res.ok) {
         throw new Error("Invalid credentials");
       }
+      
       toast({
         title: "Welcome back! 🎉",
         description: "Successfully signed in!",
@@ -53,6 +68,46 @@ export const SignInForm = ({ onSuccess, onSwitchToSignUp }: SignInFormProps) => 
       toast({
         title: "Login failed",
         description: (err as Error).message || "Something went wrong",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!email) {
+      toast({
+        title: "Email Required",
+        description: "Please enter your email address first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:8080/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email }),
+      });
+
+      if (res.ok) {
+        toast({
+          title: "Email Sent! 📧",
+          description: "Verification email has been sent to your inbox.",
+        });
+      } else {
+        const errorText = await res.text();
+        toast({
+          title: "Failed to Send Email",
+          description: errorText || "Something went wrong",
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      toast({
+        title: "Failed to Send Email",
+        description: "Something went wrong. Please try again.",
         variant: "destructive",
       });
     }
@@ -127,6 +182,19 @@ export const SignInForm = ({ onSuccess, onSwitchToSignUp }: SignInFormProps) => 
           )}
         </Button>
       </form>
+
+      {/* Resend Verification Link */}
+      <div className="text-center">
+        <p className="text-muted-foreground font-comic text-sm">
+          Didn't receive verification email?{' '}
+          <button
+            onClick={handleResendVerification}
+            className="text-primary hover:text-primary-dark font-bold transition-colors"
+          >
+            Resend verification
+          </button>
+        </p>
+      </div>
 
       <div className="text-center">
         <p className="text-muted-foreground font-comic">

@@ -31,7 +31,7 @@ const InstructionsModal: React.FC<InstructionsModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl p-8 max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div className="bg-white rounded-3xl p-8 max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl custom-scrollbar">
         <div className="text-center mb-8">
           <h2 className="text-5xl font-playful bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent mb-4">
             🎮 How to Play Face Mimic Fun! 🎭

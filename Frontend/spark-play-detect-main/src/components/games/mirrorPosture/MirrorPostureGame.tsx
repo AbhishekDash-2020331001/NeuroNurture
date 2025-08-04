@@ -11,6 +11,8 @@ import lookingRightImg from './assets/looking_right.png';
 import mouthOpenImg from './assets/mouth_open.png';
 import showingTeethImg from './assets/showing_teeth.png';
 
+import ConsentScreen from './ConsentScreen';
+import EnhancedGameStats from './EnhancedGameStats';
 import InstructionsModal from './InstructionsModal';
 import WebcamCapture from './WebcamCapture';
 
@@ -25,7 +27,7 @@ const FACIAL_EXPRESSIONS = [
 const ROUND_DURATION = 15; // seconds
 
 type GameState = 'idle' | 'playing' | 'finished';
-type GameScreen = 'instructions' | 'game' | 'loading' | 'countdown';
+type GameScreen = 'instructions' | 'consent' | 'game' | 'loading' | 'countdown';
 
 interface GameStats {
   currentRound: number;
@@ -49,6 +51,7 @@ interface GameSession {
   endTime?: Date;
   rounds: RoundStats[];
   totalScore: number;
+  consentData?: ConsentData;
 }
 
 interface SimplifiedGameStats {
@@ -59,6 +62,14 @@ interface SimplifiedGameStats {
     completionTime: number;
     status: 'completed' | 'incomplete';
   }[];
+  consentData?: ConsentData;
+}
+
+interface ConsentData {
+  childName: string;
+  childAge: string;
+  suspectedASD: boolean;
+  dataConsent: boolean;
 }
 
 
@@ -84,6 +95,7 @@ const MirrorPostureGame: React.FC = () => {
   const [simplifiedStats, setSimplifiedStats] = useState<SimplifiedGameStats | null>(null);
   const [roundCountdown, setRoundCountdown] = useState<number>(2);
   const [isRoundCountdownActive, setIsRoundCountdownActive] = useState<boolean>(false);
+  const [consentData, setConsentData] = useState<ConsentData | null>(null);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
@@ -110,7 +122,7 @@ const MirrorPostureGame: React.FC = () => {
   }, []);
 
   // Start countdown
-  const startCountdown = useCallback(() => {
+  const startCountdown = useCallback((consentDataForGame?: ConsentData) => {
     setIsCountdownActive(true);
     setCountdown(3);
     setCurrentScreen('countdown');
@@ -128,8 +140,8 @@ const MirrorPostureGame: React.FC = () => {
           }
           setIsCountdownActive(false);
           setCurrentScreen('game');
-          // Call startGame directly here
-          startGame();
+          // Call startGame with the consent data
+          startGame(consentDataForGame);
           return 3; // Reset for next time
         }
         return prev - 1;
@@ -183,14 +195,19 @@ const MirrorPostureGame: React.FC = () => {
     return {
       sessionId: session.sessionId,
       childId: session.childId,
-      expressions
+      expressions,
+      consentData: session.consentData
     };
   }, []);
 
   // Start game
-  const startGame = useCallback(() => {
+  const startGame = useCallback((consentDataForGame?: ConsentData) => {
     console.log('Start game called, isWebcamReady:', isWebcamReady);
     console.log('FACIAL_EXPRESSIONS.length:', FACIAL_EXPRESSIONS.length);
+    console.log('Current consentData state:', consentData);
+    console.log('ConsentData type:', typeof consentData);
+    console.log('ConsentData dataConsent value:', consentData?.dataConsent);
+    console.log('ConsentData passed to startGame:', consentDataForGame);
     
     // Clear any existing timers first
     if (timerRef.current) {
@@ -226,8 +243,12 @@ const MirrorPostureGame: React.FC = () => {
       childId,
       startTime: new Date(),
       rounds: [],
-      totalScore: 0
+      totalScore: 0,
+      consentData: consentDataForGame || consentData || undefined
     };
+    console.log('Creating game session with consentData:', consentData);
+    console.log('ConsentData passed to startGame:', consentDataForGame);
+    console.log('Game session consentData.dataConsent:', newSession.consentData?.dataConsent);
     setGameSession(newSession);
     setRoundStartTime(Date.now());
     
@@ -279,27 +300,31 @@ const MirrorPostureGame: React.FC = () => {
               
               console.log('Adding incomplete final round:', roundStats);
               
-              setGameSession(currentSession => {
-                if (currentSession) {
-                  const sessionWithFinalRound = {
-                    ...currentSession,
-                    rounds: [...currentSession.rounds, roundStats],
-                    endTime: new Date()
-                  };
-                  const stats = createSimplifiedStats(sessionWithFinalRound);
-                  setSimplifiedStats(stats);
-                  console.log('Simplified Game Stats:', stats);
-                  console.log('Final Game Session Rounds:', sessionWithFinalRound.rounds);
-                  return sessionWithFinalRound;
-                }
-                return currentSession;
-              });
-            }
-            setGameState('finished');
-            // Show animation after a short delay to avoid lag
-            setTimeout(() => {
-              setShowCompletionAnimation(true);
-            }, 500);
+                             setGameSession(currentSession => {
+                 if (currentSession) {
+                   const sessionWithFinalRound = {
+                     ...currentSession,
+                     rounds: [...currentSession.rounds, roundStats],
+                     endTime: new Date()
+                   };
+                   const stats = createSimplifiedStats(sessionWithFinalRound);
+                   setSimplifiedStats(stats);
+                   console.log('Simplified Game Stats:', stats);
+                   console.log('Final Game Session Rounds:', sessionWithFinalRound.rounds);
+                   
+                   // Save game data to backend
+                   saveGameDataToBackend(sessionWithFinalRound);
+                   
+                   return sessionWithFinalRound;
+                 }
+                 return currentSession;
+               });
+             }
+             setGameState('finished');
+             // Show animation after a short delay to avoid lag
+             setTimeout(() => {
+               setShowCompletionAnimation(true);
+             }, 500);
             return prev;
           } else {
             // Add incomplete round to session
@@ -432,6 +457,10 @@ const MirrorPostureGame: React.FC = () => {
                  setSimplifiedStats(stats);
                  console.log('Simplified Game Stats:', stats);
                  console.log('Final Game Session Rounds:', completedSession.rounds);
+                 
+                 // Save game data to backend
+                 saveGameDataToBackend(completedSession);
+                 
                  return completedSession;
                }
                return currentSession;
@@ -473,6 +502,108 @@ const MirrorPostureGame: React.FC = () => {
   const getCurrentExpression = () => {
     return gameRounds.current[gameStats.currentRound];
   };
+
+  // Save game data to backend
+  const saveGameDataToBackend = useCallback(async (gameSession: GameSession) => {
+    try {
+      // Extract child data from localStorage
+      const selectedChild = localStorage.getItem('selectedChild');
+      const childData = selectedChild ? JSON.parse(selectedChild) : null;
+      
+      // Calculate age from date of birth
+      const calculateAge = (dateOfBirth: string) => {
+        const birthDate = new Date(dateOfBirth);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        return age;
+      };
+
+      // Prepare posture completion times
+      const postureTimes = {
+        lookingLeft: null,
+        lookingRight: null,
+        mouthOpen: null,
+        showingTeeth: null,
+        kiss: null
+      };
+
+             // Map posture names to completion times
+       gameSession.rounds.forEach(round => {
+         const postureName = round.expressionName.toLowerCase().replace(/\s+/g, '');
+         console.log('Mapping posture:', round.expressionName, 'to lowercase:', postureName);
+         
+         if (postureName.includes('lookleft')) {
+           postureTimes.lookingLeft = round.completed ? round.timeTaken : null;
+           console.log('Mapped to lookingLeft:', round.timeTaken);
+         } else if (postureName.includes('lookright')) {
+           postureTimes.lookingRight = round.completed ? round.timeTaken : null;
+           console.log('Mapped to lookingRight:', round.timeTaken);
+         } else if (postureName.includes('openyourmouth')) {
+           postureTimes.mouthOpen = round.completed ? round.timeTaken : null;
+           console.log('Mapped to mouthOpen:', round.timeTaken);
+         } else if (postureName.includes('showyourteeth')) {
+           postureTimes.showingTeeth = round.completed ? round.timeTaken : null;
+           console.log('Mapped to showingTeeth:', round.timeTaken);
+         } else if (postureName.includes('makeakiss')) {
+           postureTimes.kiss = round.completed ? round.timeTaken : null;
+           console.log('Mapped to kiss:', round.timeTaken);
+         } else {
+           console.log('No mapping found for:', round.expressionName);
+         }
+       });
+
+             const requestData = {
+         sessionId: gameSession.sessionId,
+         dateTime: gameSession.startTime,
+         childId: childData?.id?.toString() || '1',
+         age: childData?.dateOfBirth ? calculateAge(childData.dateOfBirth) : 8,
+         ...postureTimes,
+         videoURL: "https://example.com/dummy-video.mp4", // Dummy URL for now
+         isTrainingAllowed: gameSession.consentData?.dataConsent === true,
+         suspectedASD: gameSession.consentData?.suspectedASD || false,
+         isASD: null // Will be populated by ML model later
+       };
+
+             console.log('Consent data:', gameSession.consentData);
+       console.log('Data consent value:', gameSession.consentData?.dataConsent);
+       console.log('Saving game data to backend:', requestData);
+
+      const response = await fetch('http://localhost:8083/api/mirror-posture-game/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      if (response.ok) {
+        const savedData = await response.json();
+        console.log('Game data saved successfully:', savedData);
+        toast({
+          title: "Data Saved! 📊",
+          description: "Game statistics have been saved to the database.",
+        });
+      } else {
+        console.error('Failed to save game data:', response.statusText);
+        toast({
+          title: "Save Failed! ❌",
+          description: "Failed to save game data to database.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error saving game data:', error);
+      toast({
+        title: "Save Error! ❌",
+        description: "An error occurred while saving game data.",
+        variant: "destructive",
+      });
+    }
+  }, []);
 
   // Reset game
   const resetGame = useCallback(() => {
@@ -560,11 +691,26 @@ const MirrorPostureGame: React.FC = () => {
     score: gameStats.score
   });
 
+  // Consent Screen
+  if (currentScreen === 'consent') {
+    return (
+      <ConsentScreen
+        onConsentSubmit={(data) => {
+          console.log('Consent submitted with data:', data);
+          setConsentData(data);
+          setCurrentScreen('countdown');
+          startCountdown(data);
+        }}
+        onBack={() => setCurrentScreen('instructions')}
+      />
+    );
+  }
+
   // Instructions Screen
   if (currentScreen === 'instructions') {
             return (
             <div className="h-full flex flex-col">
-                <div className="flex-1 overflow-y-auto p-6">
+                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                     <div className="max-w-4xl mx-auto">
             {/* Header */}
             <div className="text-center mb-8">
@@ -647,9 +793,7 @@ const MirrorPostureGame: React.FC = () => {
             <div className="text-center">
               <button
                 onClick={() => {
-                  setCurrentScreen('countdown');
-                  // Start countdown instead of directly starting game
-                  startCountdown();
+                  setCurrentScreen('consent');
                 }}
                 className="btn-fun font-comic text-2xl py-4 px-8 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white border-4 border-orange-300 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110"
               >
@@ -844,7 +988,7 @@ const MirrorPostureGame: React.FC = () => {
 
                    <div className="flex flex-col gap-4">
                                            <Button 
-                        onClick={startGame} 
+                        onClick={() => startGame()} 
                         className="btn-fun font-comic text-xl py-3 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white border-2 border-orange-300 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                       >
                         <Play className="w-6 h-6 mr-2" />
@@ -980,68 +1124,10 @@ const MirrorPostureGame: React.FC = () => {
 
        {/* Game Stats Modal */}
        {showGameStats && gameSession && (
-         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
-           <div className="bg-white rounded-2xl p-6 max-w-4xl w-full max-h-[85vh] overflow-y-auto relative">
-             <div className="text-center mb-6 sticky top-0 bg-white pb-4 border-b border-gray-200">
-               <h2 className="text-3xl font-playful text-primary mb-2">📊 Game Statistics</h2>
-               <p className="text-muted-foreground font-comic">Session ID: {gameSession.sessionId}</p>
-               <p className="text-muted-foreground font-comic">
-                 Total Score: {gameSession.totalScore}/5 | 
-                 Duration: {gameSession.endTime ? Math.round((gameSession.endTime.getTime() - gameSession.startTime.getTime()) / 1000) : 0}s
-               </p>
-             </div>
-
-             <div className="overflow-x-auto">
-               <table className="w-full border-collapse">
-                 <thead className="sticky top-0 bg-white">
-                   <tr className="bg-gradient-to-r from-primary/10 to-secondary/10">
-                     <th className="border border-primary p-3 text-left font-playful text-primary">Round</th>
-                     <th className="border border-primary p-3 text-left font-playful text-primary">Expression</th>
-                     <th className="border border-primary p-3 text-left font-playful text-primary">Reference</th>
-                     <th className="border border-primary p-3 text-left font-playful text-primary">Time Taken</th>
-                     <th className="border border-primary p-3 text-left font-playful text-primary">Status</th>
-                   </tr>
-                 </thead>
-                 <tbody>
-                   {gameSession.rounds.map((round, index) => (
-                     <tr key={index} className="hover:bg-gray-50 transition-colors">
-                       <td className="border border-primary p-3 font-bold text-primary">{round.roundNumber}</td>
-                       <td className="border border-primary p-3 font-comic">{round.expressionName}</td>
-                       <td className="border border-primary p-3">
-                         <img 
-                           src={round.expressionImage} 
-                           alt={round.expressionName}
-                           className="w-12 h-12 rounded-lg border-2 border-primary"
-                         />
-                       </td>
-                       <td className="border border-primary p-3 font-comic">
-                         {round.completed ? `${round.timeTaken}s` : 'Not completed'}
-                       </td>
-                       <td className="border border-primary p-3">
-                         <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                           round.completed 
-                             ? 'bg-green-100 text-green-800' 
-                             : 'bg-red-100 text-red-800'
-                         }`}>
-                           {round.completed ? '✅ Completed' : '❌ Failed'}
-                         </span>
-                       </td>
-                     </tr>
-                   ))}
-                 </tbody>
-               </table>
-             </div>
-
-             <div className="flex justify-center gap-4 mt-6 sticky bottom-0 bg-white pt-4 border-t border-gray-200">
-               <Button 
-                 onClick={() => setShowGameStats(false)}
-                 className="btn-fun font-comic text-lg py-2 bg-secondary hover:bg-secondary/80"
-               >
-                 Close Stats
-               </Button>
-             </div>
-           </div>
-         </div>
+         <EnhancedGameStats 
+           gameSession={gameSession} 
+           onClose={() => setShowGameStats(false)} 
+         />
        )}
 
        {/* Game Completion Animation */}
