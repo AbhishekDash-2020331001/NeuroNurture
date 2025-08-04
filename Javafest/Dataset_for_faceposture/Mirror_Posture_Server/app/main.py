@@ -13,11 +13,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/predict")
+@app.post("/predictPosture")
 async def predict_posture(file: UploadFile = File(...)):
     contents = await file.read()
     print("Received file:", file.filename)
     result = predict_posture_from_image_bytes(contents)
     return result
+
+@app.post("/predictGesture")
+async def predict_gesture(file: UploadFile = File(...)):
+    contents = await file.read()
+    print("Received file:", file.filename)
+    result = predict_gesture_from_image_bytes(contents)
+    return result
+
 
 # Run the server with: uvicorn app.main:app --reload

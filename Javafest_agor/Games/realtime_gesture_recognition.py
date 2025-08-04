@@ -12,7 +12,7 @@ model = joblib.load("gesture_model.pkl")
 # === Label Map ===
 label_map = {
     "victory": "Victory ✌️",
-    "love": "Love 🤘",
+    "iloveyou": "ILoveYou 🤘",
     "open_palm": "Open Palm 🖐️",
     "pointing_up": "Pointing ☝️",
     "thumbs_up": "Thumbs Up 👍",
@@ -20,7 +20,11 @@ label_map = {
     "thumbs_down": "Thumbs Down 👎",
     "none": "None ❌",
     "closed_fist": "Closed Fist ✊",
-    "heart": "Heart 🫶"
+    "heart": "Heart 🫶",
+    "dua": "Dua 🙏",
+    "none": "None ❌", 
+    "spectacle": "Spectacle 🧿",
+    "butterfly": "Butterfly 🦋",
 }
 
 # === Create HandLandmarker ===
@@ -65,21 +69,26 @@ while True:
     result = detector.detect(mp_image)
 
     if result.hand_landmarks:
-        # Feature extraction and prediction
         landmarks = extract_landmarks(result)
-        print(landmarks)
         input_data = landmarks.reshape(1, -1)
-        prediction = model.predict(input_data)[0]
-        gesture = label_map.get(prediction, "Unknown")
 
-        # Draw landmarks
+        # Get prediction probabilities
+        probs = model.predict_proba(input_data)[0]
+        max_prob = np.max(probs)
+        prediction = model.classes_[np.argmax(probs)]
+
+        if max_prob >= 0.8:
+            gesture = label_map.get(prediction, "Unknown")
+        else:
+            gesture = "None ❌"
+
         draw_landmarks(frame, result.hand_landmarks)
 
-        # Info overlay
         cv2.putText(frame, f"Gesture: {gesture}", (10, 40), cv2.FONT_HERSHEY_SIMPLEX,
                     1.0, (0, 255, 0), 2)
         cv2.putText(frame, f"Hands detected: {len(result.hand_landmarks)}", (10, 80), cv2.FONT_HERSHEY_SIMPLEX,
                     0.7, (255, 255, 255), 2)
+
 
     cv2.imshow("Real-Time Gesture Recognition", frame)
 

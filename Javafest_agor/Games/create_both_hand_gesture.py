@@ -1,76 +1,56 @@
 import cv2
-import mediapipe as mp
 import os
-import numpy as np
 import time
 
-# Gesture label
-GESTURE_LABEL = "heart"
+DATASET_PATH = "dataset"
+LABEL = "butterfly"
+LABEL_DISPLAY = "Butterfly 🦋"
+CAPTURE_INTERVAL = 1  # seconds
 
-# Folder paths
-LANDMARK_SAVE_PATH = "hand_gesture_data"
-IMAGE_SAVE_PATH = "hand_gesture_images"
+# Create the folder if it doesn't exist
+folder_path = os.path.join(DATASET_PATH, LABEL)
+os.makedirs(folder_path, exist_ok=True)
 
-# Create directories
-os.makedirs(LANDMARK_SAVE_PATH, exist_ok=True)
-os.makedirs(IMAGE_SAVE_PATH, exist_ok=True)
+def get_next_filename(folder_path):
+    files = [f for f in os.listdir(folder_path) if f.endswith(".jpg")]
+    numbers = [int(f.split(".")[0]) for f in files if f.split(".")[0].isdigit()]
+    next_num = max(numbers, default=-1) + 1
+    return f"{next_num}.jpg"
 
-# Initialize MediaPipe
-mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(static_image_mode=False, max_num_hands=2)
-mp_drawing = mp.solutions.drawing_utils
-
-# Webcam
+# Start webcam
 cap = cv2.VideoCapture(0)
-sample_idx = 0
-last_capture_time = 0  # For 1-second delay
+if not cap.isOpened():
+    print("❌ Camera not accessible.")
+    exit()
 
-def extract_landmarks(results):
-    landmarks = []
-    for hand_landmarks in results.multi_hand_landmarks:
-        for lm in hand_landmarks.landmark:
-            landmarks.extend([lm.x, lm.y, lm.z])
-    while len(landmarks) < 126:
-        landmarks.extend([0.0, 0.0, 0.0])
-    return np.array(landmarks)
+print(f"📸 Auto-capturing '{LABEL_DISPLAY}' gesture every {CAPTURE_INTERVAL} second(s)...")
+print("Press Q or ESC to stop.\n")
+
+last_capture_time = time.time()
 
 while True:
     ret, frame = cap.read()
     if not ret:
+        print("❌ Failed to capture frame.")
         break
 
-    img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    results = hands.process(img_rgb)
+    # Display info on screen
+    cv2.putText(frame, f"Capturing: {LABEL_DISPLAY}", (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+    cv2.imshow("Auto Gesture Capture", frame)
 
-    # Draw landmarks if any hands are detected
-    if results.multi_hand_landmarks:
-        for hand_landmarks in results.multi_hand_landmarks:
-            mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-
-        current_time = time.time()
-        if current_time - last_capture_time >= 1.0:  # Delay of 1 second
-            # Extract and save landmarks
-            landmarks = extract_landmarks(results)
-            landmark_filename = os.path.join(LANDMARK_SAVE_PATH, f"{GESTURE_LABEL}_{sample_idx}.npy")
-            #np.save(landmark_filename, landmarks)
-
-            # Save image
-            image_filename = os.path.join(IMAGE_SAVE_PATH, f"{GESTURE_LABEL}_{sample_idx}.jpg")
-            #cv2.imwrite(image_filename, frame)
-
-            # Update time and index
-            last_capture_time = current_time
-            sample_idx += 1
-            print(f"✅ Saved: {landmark_filename}, {image_filename}")
-            print("landmarks:", landmarks)
-
-    cv2.putText(frame, f"Gesture: {GESTURE_LABEL}", (10, 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
-    cv2.imshow("Hand Gesture Capture", frame)
-
-    if cv2.waitKey(3) & 0xFF == ord('q'):
+    key = cv2.waitKey(1) & 0xFF
+    if key in [27, ord('q')]:
+        print("🛑 Stopped by user.")
         break
+
+    current_time = time.time()
+    if current_time - last_capture_time >= CAPTURE_INTERVAL:
+        filename = get_next_filename(folder_path)
+        path = os.path.join(folder_path, filename)
+        cv2.imwrite(path, frame)
+        print(f"✅ Captured '{LABEL_DISPLAY}' as {filename}")
+        last_capture_time = current_time
 
 cap.release()
-hands.close()
 cv2.destroyAllWindows()

@@ -2,20 +2,15 @@
 
 import type React from "react"
 import { useRef, useEffect, useState, useCallback, useMemo } from "react"
-import { GestureRecognizer, FilesetResolver, DrawingUtils } from "@mediapipe/tasks-vision"
-
-// RunningMode type is not exported from @mediapipe/tasks-vision, so we define it here.
-type RunningMode = "IMAGE" | "VIDEO"
 
 const GestureRecognizerComponent: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const gestureOutputRef = useRef<HTMLParagraphElement>(null)
-    const [gestureRecognizer, setGestureRecognizer] = useState<GestureRecognizer | null>(null)
-    const [runningMode, setRunningMode] = useState<RunningMode>("IMAGE")
     const [webcamRunning, setWebcamRunning] = useState(false)
-    const [isLoading, setIsLoading] = useState(true)
+    const [isLoading, setIsLoading] = useState(false)
     const [isInitializing, setIsInitializing] = useState(false)
+    const [isVisible, setIsVisible] = useState(true)
 
     // Game state
     const [currentRound, setCurrentRound] = useState(0)
@@ -34,22 +29,27 @@ const GestureRecognizerComponent: React.FC = () => {
     const timerRef = useRef<NodeJS.Timeout | null>(null)
     const resultTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const timerWorkerRef = useRef<Worker | null>(null)
+    const lastInferenceTimeRef = useRef<number>(0)
+    const isProcessingRef = useRef<boolean>(false)
 
     const videoHeight = 450
     const videoWidth = 600
 
-    // Memoized gestures array
+    // Memoized gestures array - matching API labels
     const gestures = useMemo(
         () => [
             { name: "Closed Fist", label: "closed_fist", emoji: "✊" },
-            { name: "Open Palm", label: "open_palm", emoji: "✋" },
+            { name: "Open Palm", label: "open_palm", emoji: "🖐️" },
             { name: "Pointing Up", label: "pointing_up", emoji: "☝️" },
             { name: "Thumbs Down", label: "thumbs_down", emoji: "👎" },
             { name: "Thumbs Up", label: "thumbs_up", emoji: "👍" },
             { name: "Victory", label: "victory", emoji: "✌️" },
-            { name: "Love", label: "love", emoji: "🤟" },
+            { name: "ILoveYou", label: "iloveyou", emoji: "�" },
             { name: "Nice", label: "nice", emoji: "👌" },
             { name: "Heart", label: "heart", emoji: "🫶" },
+            { name: "Dua", label: "dua", emoji: "🙏" },
+            { name: "Spectacle", label: "spectacle", emoji: "🧿" },
+            { name: "Butterfly", label: "butterfly", emoji: "🦋" },
         ],
         [],
     )
@@ -65,10 +65,16 @@ const GestureRecognizerComponent: React.FC = () => {
 
             switch (type) {
                 case "TIMER_TICK":
-                    setTimeLeft(time)
+                    // Use requestAnimationFrame to ensure smooth UI updates
+                    requestAnimationFrame(() => {
+                        setTimeLeft(time)
+                    })
                     break
                 case "TIMER_FINISHED":
-                    handleRoundEnd()
+                    // Use requestAnimationFrame to ensure smooth UI updates
+                    requestAnimationFrame(() => {
+                        handleRoundEnd()
+                    })
                     break
             }
         }
@@ -114,77 +120,92 @@ const GestureRecognizerComponent: React.FC = () => {
     }, [gestures])
 
     const handleRoundEnd = useCallback(() => {
-        // Stop the timer
-        if (timerWorkerRef.current) {
-            timerWorkerRef.current.postMessage({ type: "STOP_TIMER" })
-        }
+        // Use setTimeout to prevent blocking
+        setTimeout(() => {
+            // Stop the timer
+            if (timerWorkerRef.current) {
+                timerWorkerRef.current.postMessage({ type: "STOP_TIMER" })
+            }
 
-        const isGestureCorrect = detectedGesture === targetGesture && detectedGesture !== ""
-        setIsCorrect(isGestureCorrect)
-
-        if (isGestureCorrect) {
-            setScore((prevScore) => prevScore + 1)
-            setRoundResult("Correct! +1 point")
-        } else {
-            setRoundResult("Wrong! No points shot khaw")
-        }
-
-        if (resultTimeoutRef.current) {
-            clearTimeout(resultTimeoutRef.current)
-        }
-
-        resultTimeoutRef.current = setTimeout(() => {
-            setCurrentRound((prevRound) => {
-                const newRound = prevRound + 1;
-
-                if (newRound > 5) {
-                    setGameEnded(true);
-                    setGameStarted(false);
-                } else {
-                    startNewRound();
-                }
-
-                return newRound;
-            });
-        }, 3000);
-
-    }, [detectedGesture, targetGesture, currentRound, startNewRound])
-
-    // Function to check for immediate round advancement
-    const checkForImmediateAdvancement = useCallback(() => {
-        if (gameStarted && !gameEnded && !roundResult) {
             const isGestureCorrect = detectedGesture === targetGesture && detectedGesture !== ""
-            const hasHighConfidence = detectedConfidence > 0.75
+            
+            // Update state in next frame for smooth UI
+            requestAnimationFrame(() => {
+                setIsCorrect(isGestureCorrect)
 
-            if (isGestureCorrect && hasHighConfidence) {
-                // Stop the timer immediately
-                if (timerWorkerRef.current) {
-                    timerWorkerRef.current.postMessage({ type: "STOP_TIMER" })
+                if (isGestureCorrect) {
+                    setScore((prevScore) => prevScore + 1)
+                    setRoundResult("Correct! +1 point")
+                } else {
+                    setRoundResult("Wrong! No points shot khaw")
                 }
-
-                setIsCorrect(true)
-                setScore((prevScore) => prevScore + 1)
-                setRoundResult("Perfect! +1 point (Auto-advance)")
 
                 if (resultTimeoutRef.current) {
                     clearTimeout(resultTimeoutRef.current)
                 }
 
                 resultTimeoutRef.current = setTimeout(() => {
-                    setCurrentRound((prevRound) => {
-                        const newRound = prevRound + 1;
+                    requestAnimationFrame(() => {
+                        setCurrentRound((prevRound) => {
+                            const newRound = prevRound + 1;
 
-                        if (newRound > 5) {
-                            setGameEnded(true);
-                            setGameStarted(false);
-                        } else {
-                            startNewRound();
-                        }
+                            if (newRound > 5) {
+                                setGameEnded(true);
+                                setGameStarted(false);
+                            } else {
+                                startNewRound();
+                            }
 
-                        return newRound;
+                            return newRound;
+                        });
                     });
                 }, 3000);
+            })
+        }, 0)
+    }, [detectedGesture, targetGesture, startNewRound])
 
+    // Function to check for immediate round advancement (optimized for smooth UI)
+    const checkForImmediateAdvancement = useCallback(() => {
+        if (gameStarted && !gameEnded && !roundResult) {
+            const isGestureCorrect = detectedGesture === targetGesture && detectedGesture !== ""
+            const hasHighConfidence = detectedConfidence > 0.75
+
+            if (isGestureCorrect && hasHighConfidence) {
+                // Use setTimeout to prevent blocking the UI
+                setTimeout(() => {
+                    // Stop the timer immediately
+                    if (timerWorkerRef.current) {
+                        timerWorkerRef.current.postMessage({ type: "STOP_TIMER" })
+                    }
+
+                    // Update state in next frame
+                    requestAnimationFrame(() => {
+                        setIsCorrect(true)
+                        setScore((prevScore) => prevScore + 1)
+                        setRoundResult("Perfect! +1 point (Auto-advance)")
+
+                        if (resultTimeoutRef.current) {
+                            clearTimeout(resultTimeoutRef.current)
+                        }
+
+                        resultTimeoutRef.current = setTimeout(() => {
+                            requestAnimationFrame(() => {
+                                setCurrentRound((prevRound) => {
+                                    const newRound = prevRound + 1;
+
+                                    if (newRound > 5) {
+                                        setGameEnded(true);
+                                        setGameStarted(false);
+                                    } else {
+                                        startNewRound();
+                                    }
+
+                                    return newRound;
+                                });
+                            });
+                        }, 3000);
+                    })
+                }, 0)
             }
         }
     }, [
@@ -198,9 +219,16 @@ const GestureRecognizerComponent: React.FC = () => {
         startNewRound,
     ])
 
-    // useEffect to check for immediate advancement when gesture or confidence changes
+    // useEffect to check for immediate advancement when gesture or confidence changes (debounced)
     useEffect(() => {
-        checkForImmediateAdvancement()
+        // Use requestAnimationFrame to prevent blocking UI updates
+        const timeoutId = setTimeout(() => {
+            requestAnimationFrame(() => {
+                checkForImmediateAdvancement()
+            })
+        }, 100) // Small debounce to prevent too frequent checks
+
+        return () => clearTimeout(timeoutId)
     }, [detectedGesture, detectedConfidence, checkForImmediateAdvancement])
 
     // Timer function using Web Worker
@@ -239,7 +267,18 @@ const GestureRecognizerComponent: React.FC = () => {
         [gestures],
     )
 
-    // Cleanup on unmount
+    // Add visibility change detection for performance
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            setIsVisible(!document.hidden)
+        }
+
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+        
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange)
+        }
+    }, [])
     useEffect(() => {
         return () => {
             if (animationFrameRef.current) {
@@ -258,41 +297,86 @@ const GestureRecognizerComponent: React.FC = () => {
                 timerWorkerRef.current.terminate()
                 timerWorkerRef.current = null
             }
+            // Reset processing flag
+            isProcessingRef.current = false
         }
     }, [])
 
-    // Initialize gesture recognizer
-    useEffect(() => {
-        const createGestureRecognizer = async () => {
-            try {
-                const vision = await FilesetResolver.forVisionTasks(
-                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm",
-                )
-                const recognizer = await GestureRecognizer.createFromOptions(vision, {
-                    baseOptions: {
-                        modelAssetPath:
-                            "models/gesture_recognizer (1).task", // Adjust path as needed
-                        delegate: "CPU",
-                    },
-                    runningMode: "IMAGE",
-                })
-                setGestureRecognizer(recognizer)
-                setIsLoading(false)
-            } catch (error) {
-                console.error("Error initializing gesture recognizer:", error)
-                setIsLoading(false)
+    // Function to capture frame from video and call API (optimized for non-blocking)
+    const captureFrameAndPredict = useCallback(async () => {
+        if (!videoRef.current || !canvasRef.current || isProcessingRef.current) return null
+
+        const video = videoRef.current
+        const canvas = canvasRef.current
+        const ctx = canvas.getContext('2d')
+        
+        if (!ctx) return null
+
+        // Set processing flag to prevent multiple simultaneous calls
+        isProcessingRef.current = true
+
+        try {
+            // Draw current video frame to canvas
+            ctx.drawImage(video, 0, 0, videoWidth, videoHeight)
+            
+            // Convert canvas to blob asynchronously
+            const blob = await new Promise<Blob | null>((resolve) => {
+                canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.8)
+            })
+
+            if (!blob) return null
+
+            // Create FormData to send to API
+            const formData = new FormData()
+            formData.append('file', blob, 'frame.jpg')
+
+            // Call your API with timeout
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+
+            const response = await fetch('http://localhost:8000/predictGesture', {
+                method: 'POST',
+                body: formData,
+                signal: controller.signal
+            })
+
+            clearTimeout(timeoutId)
+
+            if (response.ok) {
+                const result = await response.text()
+                return result.trim()
+            } else {
+                console.error('API Error:', response.statusText)
+                return null
             }
+        } catch (error) {
+            if (error instanceof Error && error.name === 'AbortError') {
+                console.log('API call aborted due to timeout')
+            } else {
+                console.error('Error calling gesture API:', error)
+            }
+            return null
+        } finally {
+            isProcessingRef.current = false
+        }
+    }, [videoWidth, videoHeight])
+
+    // Parse API response to extract gesture name and confidence
+    const parseGestureResponse = useCallback((response: string) => {
+        // Your API now returns simple labels like "victory", "closed_fist", "none", etc.
+        const cleanResponse = response.trim().toLowerCase()
+        
+        if (!cleanResponse || cleanResponse === "none" || cleanResponse === "no_hands_detected" || cleanResponse === "error") {
+            return { gesture: "", confidence: 0 }
         }
 
-        createGestureRecognizer()
+        // The response is already the gesture label
+        const confidence = 0.9 // Assume high confidence if gesture detected
+        
+        return { gesture: cleanResponse, confidence }
     }, [])
 
     const enableWebcam = useCallback(async () => {
-        if (!gestureRecognizer) {
-            alert("GestureRecognizer not loaded yet.")
-            return
-        }
-
         if (!webcamRunning) {
             try {
                 setIsInitializing(true)
@@ -339,94 +423,68 @@ const GestureRecognizerComponent: React.FC = () => {
                 timerWorkerRef.current.postMessage({ type: "STOP_TIMER" })
             }
         }
-    }, [gestureRecognizer, webcamRunning, videoWidth, videoHeight])
+    }, [webcamRunning, videoWidth, videoHeight])
 
-    let lastInferenceTime = 0
-    const minInterval = 250
+    const minInterval = 1500 // Increase interval for API calls (1.5 seconds for better performance)
 
     const predictWebcam = useCallback(async () => {
-        if (!gestureRecognizer || !videoRef.current || !canvasRef.current || !webcamRunning) return
+        if (!videoRef.current || !canvasRef.current || !webcamRunning || !isVisible) return
 
-        const ctx = canvasRef.current.getContext("2d")
-        if (!ctx) return
+        const loop = () => {
+            if (!webcamRunning || !videoRef.current || !canvasRef.current || !isVisible) return
 
-        const drawingUtils = new DrawingUtils(ctx)
-        let lastVideoTime = -1
+            const nowInMs = Date.now()
 
-        const loop = async () => {
-            if (!webcamRunning || !videoRef.current || !canvasRef.current) return
+            // Only process if enough time has passed and not currently processing
+            if (nowInMs - lastInferenceTimeRef.current > minInterval && !isProcessingRef.current) {
+                lastInferenceTimeRef.current = nowInMs
 
-            try {
-                // Change to VIDEO mode if needed
-                if (runningMode === "IMAGE") {
-                    setRunningMode("VIDEO")
-                    await gestureRecognizer.setOptions({ runningMode: "VIDEO" })
-                }
+                // Use setTimeout to make API call non-blocking
+                setTimeout(async () => {
+                    try {
+                        const result = await captureFrameAndPredict()
+                        
+                        if (result && webcamRunning) {
+                            const { gesture, confidence } = parseGestureResponse(result)
+                            
+                            // Update state in the next frame to prevent blocking
+                            requestAnimationFrame(() => {
+                                setDetectedGesture(gesture)
+                                setDetectedConfidence(confidence)
 
-                const nowInMs = Date.now()
-
-                // Only process if video time has changed and enough time has passed
-                if (videoRef.current.currentTime !== lastVideoTime && nowInMs - lastInferenceTime > minInterval) {
-                    lastVideoTime = videoRef.current.currentTime
-                    lastInferenceTime = nowInMs
-
-                    const results = gestureRecognizer.recognizeForVideo(videoRef.current, nowInMs)
-
-                    if (results) {
-                        // Clear canvas
-                        ctx.clearRect(0, 0, videoWidth, videoHeight)
-
-                        // Draw landmarks
-                        if (results.landmarks) {
-                            for (const landmarks of results.landmarks) {
-                                drawingUtils.drawConnectors(landmarks, GestureRecognizer.HAND_CONNECTIONS, {
-                                    color: "#00FF00",
-                                    lineWidth: 3,
-                                })
-                                drawingUtils.drawLandmarks(landmarks, {
-                                    color: "#FF0000",
-                                    lineWidth: 2,
-                                })
-                            }
+                                if (gestureOutputRef.current) {
+                                    if (gesture) {
+                                        gestureOutputRef.current.innerText = `${getGestureName(gesture)} (${(confidence * 100).toFixed(1)}%)`
+                                        gestureOutputRef.current.className = "p-4 bg-white/90 backdrop-blur-lg rounded-2xl font-semibold text-gray-700 shadow-gesture transition-all duration-300 text-center max-w-lg opacity-100 transform translate-y-0"
+                                    } else {
+                                        gestureOutputRef.current.className = "hidden p-4 bg-white/90 backdrop-blur-lg rounded-2xl font-semibold text-gray-700 shadow-gesture transition-all duration-300 text-center max-w-lg opacity-0 transform translate-y-2"
+                                    }
+                                }
+                            })
+                        } else if (webcamRunning) {
+                            // No result from API - update UI in next frame
+                            requestAnimationFrame(() => {
+                                setDetectedGesture("")
+                                setDetectedConfidence(0)
+                                if (gestureOutputRef.current) {
+                                    gestureOutputRef.current.className = "hidden p-4 bg-white/90 backdrop-blur-lg rounded-2xl font-semibold text-gray-700 shadow-gesture transition-all duration-300 text-center max-w-lg opacity-0 transform translate-y-2"
+                                }
+                            })
                         }
-
-                        // Display gesture and update detected gesture for game
-                        if (results.gestures.length > 0) {
-                            const gesture = results.gestures[0][0]
-                            const handedness = results.handednesses[0][0].displayName
-
-                            // Update detected gesture and confidence for game logic
-                            setDetectedGesture(gesture.categoryName)
-                            setDetectedConfidence(gesture.score)
-
-                            if (gestureOutputRef.current) {
-                                gestureOutputRef.current.innerText = `${gesture.categoryName} (${(gesture.score * 100).toFixed(1)}%) - ${handedness}`
-                                gestureOutputRef.current.className = "p-4 bg-white/90 backdrop-blur-lg rounded-2xl font-semibold text-gray-700 shadow-gesture transition-all duration-300 text-center max-w-lg opacity-100 transform translate-y-0"
-                            }
-                        } else {
-                            setDetectedGesture("")
-                            setDetectedConfidence(0)
-                            if (gestureOutputRef.current) {
-                                gestureOutputRef.current.className = "hidden p-4 bg-white/90 backdrop-blur-lg rounded-2xl font-semibold text-gray-700 shadow-gesture transition-all duration-300 text-center max-w-lg opacity-0 transform translate-y-2"
-                            }
-                        }
+                    } catch (error) {
+                        console.error("Error in API call:", error)
                     }
-                }
+                }, 0)
+            }
 
-                // Use requestAnimationFrame for smooth animation
-                if (webcamRunning) {
-                    animationFrameRef.current = requestAnimationFrame(loop)
-                }
-            } catch (error) {
-                console.error("Error in prediction loop:", error)
-                if (webcamRunning) {
-                    animationFrameRef.current = requestAnimationFrame(loop)
-                }
+            // Continue the loop using requestAnimationFrame for smooth UI
+            if (webcamRunning) {
+                animationFrameRef.current = requestAnimationFrame(loop)
             }
         }
 
         loop()
-    }, [gestureRecognizer, webcamRunning, runningMode, videoWidth, videoHeight])
+    }, [webcamRunning, captureFrameAndPredict, parseGestureResponse, getGestureName, isVisible])
 
     // useEffect to start/stop continuous prediction based on webcam state
     useEffect(() => {
@@ -440,22 +498,6 @@ const GestureRecognizerComponent: React.FC = () => {
             }
         }
     }, [webcamRunning, predictWebcam])
-
-    if (isLoading) {
-        return (
-            <div className="gesture-container">
-                <div className="loading-container">
-                    <div className="loading-spinner">
-                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-4xl animate-pulse">
-                            🎯
-                        </div>
-                    </div>
-                    <h2 className="text-4xl font-fredoka mb-4 text-gradient">Loading AI Model...</h2>
-                    <p className="text-gray-600 text-xl font-semibold">Preparing gesture recognition system</p>
-                </div>
-            </div>
-        )
-    }
 
     return (
         <div className="gesture-container">
