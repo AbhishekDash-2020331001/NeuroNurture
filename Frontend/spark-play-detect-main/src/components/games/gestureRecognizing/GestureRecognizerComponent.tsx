@@ -2,11 +2,30 @@
 
 import type React from "react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import GestureGameStats from './GestureGameStats'
 
 // RunningMode type is not exported from @mediapipe/tasks-vision, so we define it here.
 type RunningMode = "IMAGE" | "VIDEO"
 
 type GameScreen = 'instructions' | 'consent' | 'game' | 'loading'
+
+interface GestureRoundStats {
+  roundNumber: number;
+  gestureName: string;
+  gestureEmoji: string;
+  timeTaken: number;
+  completed: boolean;
+}
+
+interface GestureGameSession {
+  sessionId: string;
+  childId: string;
+  startTime: Date;
+  endTime?: Date;
+  rounds: GestureRoundStats[];
+  totalScore: number;
+  consentData?: any;
+}
 
 const GestureRecognizerComponent: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null)
@@ -43,6 +62,15 @@ const GestureRecognizerComponent: React.FC = () => {
     const [roundCountdown, setRoundCountdown] = useState<number>(2)
     const [isRoundCountdownActive, setIsRoundCountdownActive] = useState<boolean>(false)
 
+    // Confetti and celebration state
+    const [showConfetti, setShowConfetti] = useState<boolean>(false)
+    const [showCongratulations, setShowCongratulations] = useState<boolean>(false)
+ 
+     // Game session and stats state
+     const [gameSession, setGameSession] = useState<GestureGameSession | null>(null)
+     const [showGameStats, setShowGameStats] = useState<boolean>(false)
+     const [roundStartTime, setRoundStartTime] = useState<number>(0)
+
     // Refs for cleanup and avoiding stale closures
     const timerRef = useRef<NodeJS.Timeout | null>(null)
     const resultTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -53,14 +81,21 @@ const GestureRecognizerComponent: React.FC = () => {
     const isCorrectRef = useRef<boolean | null>(null)
     const startNextRoundRef = useRef<(() => void) | null>(null)
     const roundCountdownRef = useRef<NodeJS.Timeout | null>(null)
+    const usedGesturesRef = useRef<string[]>([])
+    const targetGestureRef = useRef<string>("")
 
     const videoHeight = "480px"
     const videoWidth = "640px"
 
     // API endpoint for gesture detection
     const API_ENDPOINT = 'http://localhost:8000/predictGesture';
-
-    // Test API connection on component mount
+ 
+     // Create session ID
+     const createSessionId = useCallback(() => {
+         return `gesture_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+     }, []);
+ 
+     // Test API connection on component mount
     useEffect(() => {
         const testConnection = async () => {
             try {
@@ -193,21 +228,70 @@ const GestureRecognizerComponent: React.FC = () => {
         if (isProcessingRoundRef.current) return;
         isProcessingRoundRef.current = true;
         setIsProcessingRound(true);
-
-        if (isCorrectRef.current === null) {
-            setRoundResult("Time's up! ⏰");
-            setIsCorrect(false);
-            isCorrectRef.current = false;
-        }
-
-        // Use setTimeout with a ref to avoid circular dependency
-        resultTimeoutRef.current = setTimeout(() => {
-            // Call startNextRound through a ref to avoid circular dependency
-            if (startNextRoundRef.current) {
-                startNextRoundRef.current();
-            }
-        }, 2000);
-    }, []);
+ 
+         if (isCorrectRef.current === null) {
+             setRoundResult("Time's up! ⏰");
+             setIsCorrect(false);
+             isCorrectRef.current = false;
+             
+             // Add incomplete round data to game session (prevent duplicates)
+             // Always use the target gesture, not the detected gesture
+             if (!targetGestureRef.current) {
+                 console.error('No target gesture set for failed round', currentRoundRef.current);
+                 return;
+             }
+             
+             const currentGesture = gestures.find(g => g.label === targetGestureRef.current);
+             if (currentGesture && gameSession) {
+                 console.log('Recording failed round:', {
+                     roundNumber: currentRoundRef.current,
+                     targetGesture: targetGestureRef.current,
+                     gestureName: currentGesture.name,
+                     gestureEmoji: currentGesture.emoji
+                 });
+                 
+                 const roundStats: GestureRoundStats = {
+                     roundNumber: currentRoundRef.current,
+                     gestureName: currentGesture.name,
+                     gestureEmoji: currentGesture.emoji,
+                     timeTaken: 10, // Full 10 seconds for incomplete
+                     completed: false
+                 };
+                 
+                 setGameSession(prev => {
+                     if (prev) {
+                         // Check if this round number already exists to prevent duplicates
+                         const roundExists = prev.rounds.some(round => round.roundNumber === currentRoundRef.current);
+                         if (roundExists) {
+                             console.log(`Round ${currentRoundRef.current} already exists, skipping duplicate entry`);
+                             return prev;
+                         }
+                         
+                         console.log('Adding failed round to game session:', roundStats);
+                         return {
+                             ...prev,
+                             rounds: [...prev.rounds, roundStats]
+                         };
+                     }
+                     return prev;
+                 });
+             } else {
+                 console.error('Failed to record round: missing gesture or game session', {
+                     targetGesture: targetGestureRef.current,
+                     currentGesture,
+                     gameSession: !!gameSession
+                 });
+             }
+         }
+ 
+         // Use setTimeout with a ref to avoid circular dependency
+         resultTimeoutRef.current = setTimeout(() => {
+             // Call startNextRound through a ref to avoid circular dependency
+             if (startNextRoundRef.current) {
+                 startNextRoundRef.current();
+             }
+         }, 2000);
+     }, [gestures, gameSession]);
 
     // Start round timer after countdown
     const startRoundTimer = useCallback(() => {
@@ -298,15 +382,19 @@ const GestureRecognizerComponent: React.FC = () => {
             setCurrentRound(nextRound);
             currentRoundRef.current = nextRound;
 
-            // Get available gestures (not used yet)
-            const availableGestures = gestures.filter(g => !usedGestures.includes(g.label));
+            // Get available gestures (not used yet) - use ref for synchronous access
+            const availableGestures = gestures.filter(g => !usedGesturesRef.current.includes(g.label));
             console.log('Available gestures for next round:', availableGestures.map(g => g.label));
+            console.log('Used gestures so far:', usedGesturesRef.current);
             
             // Only select from available gestures - never repeat
             const randomGesture = availableGestures[Math.floor(Math.random() * availableGestures.length)];
             
+            // Update both state and ref synchronously
+            targetGestureRef.current = randomGesture.label;
             setTargetGesture(randomGesture.label);
-            setUsedGestures(prev => [...prev, randomGesture.label]);
+            usedGesturesRef.current = [...usedGesturesRef.current, randomGesture.label];
+            setUsedGestures(usedGesturesRef.current);
             setDetectedGesture("");
             setDetectedConfidence(0);
 
@@ -334,11 +422,32 @@ const GestureRecognizerComponent: React.FC = () => {
              // Stop camera when game ends
              stopWebcam();
              
+             // Finalize game session
+             setGameSession(prev => {
+                 if (prev) {
+                     return {
+                         ...prev,
+                         endTime: new Date()
+                     };
+                 }
+                 return prev;
+             });
+             
              setGameEnded(true);
              setGameStarted(false);
              setIsRoundCountdownActive(false);
+             
+             // Trigger confetti and congratulations
+             setShowConfetti(true);
+             setShowCongratulations(true);
+             
+             // Hide confetti and congratulations after 2 seconds
+             setTimeout(() => {
+                 setShowConfetti(false);
+                 setShowCongratulations(false);
+             }, 2000);
          }
-     }, [gestures, usedGestures, startRoundCountdown, stopWebcam])
+     }, [gestures, startRoundCountdown, stopWebcam])
 
     // Assign function to ref to avoid circular dependency
     useEffect(() => {
@@ -373,13 +482,13 @@ const GestureRecognizerComponent: React.FC = () => {
         setDetectedConfidence(confidence);
 
         // Check if this is the correct gesture with sufficient confidence
-        if (gesture === targetGesture && confidence >= 0.65) { // Changed threshold from 0.8 to 0.65 (65%)
-            console.log('✅ Correct gesture detected! Moving to next round...', {
-                gesture,
-                targetGesture,
-                confidence,
-                currentRound: currentRoundRef.current
-            });
+        if (gesture === targetGestureRef.current && confidence >= 0.65) { // Changed threshold from 0.8 to 0.65 (65%)
+                         console.log('✅ Correct gesture detected! Moving to next round...', {
+                 gesture,
+                 targetGesture: targetGestureRef.current,
+                 confidence,
+                 currentRound: currentRoundRef.current
+             });
             
             // Immediately mark as processing to prevent multiple detections
             isProcessingRoundRef.current = true;
@@ -390,31 +499,85 @@ const GestureRecognizerComponent: React.FC = () => {
             setRoundResult("Correct! 🎉");
             setIsCorrect(true);
             isCorrectRef.current = true;
-
-            // Stop all timers immediately and clear the refs
-            if (timerRef.current) {
-                clearInterval(timerRef.current);
-                timerRef.current = null;
-            }
-            if (roundCountdownRef.current) {
-                clearInterval(roundCountdownRef.current);
-                roundCountdownRef.current = null;
-            }
-
-            // Move to next round after a short delay
-            resultTimeoutRef.current = setTimeout(() => {
-                console.log('🚀 Starting next round after correct gesture...');
-                startNextRound();
-            }, 1500); // Reduced delay for faster progression
-        } else {
-            console.log('Gesture detected but not correct:', {
-                detected: gesture,
-                target: targetGesture,
-                confidence,
-                threshold: 0.65 // Changed threshold to 0.65
-            });
-        }
-    }, [gameStarted, gameEnded, targetGesture, startNextRound])
+ 
+             // Calculate time taken for this round
+             const timeTaken = 10 - timeLeft; // 10 seconds minus time left
+             
+             // Add round data to game session (prevent duplicates)
+             // Always use the target gesture, not the detected gesture
+             if (!targetGestureRef.current) {
+                 console.error('No target gesture set for round', currentRoundRef.current);
+                 return;
+             }
+             
+             const currentGesture = gestures.find(g => g.label === targetGestureRef.current);
+             if (currentGesture && gameSession) {
+                 console.log('Recording successful round:', {
+                     roundNumber: currentRoundRef.current,
+                     targetGesture: targetGestureRef.current,
+                     gestureName: currentGesture.name,
+                     gestureEmoji: currentGesture.emoji,
+                     timeTaken: timeTaken
+                 });
+                 
+                 const roundStats: GestureRoundStats = {
+                     roundNumber: currentRoundRef.current,
+                     gestureName: currentGesture.name,
+                     gestureEmoji: currentGesture.emoji,
+                     timeTaken: timeTaken,
+                     completed: true
+                 };
+                 
+                 setGameSession(prev => {
+                     if (prev) {
+                         // Check if this round number already exists to prevent duplicates
+                         const roundExists = prev.rounds.some(round => round.roundNumber === currentRoundRef.current);
+                         if (roundExists) {
+                             console.log(`Round ${currentRoundRef.current} already exists, skipping duplicate entry`);
+                             return prev;
+                         }
+                         
+                         console.log('Adding successful round to game session:', roundStats);
+                         return {
+                             ...prev,
+                             rounds: [...prev.rounds, roundStats],
+                             totalScore: prev.totalScore + 1
+                         };
+                     }
+                     return prev;
+                 });
+             } else {
+                 console.error('Failed to record round: missing gesture or game session', {
+                     targetGesture: targetGestureRef.current,
+                     currentGesture,
+                     gameSession: !!gameSession
+                 });
+             }
+ 
+             // Stop all timers immediately and clear the refs
+             if (timerRef.current) {
+                 clearInterval(timerRef.current);
+                 timerRef.current = null;
+             }
+             if (roundCountdownRef.current) {
+                 clearInterval(roundCountdownRef.current);
+                 roundCountdownRef.current = null;
+             }
+ 
+             // Move to next round after a short delay
+             resultTimeoutRef.current = setTimeout(() => {
+                 console.log('🚀 Starting next round after correct gesture...');
+                 startNextRound();
+             }, 1500); // Reduced delay for faster progression
+         } else {
+             console.log('Gesture detected but not correct:', {
+                 detected: gesture,
+                 target: targetGestureRef.current,
+                 confidence,
+                 threshold: 0.65 // Changed threshold to 0.65
+             });
+         }
+    }, [gameStarted, gameEnded, startNextRound, timeLeft, gestures, gameSession])
 
     // Main game start function
     const startGame = useCallback(() => {
@@ -437,6 +600,7 @@ const GestureRecognizerComponent: React.FC = () => {
         setCurrentRound(0); // Will be incremented to 1 by startNextRound
         currentRoundRef.current = 0;
         setScore(0);
+        targetGestureRef.current = ""; // Reset target gesture ref
         setTargetGesture("");
         setDetectedGesture("");
         setDetectedConfidence(0);
@@ -445,10 +609,30 @@ const GestureRecognizerComponent: React.FC = () => {
         isCorrectRef.current = null;
         setIsProcessingRound(false);
         isProcessingRoundRef.current = false;
+        usedGesturesRef.current = []; // Reset used gestures ref for new game
         setUsedGestures([]); // Reset used gestures for new game
         setTimeLeft(10); // Reset timer
         setIsRoundCountdownActive(false);
         setRoundCountdown(2);
+        
+        // Initialize game session
+        const sessionId = createSessionId();
+        const childId = localStorage.getItem('selectedChildId') || 'unknown';
+        const newSession: GestureGameSession = {
+            sessionId,
+            childId,
+            startTime: new Date(),
+            rounds: [],
+            totalScore: 0,
+            consentData: {
+                childName,
+                childAge,
+                suspectedASD,
+                dataConsent: isTrainingAllowed
+            }
+        };
+        setGameSession(newSession);
+        setRoundStartTime(Date.now());
         
         // Start countdown before the game
         setShowCountdown(true);
@@ -471,7 +655,7 @@ const GestureRecognizerComponent: React.FC = () => {
                 }
             });
         }, 1000);
-    }, [startNextRound]);
+    }, [startNextRound, createSessionId, childName, childAge, suspectedASD, isTrainingAllowed]);
     
     // Function to reset the game state
     const resetGame = useCallback(() => {
@@ -489,6 +673,7 @@ const GestureRecognizerComponent: React.FC = () => {
         setCurrentRound(0);
         currentRoundRef.current = 0;
         setScore(0);
+        targetGestureRef.current = ""; // Reset target gesture ref
         setTargetGesture("");
         setDetectedGesture("");
         setDetectedConfidence(0);
@@ -498,6 +683,7 @@ const GestureRecognizerComponent: React.FC = () => {
         setTimeLeft(10);
         setIsProcessingRound(false);
         isProcessingRoundRef.current = false;
+        usedGesturesRef.current = []; // Reset used gestures ref
         setUsedGestures([]); // Reset used gestures
         
         // Reset countdown state
@@ -507,12 +693,21 @@ const GestureRecognizerComponent: React.FC = () => {
         // Reset round countdown state
         setRoundCountdown(2);
         setIsRoundCountdownActive(false);
-  
+   
         // Reset consent screen state
         setChildName("");
         setChildAge("");
         setSuspectedASD(false);
         setIsTrainingAllowed(false);
+        
+        // Reset confetti and congratulations state
+        setShowConfetti(false);
+        setShowCongratulations(false);
+        
+        // Reset game session and stats
+        setGameSession(null);
+        setShowGameStats(false);
+        setRoundStartTime(0);
     }, [stopWebcam])
 
     // Initialize webcam when game screen is active
@@ -983,26 +1178,86 @@ const GestureRecognizerComponent: React.FC = () => {
 
                 <div className="flex-1 flex items-center justify-center pt-8">
                     <div className="flex gap-8 lg:gap-20 items-center justify-center flex-wrap lg:flex-nowrap">
-                        <div className="relative w-[500px] h-[400px]">
-                            <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover rounded-2xl shadow-2xl border-4 border-primary transform -scale-x-100" />
-                            <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full rounded-2xl" />
-                            {!isCameraOn && (
-                                <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl">
-                                    <div className="text-center">
-                                        <div className="text-6xl mb-4 animate-bounce">📹</div>
-                                        <p className="text-2xl font-playful text-primary">Camera not active</p>
-                                    </div>
-                                </div>
-                            )}
-                            {detectedGesture && gameStarted && !gameEnded && (
-                                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 card-playful border-2 border-secondary p-2 text-center bg-white/80 backdrop-blur-sm">
-                                    <div className="text-sm font-playful text-primary">
-                                        Detected: {detectedGesture} ({(detectedConfidence * 100).toFixed(1)}%)
-                                    </div>
-                                </div>
-                            )}
-                            {/* Removed all debug displays to keep camera screen clean */}
-                        </div>
+                                                 <div className="relative w-[500px] h-[400px]">
+                             {!gameEnded ? (
+                                 <>
+                                     <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover rounded-2xl shadow-2xl border-4 border-primary transform -scale-x-100" />
+                                     <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full rounded-2xl" />
+                                     {!isCameraOn && (
+                                         <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl">
+                                             <div className="text-center">
+                                                 <div className="text-6xl mb-4 animate-bounce">📹</div>
+                                                 <p className="text-2xl font-playful text-primary">Camera not active</p>
+                                             </div>
+                                         </div>
+                                     )}
+                                     {detectedGesture && gameStarted && !gameEnded && (
+                                         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 card-playful border-2 border-secondary p-2 text-center bg-white/80 backdrop-blur-sm">
+                                             <div className="text-sm font-playful text-primary">
+                                                 Detected: {detectedGesture} ({(detectedConfidence * 100).toFixed(1)}%)
+                                             </div>
+                                         </div>
+                                     )}
+                                 </>
+                             ) : (
+                                 // Game completion screen in camera box
+                                 <div className="w-full h-full bg-gradient-to-br from-purple-600 via-pink-500 to-blue-600 rounded-2xl shadow-2xl border-4 border-primary relative overflow-hidden">
+                                     {/* Animated background elements */}
+                                     <div className="absolute inset-0 pointer-events-none">
+                                         <div className="absolute top-6 left-6 w-20 h-20 bg-yellow-300/30 rounded-full animate-pulse"></div>
+                                         <div className="absolute top-12 right-8 w-16 h-16 bg-blue-300/30 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
+                                         <div className="absolute bottom-8 left-10 w-12 h-12 bg-green-300/30 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+                                         <div className="absolute bottom-12 right-6 w-18 h-18 bg-pink-300/30 rounded-full animate-bounce" style={{animationDelay: '1.5s'}}></div>
+                                         <div className="absolute top-1/2 left-1/4 w-14 h-14 bg-orange-300/30 rounded-full animate-spin" style={{animationDuration: '3s'}}></div>
+                                         <div className="absolute top-1/3 right-1/3 w-10 h-10 bg-cyan-300/30 rounded-full animate-pulse" style={{animationDelay: '0.8s'}}></div>
+                                     </div>
+                                     
+                                     {/* Main content */}
+                                     <div className="relative z-10 w-full h-full flex flex-col items-center justify-center text-white p-6">
+                                         <h2 className="text-5xl font-playful mb-6 text-center drop-shadow-2xl">
+                                             🏆 Game Finished!
+                                         </h2>
+                                         
+                                         <div className="text-8xl mb-6 animate-bounce drop-shadow-2xl">🎉</div>
+                                         
+                                         <div className="text-4xl font-playful mb-4 text-center drop-shadow-lg">
+                                             Final Score: {score}/11
+                                         </div>
+                                         
+                                         <div className="text-xl font-comic mb-3 text-center drop-shadow-md">
+                                             {score === 11 ? "Perfect! You're a gesture master! 🌟" : 
+                                              score >= 8 ? "Great job! You're getting better! 👍" : 
+                                              "Keep practicing! You'll improve! 💪"}
+                                         </div>
+                                         
+                                         <div className="text-sm font-comic text-center opacity-90 drop-shadow-sm">
+                                             {score === 11 ? "Incredible performance! You've mastered all gestures!" :
+                                              score >= 8 ? "Excellent work! You're on your way to becoming a gesture expert!" :
+                                              "Good effort! Every practice session makes you stronger!"}
+                                         </div>
+                                         
+                                         {/* Achievement badges */}
+                                         <div className="mt-6 flex gap-3">
+                                             {score === 11 && (
+                                                 <div className="bg-yellow-400/80 text-yellow-900 px-3 py-1 rounded-full text-sm font-bold animate-pulse">
+                                                     🏅 Perfect Score
+                                                 </div>
+                                             )}
+                                             {score >= 8 && (
+                                                 <div className="bg-blue-400/80 text-blue-900 px-3 py-1 rounded-full text-sm font-bold">
+                                                     ⭐ Great Performance
+                                                 </div>
+                                             )}
+                                             {score >= 5 && (
+                                                 <div className="bg-green-400/80 text-green-900 px-3 py-1 rounded-full text-sm font-bold">
+                                                     🎯 Good Effort
+                                                 </div>
+                                             )}
+                                         </div>
+                                     </div>
+                                 </div>
+                             )}
+                         </div>
 
                         {gameStarted && !gameEnded && (
                             <div className="flex flex-col items-center justify-center order-first lg:order-none mb-4 lg:mb-0">
@@ -1128,35 +1383,45 @@ const GestureRecognizerComponent: React.FC = () => {
                             )}
 
                             {gameEnded && (
-                                <div className="card-playful border-4 border-primary bg-gradient-to-r from-primary/10 to-secondary/10 p-6 text-center w-full h-full flex flex-col justify-center">
-                                    <h2 className="text-3xl font-playful text-primary mb-4">
-                                        🏆 Game Finished!
-                                    </h2>
-                                    <div className="mb-6">
-                                        <div className="text-6xl mb-4 animate-bounce">🎉</div>
-                                        <div className="text-2xl font-playful text-primary mb-3">Final Score: {score}/11</div>
-                                        <div className="text-lg text-muted-foreground font-comic">
-                                            {score === 11 ? "Perfect! You're a gesture master! 🌟" : 
-                                             score >= 8 ? "Great job! You're getting better! 👍" : 
-                                             "Keep practicing! You'll improve! 💪"}
-                                        </div>
+                                <div className="card-playful border-4 border-primary bg-gradient-to-br from-primary/5 via-secondary/10 to-purple-500/5 p-8 text-center w-full min-h-full flex flex-col justify-center relative overflow-hidden">
+                                    {/* Animated background elements */}
+                                    <div className="absolute inset-0 pointer-events-none">
+                                        <div className="absolute top-4 left-4 w-16 h-16 bg-yellow-400/20 rounded-full animate-pulse"></div>
+                                        <div className="absolute top-8 right-8 w-12 h-12 bg-blue-400/20 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
+                                        <div className="absolute bottom-6 left-8 w-10 h-10 bg-green-400/20 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+                                        <div className="absolute bottom-8 right-4 w-14 h-14 bg-pink-400/20 rounded-full animate-bounce" style={{animationDelay: '1.5s'}}></div>
                                     </div>
-                                    <div className="flex flex-col gap-3">
-                                        <button
-                                            onClick={resetGame}
-                                            className="btn-fun font-comic text-xl py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-2 border-purple-300 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-                                        >
-                                            🔄 Play Again
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                resetGame();
-                                                setCurrentScreen('instructions');
-                                            }}
-                                            className="btn-fun font-comic text-lg py-2 bg-secondary hover:bg-secondary/80"
-                                        >
-                                            📖 Back to Instructions
-                                        </button>
+                                    
+                                    {/* Main content - Buttons only */}
+                                    <div className="relative z-10">
+                                        <h2 className="text-4xl font-playful text-primary mb-8 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                                            🎮 What's Next?
+                                        </h2>
+                                        
+                                        {/* Button container with improved layout */}
+                                        <div className="flex flex-col gap-4 max-w-sm mx-auto">
+                                            <button
+                                                onClick={() => setShowGameStats(true)}
+                                                className="btn-fun font-comic text-lg py-4 bg-gradient-to-r from-purple-500 via-blue-500 to-purple-600 hover:from-purple-600 hover:via-blue-600 hover:to-purple-700 text-white border-2 border-purple-300 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 transform hover:-translate-y-1"
+                                            >
+                                                📊 View Detailed Stats
+                                            </button>
+                                            <button
+                                                onClick={resetGame}
+                                                className="btn-fun font-comic text-lg py-4 bg-gradient-to-r from-orange-500 via-pink-500 to-orange-600 hover:from-orange-600 hover:via-pink-600 hover:to-orange-700 text-white border-2 border-orange-300 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 transform hover:-translate-y-1"
+                                            >
+                                                🔄 Play Again
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    resetGame();
+                                                    setCurrentScreen('instructions');
+                                                }}
+                                                className="btn-fun font-comic text-base py-3 bg-gradient-to-r from-secondary to-secondary/80 hover:from-secondary/90 hover:to-secondary text-white border-2 border-secondary/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 transform hover:-translate-y-1"
+                                            >
+                                                📖 Back to Instructions
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -1172,6 +1437,66 @@ const GestureRecognizerComponent: React.FC = () => {
                             {roundResult}
                         </div>
                     </div>
+                )}
+                
+                {/* Confetti Overlay */}
+                {showConfetti && (
+                    <div className="fixed inset-0 z-50 pointer-events-none">
+                        {/* Confetti pieces */}
+                        {[...Array(50)].map((_, i) => (
+                            <div
+                                key={i}
+                                className={`absolute w-2 h-2 animate-bounce ${
+                                    ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500'][i % 6]
+                                }`}
+                                style={{
+                                    left: `${Math.random() * 100}%`,
+                                    top: `${Math.random() * 100}%`,
+                                    animationDelay: `${Math.random() * 2}s`,
+                                    animationDuration: `${1 + Math.random() * 2}s`
+                                }}
+                            />
+                        ))}
+                        {/* Sparkles */}
+                        {[...Array(30)].map((_, i) => (
+                            <div
+                                key={`sparkle-${i}`}
+                                className="absolute w-1 h-1 bg-yellow-300 animate-pulse"
+                                style={{
+                                    left: `${Math.random() * 100}%`,
+                                    top: `${Math.random() * 100}%`,
+                                    animationDelay: `${Math.random() * 1}s`,
+                                    animationDuration: `${0.5 + Math.random() * 1}s`
+                                }}
+                            />
+                        ))}
+                    </div>
+                )}
+                
+                {/* Congratulations Message */}
+                {showCongratulations && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                        <div className="card-playful border-4 border-yellow-400 bg-gradient-to-r from-yellow-100 to-orange-100 p-8 text-center max-w-md mx-4 animate-bounce">
+                            <div className="text-6xl mb-4">🎉</div>
+                            <h2 className="text-3xl font-playful text-yellow-600 mb-2">
+                                Congratulations!
+                            </h2>
+                            <p className="text-lg font-comic text-yellow-700">
+                                You've completed all 11 rounds! 🏆
+                            </p>
+                            <div className="text-2xl font-playful text-yellow-600 mt-2">
+                                Final Score: {score}/11
+                            </div>
+                        </div>
+                    </div>
+                )}
+                
+                {/* Game Stats Modal */}
+                {showGameStats && gameSession && (
+                    <GestureGameStats 
+                        gameSession={gameSession} 
+                        onClose={() => setShowGameStats(false)} 
+                    />
                 )}
             </div>
         )
