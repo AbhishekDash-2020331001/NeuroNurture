@@ -1,5 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { Brain, LogOut } from "lucide-react";
+import { getCurrentChild } from "@/utils/childUtils";
+import { Brain } from "lucide-react";
+import { useEffect, useState } from "react";
+import UserMenu from "./UserMenu";
 
 interface NavbarProps {
   onLogout?: () => void;
@@ -7,20 +9,28 @@ interface NavbarProps {
 }
 
 const Navbar = ({ onLogout, showLogout = true }: NavbarProps) => {
+  const [username, setUsername] = useState<string | null>(null);
+  const [selectedChild, setSelectedChild] = useState<any>(null);
+
+  useEffect(() => {
+    // Get username
+    fetch('http://localhost:8080/auth/me', { credentials: 'include' })
+      .then(res => res.text())
+      .then(name => setUsername(name))
+      .catch(err => console.error('Failed to get username:', err));
+    
+    // Get selected child data
+    const childData = getCurrentChild();
+    if (childData) {
+      setSelectedChild(childData);
+    }
+  }, []);
+
   const handleHomeClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     console.log('Navbar home clicked');
     window.location.href = 'http://localhost:8081';
-  };
-
-  const handleLogoutClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('Navbar logout clicked');
-    if (onLogout) {
-      onLogout();
-    }
   };
 
   return (
@@ -46,17 +56,13 @@ const Navbar = ({ onLogout, showLogout = true }: NavbarProps) => {
             </div>
           </button>
 
-          {/* Right side - Logout button */}
-          {showLogout && onLogout && (
-            <Button
-              onClick={handleLogoutClick}
-              className="bg-white/10 hover:bg-white/20 text-white border border-white/20 font-comic font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg flex items-center gap-2 relative z-10"
-              style={{ pointerEvents: 'auto' }}
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
-            </Button>
-          )}
+          {/* Right side - User Menu */}
+          <UserMenu 
+            onLogout={onLogout} 
+            showLogout={showLogout}
+            username={username}
+            selectedChild={selectedChild}
+          />
         </div>
       </div>
     </nav>

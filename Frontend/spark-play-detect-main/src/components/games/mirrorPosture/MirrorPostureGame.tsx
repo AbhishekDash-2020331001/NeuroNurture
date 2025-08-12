@@ -1,4 +1,4 @@
-import { HelpCircle, Play, RotateCcw } from 'lucide-react';
+import { HelpCircle, Play } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from './hooks/use-toast';
 import './mirrorPosture.css';
@@ -96,6 +96,7 @@ const MirrorPostureGame: React.FC = () => {
   const [roundCountdown, setRoundCountdown] = useState<number>(2);
   const [isRoundCountdownActive, setIsRoundCountdownActive] = useState<boolean>(false);
   const [consentData, setConsentData] = useState<ConsentData | null>(null);
+  const [showConfetti, setShowConfetti] = useState<boolean>(false);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
@@ -321,6 +322,11 @@ const MirrorPostureGame: React.FC = () => {
                });
              }
              setGameState('finished');
+             // Trigger confetti
+             setShowConfetti(true);
+             setTimeout(() => {
+               setShowConfetti(false);
+             }, 3000);
              // Show animation after a short delay to avoid lag
              setTimeout(() => {
                setShowCompletionAnimation(true);
@@ -467,6 +473,11 @@ const MirrorPostureGame: React.FC = () => {
              });
              setGameState('finished');
              setIsProcessingRound(false);
+             // Trigger confetti
+             setShowConfetti(true);
+             setTimeout(() => {
+               setShowConfetti(false);
+             }, 3000);
              // Show animation after a short delay to avoid lag
              setTimeout(() => {
                setShowCompletionAnimation(true);
@@ -560,7 +571,7 @@ const MirrorPostureGame: React.FC = () => {
          sessionId: gameSession.sessionId,
          dateTime: gameSession.startTime,
          childId: childData?.id?.toString() || '1',
-         age: childData?.dateOfBirth ? calculateAge(childData.dateOfBirth) : 8,
+         age: gameSession.consentData?.childAge ? parseInt(gameSession.consentData.childAge) : (childData?.dateOfBirth ? calculateAge(childData.dateOfBirth) : 8),
          ...postureTimes,
          videoURL: "https://example.com/dummy-video.mp4", // Dummy URL for now
          isTrainingAllowed: gameSession.consentData?.dataConsent === true,
@@ -900,34 +911,95 @@ const MirrorPostureGame: React.FC = () => {
             <div className="flex gap-20 items-start">
               {/* Camera Box */}
               <div className="relative w-[30rem] h-[26rem]">
-                <div className="w-full h-[24rem] mb-2">
-                  <WebcamCapture 
-                    onCameraReady={setIsWebcamReady}
-                    onExpressionDetected={handleExpressionDetected}
-                    isActive={gameState === 'playing' || isCountdownActive}
-                    detectedExpression={gameStats.detectedExpression}
-                  />
-                  {!isWebcamReady && (
-                    <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl">
-                      <div className="text-center">
-                        <div className="text-6xl mb-4 animate-bounce">📹</div>
-                        <p className="text-2xl font-playful text-primary">Camera not active</p>
+                {gameState !== 'finished' ? (
+                  <>
+                    <div className="w-full h-[24rem] mb-2">
+                      <WebcamCapture 
+                        onCameraReady={setIsWebcamReady}
+                        onExpressionDetected={handleExpressionDetected}
+                        isActive={gameState === 'playing' || isCountdownActive}
+                        detectedExpression={gameStats.detectedExpression}
+                      />
+                      {!isWebcamReady && (
+                        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl">
+                          <div className="text-center">
+                            <div className="text-6xl mb-4 animate-bounce">📹</div>
+                            <p className="text-2xl font-playful text-primary">Camera not active</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Detected Expression Display - Single Row */}
+                    {gameStats.detectedExpression && gameState === 'playing' && (
+                      <div className="card-playful border-2 border-secondary p-2 text-center">
+                        <div className="text-sm font-playful text-primary">
+                          Detected: {gameStats.detectedExpression === 'looking_left' && 'Looking Left 👈'}
+                          {gameStats.detectedExpression === 'looking_right' && 'Looking Right 👉'}
+                          {gameStats.detectedExpression === 'mouth_open' && 'Mouth Open 😮'}
+                          {gameStats.detectedExpression === 'showing_teeth' && 'Showing Teeth 😁'}
+                          {gameStats.detectedExpression === 'kiss' && 'Kiss 😘'}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Detected Expression Display - Single Row */}
-                {gameStats.detectedExpression && gameState === 'playing' && (
-                  <div className="card-playful border-2 border-secondary p-2 text-center">
-                    <div className="text-sm font-playful text-primary">
-                      Detected: {gameStats.detectedExpression === 'looking_left' && 'Looking Left 👈'}
-                      {gameStats.detectedExpression === 'looking_right' && 'Looking Right 👉'}
-                      {gameStats.detectedExpression === 'mouth_open' && 'Mouth Open 😮'}
-                      {gameStats.detectedExpression === 'showing_teeth' && 'Showing Teeth 😁'}
-                      {gameStats.detectedExpression === 'kiss' && 'Kiss 😘'}
-                    </div>
-                  </div>
+                    )}
+                  </>
+                ) : (
+                                     // Game completion screen in camera box
+                   <div className="w-full h-full bg-gradient-to-br from-orange-600 via-pink-500 to-purple-600 rounded-2xl shadow-2xl border-4 border-primary relative overflow-hidden">
+                     {/* Animated background elements */}
+                     <div className="absolute inset-0 pointer-events-none">
+                       <div className="absolute top-4 left-4 w-16 h-16 bg-yellow-300/30 rounded-full animate-pulse"></div>
+                       <div className="absolute top-8 right-6 w-12 h-12 bg-blue-300/30 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
+                       <div className="absolute bottom-6 left-6 w-10 h-10 bg-green-300/30 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+                       <div className="absolute bottom-8 right-4 w-14 h-14 bg-pink-300/30 rounded-full animate-bounce" style={{animationDelay: '1.5s'}}></div>
+                       <div className="absolute top-1/2 left-1/3 w-8 h-8 bg-orange-300/30 rounded-full animate-spin" style={{animationDuration: '3s'}}></div>
+                       <div className="absolute top-1/4 right-1/4 w-6 h-6 bg-cyan-300/30 rounded-full animate-pulse" style={{animationDelay: '0.8s'}}></div>
+                     </div>
+                     
+                     {/* Main content */}
+                     <div className="relative z-10 w-full h-full flex flex-col items-center justify-center text-white p-4">
+                       <h2 className="text-3xl font-playful mb-3 text-center drop-shadow-2xl">
+                         🏆 Game Finished!
+                       </h2>
+                       
+                       <div className="text-6xl mb-3 animate-bounce drop-shadow-2xl">🎉</div>
+                       
+                       <div className="text-2xl font-playful mb-2 text-center drop-shadow-lg">
+                         Final Score: {gameStats.score}/5
+                       </div>
+                       
+                       <div className="text-lg font-comic mb-2 text-center drop-shadow-md">
+                         {gameStats.score === 5 ? "Perfect! You're an expression master! 🌟" : 
+                          gameStats.score >= 3 ? "Great job! You're getting better! 👍" : 
+                          "Keep practicing! You'll improve! 💪"}
+                       </div>
+                       
+                       <div className="text-xs font-comic text-center opacity-90 drop-shadow-sm mb-3">
+                         {gameStats.score === 5 ? "Incredible performance! You've mastered all expressions!" :
+                          gameStats.score >= 3 ? "Excellent work! You're on your way to becoming an expression expert!" :
+                          "Good effort! Every practice session makes you stronger!"}
+                       </div>
+                       
+                       {/* Achievement badges */}
+                       <div className="flex gap-2 flex-wrap justify-center">
+                         {gameStats.score === 5 && (
+                           <div className="bg-yellow-400/80 text-yellow-900 px-2 py-1 rounded-full text-xs font-bold animate-pulse">
+                             🏅 Perfect
+                           </div>
+                         )}
+                         {gameStats.score >= 3 && (
+                           <div className="bg-blue-400/80 text-blue-900 px-2 py-1 rounded-full text-xs font-bold">
+                             ⭐ Great
+                           </div>
+                         )}
+                         {gameStats.score >= 2 && (
+                           <div className="bg-green-400/80 text-green-900 px-2 py-1 rounded-full text-xs font-bold">
+                             🎯 Good
+                           </div>
+                         )}
+                       </div>
+                     </div>
+                   </div>
                 )}
               </div>
 
@@ -1076,41 +1148,48 @@ const MirrorPostureGame: React.FC = () => {
                  )}
 
                                {gameState === 'finished' && (
-                  <div className="card-playful border-4 border-primary bg-gradient-to-r from-primary/10 to-secondary/10 p-6 text-center w-full h-full flex flex-col justify-center">
-                    <h2 className="text-3xl font-playful text-primary mb-4">
-                      🏆 Game Finished!
-                    </h2>
-                    <div className="mb-6">
-                      <div className="text-6xl mb-4 animate-bounce">🎉</div>
-                      <div className="text-2xl font-playful text-primary mb-3">Final Score: {gameStats.score}/5</div>
-                      <div className="text-lg text-muted-foreground font-comic">
-                        {gameStats.score === 5 ? "Perfect! You're an expression master! 🌟" : 
-                         gameStats.score >= 3 ? "Great job! You're getting better! 👍" : 
-                         "Keep practicing! You'll improve! 💪"}
+                  <div className="card-playful border-4 border-primary bg-gradient-to-br from-primary/5 via-secondary/10 to-purple-500/5 p-8 text-center w-full min-h-full flex flex-col justify-center relative overflow-hidden">
+                    {/* Animated background elements */}
+                    <div className="absolute inset-0 pointer-events-none">
+                      <div className="absolute top-4 left-4 w-16 h-16 bg-yellow-400/20 rounded-full animate-pulse"></div>
+                      <div className="absolute top-8 right-8 w-12 h-12 bg-blue-400/20 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
+                      <div className="absolute bottom-6 left-8 w-10 h-10 bg-green-400/20 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+                      <div className="absolute bottom-8 right-4 w-14 h-14 bg-pink-400/20 rounded-full animate-bounce" style={{animationDelay: '1.5s'}}></div>
+                    </div>
+                    
+                    {/* Main content - Buttons only */}
+                    <div className="relative z-10">
+                      <h2 className="text-4xl font-playful text-primary mb-8 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                        🎮 What's Next?
+                      </h2>
+                      
+                      {/* Button container with improved layout */}
+                      <div className="flex flex-col gap-4 max-w-sm mx-auto">
+                        <Button 
+                          onClick={() => setShowGameStats(true)} 
+                          className="btn-fun font-comic text-lg py-4 bg-gradient-to-r from-purple-500 via-blue-500 to-purple-600 hover:from-purple-600 hover:via-blue-600 hover:to-purple-700 text-white border-2 border-purple-300 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 transform hover:-translate-y-1"
+                        >
+                          📊 View Detailed Stats
+                        </Button>
+                        
+                        <Button 
+                          onClick={resetGame} 
+                          className="btn-fun font-comic text-lg py-4 bg-gradient-to-r from-orange-500 via-pink-500 to-orange-600 hover:from-orange-600 hover:via-pink-600 hover:to-orange-700 text-white border-2 border-orange-300 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 transform hover:-translate-y-1"
+                        >
+                          🔄 Play Again
+                        </Button>
+                        
+                        <Button
+                          onClick={() => {
+                            resetGame();
+                            setCurrentScreen('instructions');
+                          }}
+                          className="btn-fun font-comic text-base py-3 bg-gradient-to-r from-secondary to-secondary/80 hover:from-secondary/90 hover:to-secondary text-white border-2 border-secondary/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 transform hover:-translate-y-1"
+                        >
+                          📖 Back to Instructions
+                        </Button>
                       </div>
                     </div>
-
-                                         <div className="flex flex-col gap-3">
-                       <Button 
-                         onClick={() => setShowGameStats(true)} 
-                         className="btn-fun font-comic text-xl py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white border-2 border-purple-300 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-                       >
-                         📊 View Detailed Stats
-                       </Button>
-                       
-                       <Button onClick={resetGame} className="btn-fun font-comic text-xl py-3 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white border-2 border-orange-300 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                         <RotateCcw className="w-6 h-6 mr-2" />
-                         Play Again
-                       </Button>
-                       
-                       <Button
-                         onClick={() => setCurrentScreen('instructions')}
-                         className="btn-fun font-comic text-lg py-2 bg-secondary hover:bg-secondary/80"
-                       >
-                         <HelpCircle className="w-5 h-5 mr-2" />
-                         Back to Instructions
-                       </Button>
-                     </div>
                   </div>
                 )}
              </div>
@@ -1176,6 +1255,40 @@ const MirrorPostureGame: React.FC = () => {
                ))}
              </div>
            </div>
+         </div>
+       )}
+
+       {/* Confetti Overlay */}
+       {showConfetti && (
+         <div className="fixed inset-0 z-50 pointer-events-none">
+           {/* Confetti pieces */}
+           {[...Array(50)].map((_, i) => (
+             <div
+               key={i}
+               className={`absolute w-2 h-2 animate-bounce ${
+                 ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500'][i % 6]
+               }`}
+               style={{
+                 left: `${Math.random() * 100}%`,
+                 top: `${Math.random() * 100}%`,
+                 animationDelay: `${Math.random() * 2}s`,
+                 animationDuration: `${1 + Math.random() * 2}s`
+               }}
+             />
+           ))}
+           {/* Sparkles */}
+           {[...Array(30)].map((_, i) => (
+             <div
+               key={`sparkle-${i}`}
+               className="absolute w-1 h-1 bg-yellow-300 animate-pulse"
+               style={{
+                 left: `${Math.random() * 100}%`,
+                 top: `${Math.random() * 100}%`,
+                 animationDelay: `${Math.random() * 1}s`,
+                 animationDuration: `${0.5 + Math.random() * 1}s`
+               }}
+             />
+           ))}
          </div>
        )}
      </div>

@@ -223,14 +223,11 @@ const ChildrenProfiles = () => {
           <div className="w-32 h-1 bg-gradient-to-r from-fun-blue to-fun-purple mx-auto mt-4 rounded-full hover:scale-x-150 transition-transform duration-300"></div>
         </div>
 
-        {/* Enhanced Navigation Buttons */}
-        <div className="flex justify-center gap-4 mb-8">
-          <Button
-            onClick={handleParentInfoClick}
-            className="bg-secondary hover:bg-secondary/90 text-secondary-foreground font-comic font-bold px-6 py-3 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-secondary/30 transform"
-          >
-            {parentExists ? "View Parent Info 👨‍👩‍👧‍👦" : "Back to Parent Info 👨‍👩‍👧‍👦"}
-          </Button>
+        {/* Welcome message */}
+        <div className="text-center mb-8">
+          <p className="text-lg text-muted-foreground font-comic">
+            Use the user menu in the top-right corner to access parent info and other options! ✨
+          </p>
         </div>
 
         {/* Children Grid with enhanced animations */}

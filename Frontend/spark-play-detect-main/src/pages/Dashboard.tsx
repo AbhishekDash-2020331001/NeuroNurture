@@ -130,20 +130,6 @@ export default function Dashboard() {
           </div>
           
           <div className="flex gap-2">
-            {selectedChild && (
-              <Button 
-                onClick={() => {
-                  console.log('Switch Child button clicked');
-                  localStorage.removeItem("selectedChild");
-                  localStorage.removeItem("selectedChildId");
-                  setSelectedChild(null);
-                  navigate("/children");
-                }} 
-                className="btn-fun font-comic relative z-10"
-              >
-                Switch Child 👥
-              </Button>
-            )}
             <Button className="btn-fun font-comic relative z-10">
               Start New Game 🚀
             </Button>

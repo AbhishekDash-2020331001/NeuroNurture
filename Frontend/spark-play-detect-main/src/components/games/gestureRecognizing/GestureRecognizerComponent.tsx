@@ -189,14 +189,15 @@ const GestureRecognizerComponent: React.FC = () => {
     const [isCameraOn, setIsCameraOn] = useState(false);
     const streamRef = useRef<MediaStream | null>(null);
 
-    // Initialize webcam - same as mirror posture game
+    // Initialize webcam - optimized for performance
     const initializeWebcam = useCallback(async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: {
-                    width: { ideal: 640 },
-                    height: { ideal: 480 },
-                    facingMode: 'user'
+                    width: { ideal: 640, max: 1280 },
+                    height: { ideal: 480, max: 720 },
+                    facingMode: 'user',
+                    frameRate: { ideal: 30, max: 60 }
                 }
             });
 
@@ -708,7 +709,16 @@ const GestureRecognizerComponent: React.FC = () => {
         setGameSession(null);
         setShowGameStats(false);
         setRoundStartTime(0);
-    }, [stopWebcam])
+        
+        // Restart camera if we're on the game screen
+        if (currentScreen === 'game') {
+            console.log('Restarting camera after game reset...');
+            // Use setTimeout to ensure state updates are processed first
+            setTimeout(() => {
+                initializeWebcam();
+            }, 100);
+        }
+    }, [stopWebcam, currentScreen, initializeWebcam])
 
     // Initialize webcam when game screen is active
     useEffect(() => {
@@ -752,9 +762,9 @@ const GestureRecognizerComponent: React.FC = () => {
             try {
                 setIsProcessing(true);
                 
-                // Convert canvas to blob
+                // Convert canvas to blob - optimized quality for performance
                 const blob = await new Promise<Blob>((resolve) => {
-                    canvas.toBlob(resolve as BlobCallback, 'image/jpeg', 0.8);
+                    canvas.toBlob(resolve as BlobCallback, 'image/jpeg', 0.6);
                 });
 
                 if (!blob) return;
@@ -771,7 +781,6 @@ const GestureRecognizerComponent: React.FC = () => {
 
                 if (response.ok) {
                     const result = await response.json();
-                    console.log('Gesture API Response:', result);
                     
                     // Handle different response formats from the API
                     let prediction = null;
@@ -789,15 +798,12 @@ const GestureRecognizerComponent: React.FC = () => {
                     
                     // Check if prediction exists and is valid - simplified like mirror posture game
                     if (prediction && prediction !== "none" && prediction !== "no_hands_detected" && prediction !== "error") {
-                        console.log(`Detected: ${prediction} (confidence: ${confidence})`);
-                        
                         // Always update the detected gesture display
                         setDetectedGesture(prediction);
                         setDetectedConfidence(confidence);
                         
                         // Process for game logic if game is active - simplified logic
                         if (gameStarted && !gameEnded && !isProcessingRoundRef.current) {
-                            console.log(`🎮 Sending gesture to game logic: ${prediction}`);
                             handleGestureDetected(prediction, confidence);
                         }
                     }
@@ -806,11 +812,12 @@ const GestureRecognizerComponent: React.FC = () => {
                     throw new Error('API request failed');
                 }
             } catch (error) {
-                console.log('Gesture API not available, using demo mode:', error);
+                // Mock detection for development (remove in production)
+                console.log('API not available, using mock detection');
                 setIsConnected(false);
                 
                 // Simulate random detection for testing (fallback when API is not available)
-                if (Math.random() < 0.05) { // 5% chance for demo mode
+                if (Math.random() < 0.05) { // 5% chance per frame for testing
                     const gestures = ['closed_fist', 'open_palm', 'pointing_up', 'thumbs_down', 'thumbs_up', 'victory', 'iloveyou', 'butterfly', 'dua', 'heart', 'spectacle'];
                     const randomGesture = gestures[Math.floor(Math.random() * gestures.length)];
                     setDetectedGesture(randomGesture);
@@ -825,13 +832,15 @@ const GestureRecognizerComponent: React.FC = () => {
         sendFrame();
     }, [isConnected, isCameraOn, handleGestureDetected, isProcessing, gameStarted, gameEnded])
 
-    // Determine if game is active (same logic as mirror posture game)
-    const isActive = currentScreen === 'game' && gameStarted && !gameEnded;
+    // Determine if game is active (optimized with useMemo)
+    const isActive = useMemo(() => {
+        return currentScreen === 'game' && gameStarted && !gameEnded;
+    }, [currentScreen, gameStarted, gameEnded]);
 
-    // Start/stop frame capture based on game state - same as mirror posture game
+    // Start/stop frame capture based on game state - optimized for performance
     useEffect(() => {
         if (isActive && isCameraOn) {
-            captureIntervalRef.current = setInterval(predictWebcam, 100); // Same 100ms (10 FPS) as mirror posture game
+            captureIntervalRef.current = setInterval(predictWebcam, 50); // Increased to 50ms (20 FPS) for smoother performance
         } else {
             if (captureIntervalRef.current) {
                 clearInterval(captureIntervalRef.current);
@@ -1181,8 +1190,26 @@ const GestureRecognizerComponent: React.FC = () => {
                                                  <div className="relative w-[500px] h-[400px]">
                              {!gameEnded ? (
                                  <>
-                                     <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover rounded-2xl shadow-2xl border-4 border-primary transform -scale-x-100" />
-                                     <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full rounded-2xl" />
+                                     <video 
+                                         ref={videoRef} 
+                                         autoPlay 
+                                         playsInline 
+                                         muted 
+                                         className="w-full h-full object-cover rounded-2xl shadow-2xl border-4 border-primary transform -scale-x-100"
+                                         style={{ 
+                                             transform: 'scaleX(-1)',
+                                             willChange: 'transform',
+                                             backfaceVisibility: 'hidden'
+                                         }}
+                                     />
+                                     <canvas 
+                                         ref={canvasRef} 
+                                         className="absolute top-0 left-0 w-full h-full rounded-2xl"
+                                         style={{ 
+                                             willChange: 'transform',
+                                             backfaceVisibility: 'hidden'
+                                         }}
+                                     />
                                      {!isCameraOn && (
                                          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl">
                                              <div className="text-center">
@@ -1204,53 +1231,53 @@ const GestureRecognizerComponent: React.FC = () => {
                                  <div className="w-full h-full bg-gradient-to-br from-purple-600 via-pink-500 to-blue-600 rounded-2xl shadow-2xl border-4 border-primary relative overflow-hidden">
                                      {/* Animated background elements */}
                                      <div className="absolute inset-0 pointer-events-none">
-                                         <div className="absolute top-6 left-6 w-20 h-20 bg-yellow-300/30 rounded-full animate-pulse"></div>
-                                         <div className="absolute top-12 right-8 w-16 h-16 bg-blue-300/30 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
-                                         <div className="absolute bottom-8 left-10 w-12 h-12 bg-green-300/30 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
-                                         <div className="absolute bottom-12 right-6 w-18 h-18 bg-pink-300/30 rounded-full animate-bounce" style={{animationDelay: '1.5s'}}></div>
-                                         <div className="absolute top-1/2 left-1/4 w-14 h-14 bg-orange-300/30 rounded-full animate-spin" style={{animationDuration: '3s'}}></div>
-                                         <div className="absolute top-1/3 right-1/3 w-10 h-10 bg-cyan-300/30 rounded-full animate-pulse" style={{animationDelay: '0.8s'}}></div>
+                                         <div className="absolute top-4 left-4 w-16 h-16 bg-yellow-300/30 rounded-full animate-pulse"></div>
+                                         <div className="absolute top-8 right-6 w-12 h-12 bg-blue-300/30 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
+                                         <div className="absolute bottom-6 left-6 w-10 h-10 bg-green-300/30 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+                                         <div className="absolute bottom-8 right-4 w-14 h-14 bg-pink-300/30 rounded-full animate-bounce" style={{animationDelay: '1.5s'}}></div>
+                                         <div className="absolute top-1/2 left-1/3 w-8 h-8 bg-orange-300/30 rounded-full animate-spin" style={{animationDuration: '3s'}}></div>
+                                         <div className="absolute top-1/4 right-1/4 w-6 h-6 bg-cyan-300/30 rounded-full animate-pulse" style={{animationDelay: '0.8s'}}></div>
                                      </div>
                                      
                                      {/* Main content */}
-                                     <div className="relative z-10 w-full h-full flex flex-col items-center justify-center text-white p-6">
-                                         <h2 className="text-5xl font-playful mb-6 text-center drop-shadow-2xl">
+                                     <div className="relative z-10 w-full h-full flex flex-col items-center justify-center text-white p-4">
+                                         <h2 className="text-3xl font-playful mb-3 text-center drop-shadow-2xl">
                                              🏆 Game Finished!
                                          </h2>
                                          
-                                         <div className="text-8xl mb-6 animate-bounce drop-shadow-2xl">🎉</div>
+                                         <div className="text-6xl mb-3 animate-bounce drop-shadow-2xl">🎉</div>
                                          
-                                         <div className="text-4xl font-playful mb-4 text-center drop-shadow-lg">
+                                         <div className="text-2xl font-playful mb-2 text-center drop-shadow-lg">
                                              Final Score: {score}/11
                                          </div>
                                          
-                                         <div className="text-xl font-comic mb-3 text-center drop-shadow-md">
+                                         <div className="text-lg font-comic mb-2 text-center drop-shadow-md">
                                              {score === 11 ? "Perfect! You're a gesture master! 🌟" : 
                                               score >= 8 ? "Great job! You're getting better! 👍" : 
                                               "Keep practicing! You'll improve! 💪"}
                                          </div>
                                          
-                                         <div className="text-sm font-comic text-center opacity-90 drop-shadow-sm">
+                                         <div className="text-xs font-comic text-center opacity-90 drop-shadow-sm mb-3">
                                              {score === 11 ? "Incredible performance! You've mastered all gestures!" :
                                               score >= 8 ? "Excellent work! You're on your way to becoming a gesture expert!" :
                                               "Good effort! Every practice session makes you stronger!"}
                                          </div>
                                          
                                          {/* Achievement badges */}
-                                         <div className="mt-6 flex gap-3">
+                                         <div className="flex gap-2 flex-wrap justify-center">
                                              {score === 11 && (
-                                                 <div className="bg-yellow-400/80 text-yellow-900 px-3 py-1 rounded-full text-sm font-bold animate-pulse">
-                                                     🏅 Perfect Score
+                                                 <div className="bg-yellow-400/80 text-yellow-900 px-2 py-1 rounded-full text-xs font-bold animate-pulse">
+                                                     🏅 Perfect
                                                  </div>
                                              )}
                                              {score >= 8 && (
-                                                 <div className="bg-blue-400/80 text-blue-900 px-3 py-1 rounded-full text-sm font-bold">
-                                                     ⭐ Great Performance
+                                                 <div className="bg-blue-400/80 text-blue-900 px-2 py-1 rounded-full text-xs font-bold">
+                                                     ⭐ Great
                                                  </div>
                                              )}
                                              {score >= 5 && (
-                                                 <div className="bg-green-400/80 text-green-900 px-3 py-1 rounded-full text-sm font-bold">
-                                                     🎯 Good Effort
+                                                 <div className="bg-green-400/80 text-green-900 px-2 py-1 rounded-full text-xs font-bold">
+                                                     🎯 Good
                                                  </div>
                                              )}
                                          </div>
