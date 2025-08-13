@@ -1,7 +1,7 @@
 import mascotImage from '@/assets/mascot.jpg';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardTitle } from '@/components/ui/card';
 import { getCurrentChild } from '@/utils/childUtils';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -57,33 +57,33 @@ export default function Dashboard() {
 
   const games = [
     {
-      title: "Gesture Recognizing Game",
-      description: "Play and learn by recognizing hand gestures!",
-      icon: " 44B", // 👋
-      color: "bg-fun-purple",
+      title: "Gesture Game",
+      description: "Learn hand gestures!",
+      icon: "👋",
+      color: "from-blue-400 to-purple-500",
       progress: 75,
-      route: "/games/gesture"
+      route: "/games/gesture/insights"
     },
     {
-      title: "Mirror Posture Game",
-      description: "Mimic facial expressions and postures for fun!",
-      icon: " 60E", // 😎
-      color: "bg-fun-orange",
+      title: "Mirror Posture",
+      description: "Mimic expressions!",
+      icon: "😎",
+      color: "from-orange-400 to-pink-500",
       progress: 45,
       route: "/games/mirror-posture"
     },
     {
       title: "Shape Sorter",
-      description: "Learn shapes and colors in this interactive game",
+      description: "Learn shapes & colors",
       icon: "🔷",
-      color: "bg-secondary",
+      color: "from-green-400 to-teal-500",
       progress: 90
     },
     {
       title: "Story Builder",
-      description: "Create amazing stories and boost creativity",
+      description: "Create stories!",
       icon: "📚",
-      color: "bg-fun-yellow",
+      color: "from-yellow-400 to-orange-500",
       progress: 30
     }
   ];
@@ -91,223 +91,250 @@ export default function Dashboard() {
   const achievements = [
     { title: "First Steps", icon: "🌟", unlocked: true },
     { title: "Puzzle Master", icon: "🏆", unlocked: true },
-    { title: "Memory Champion", icon: "🧠", unlocked: false },
+    { title: "Memory Champ", icon: "🧠", unlocked: false },
     { title: "Creative Writer", icon: "✨", unlocked: false }
   ];
 
   return (
-    <div className="min-h-screen bg-soft font-nunito">
+    <div className="min-h-screen bg-soft font-nunito custom-scrollbar relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        {/* Floating Toys and Objects */}
+        <div className="absolute top-10 left-10 text-4xl animate-bounce" style={{ animationDelay: '0s', animationDuration: '3s' }}>🧸</div>
+        <div className="absolute top-20 right-20 text-3xl animate-float" style={{ animationDelay: '1s', animationDuration: '4s' }}>🎈</div>
+        <div className="absolute top-40 left-1/4 text-3xl animate-wiggle" style={{ animationDelay: '2s', animationDuration: '2.5s' }}>🎪</div>
+        <div className="absolute top-60 right-1/3 text-4xl animate-pulse-fun" style={{ animationDelay: '0.5s', animationDuration: '3.5s' }}>🎨</div>
+        <div className="absolute top-80 left-1/3 text-3xl animate-bounce" style={{ animationDelay: '1.5s', animationDuration: '2.8s' }}>🎯</div>
+        <div className="absolute top-32 right-1/4 text-3xl animate-float" style={{ animationDelay: '0.8s', animationDuration: '4.2s' }}>🎭</div>
+        
+        {/* More floating elements */}
+        <div className="absolute top-96 left-20 text-2xl animate-wiggle" style={{ animationDelay: '2.2s', animationDuration: '3.1s' }}>🎲</div>
+        <div className="absolute top-72 right-16 text-3xl animate-pulse-fun" style={{ animationDelay: '1.2s', animationDuration: '2.9s' }}>🎪</div>
+        <div className="absolute top-48 left-1/2 text-2xl animate-bounce" style={{ animationDelay: '0.3s', animationDuration: '3.3s' }}>🎨</div>
+        
+        {/* Bottom floating elements */}
+        <div className="absolute bottom-20 left-16 text-3xl animate-float" style={{ animationDelay: '1.8s', animationDuration: '4.5s' }}>🎈</div>
+        <div className="absolute bottom-32 right-24 text-2xl animate-wiggle" style={{ animationDelay: '0.7s', animationDuration: '2.7s' }}>🎯</div>
+        <div className="absolute bottom-40 left-1/3 text-3xl animate-pulse-fun" style={{ animationDelay: '2.5s', animationDuration: '3.8s' }}>🎭</div>
+        <div className="absolute bottom-60 right-1/3 text-2xl animate-bounce" style={{ animationDelay: '1.1s', animationDuration: '3.2s' }}>🎲</div>
+        
+        {/* Animated Background Gradients */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 opacity-30"></div>
+        <div className="absolute inset-0 bg-gradient-to-tr from-yellow-50 via-orange-50 to-red-50 opacity-20"></div>
+        
+        {/* Floating Bubbles */}
+        <div className="absolute top-1/4 left-1/6 w-4 h-4 bg-blue-300 rounded-full animate-float opacity-60" style={{ animationDelay: '0s', animationDuration: '6s' }}></div>
+        <div className="absolute top-1/3 right-1/5 w-6 h-6 bg-purple-300 rounded-full animate-float opacity-50" style={{ animationDelay: '2s', animationDuration: '7s' }}></div>
+        <div className="absolute top-1/2 left-1/4 w-3 h-3 bg-pink-300 rounded-full animate-float opacity-70" style={{ animationDelay: '1s', animationDuration: '5s' }}></div>
+        <div className="absolute top-2/3 right-1/3 w-5 h-5 bg-yellow-300 rounded-full animate-float opacity-60" style={{ animationDelay: '3s', animationDuration: '8s' }}></div>
+        <div className="absolute bottom-1/4 left-1/5 w-4 h-4 bg-green-300 rounded-full animate-float opacity-50" style={{ animationDelay: '1.5s', animationDuration: '6.5s' }}></div>
+        
+        {/* Sparkles */}
+        <div className="absolute top-1/6 left-1/8 text-yellow-400 animate-pulse-fun" style={{ animationDelay: '0.5s', animationDuration: '2s' }}>✨</div>
+        <div className="absolute top-1/3 right-1/6 text-yellow-400 animate-pulse-fun" style={{ animationDelay: '1.5s', animationDuration: '2.5s' }}>✨</div>
+        <div className="absolute top-1/2 left-1/3 text-yellow-400 animate-pulse-fun" style={{ animationDelay: '0.8s', animationDuration: '1.8s' }}>✨</div>
+        <div className="absolute top-2/3 right-1/4 text-yellow-400 animate-pulse-fun" style={{ animationDelay: '2.2s', animationDuration: '2.2s' }}>✨</div>
+        <div className="absolute bottom-1/3 left-1/6 text-yellow-400 animate-pulse-fun" style={{ animationDelay: '1.2s', animationDuration: '1.9s' }}>✨</div>
+        
+        {/* Rainbow Trail Effect */}
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-400 via-yellow-400 via-green-400 via-blue-400 via-purple-400 to-pink-400 opacity-30 animate-pulse"></div>
+        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-pink-400 via-purple-400 via-blue-400 via-green-400 via-yellow-400 to-red-400 opacity-30 animate-pulse" style={{ animationDelay: '1s' }}></div>
+      </div>
+
       {/* Beautiful Navbar */}
       <Navbar onLogout={handleLogout} />
 
-      <div className="max-w-7xl mx-auto space-y-8 p-4 lg:p-8">
-        {/* Breadcrumb Navigation */}
-        {selectedChild && (
-          <div className="flex items-center space-x-2 text-sm text-muted-foreground font-comic">
-            <span>🏠</span>
-            <span>Children Profiles</span>
-            <span>→</span>
-            <span className="text-primary font-bold">{selectedChild.name}'s Realm</span>
-          </div>
-        )}
-
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row items-center justify-between space-y-4 lg:space-y-0">
-          <div className="flex items-center space-x-4">
+      <div className="max-w-6xl mx-auto space-y-6 p-4 lg:p-6 relative z-10">
+        {/* Compact Header */}
+        <div className="flex flex-col lg:flex-row items-center justify-between space-y-3 lg:space-y-0">
+          <div className="flex items-center space-x-3">
             <img 
               src={mascotImage} 
-                              alt="NeuroNurture Mascot" 
-              className="w-16 h-16 animate-pulse-fun"
+              alt="NeuroNurture Mascot" 
+              className="w-12 h-12 animate-pulse-fun"
             />
             <div>
-              <h1 className="text-4xl font-playful text-primary">
-                {selectedChild ? `Welcome, ${selectedChild.name}! 🎉` : username ? `Welcome back, ${username}! 🎉` : 'Welcome Back! 🎉'}
+              <h1 className="text-2xl lg:text-3xl font-playful text-primary">
+                {selectedChild ? `Hi ${selectedChild.name}! 🎉` : username ? `Hi ${username}! 🎉` : 'Welcome! 🎉'}
               </h1>
-              <p className="text-lg font-comic text-muted-foreground">
-                {selectedChild ? `Ready for some fun learning adventures, ${selectedChild.name}?` : 'Ready for some fun learning adventures?'}
+              <p className="text-base lg:text-lg font-comic text-muted-foreground">
+                {selectedChild ? `Ready for fun learning, ${selectedChild.name}?` : 'Ready for fun learning?'}
               </p>
             </div>
           </div>
           
-          <div className="flex gap-2">
-            <Button className="btn-fun font-comic relative z-10">
-              Start New Game 🚀
-            </Button>
-          </div>
+          <Button className="btn-fun font-comic text-base py-2 px-4">
+            Start Game 🚀
+          </Button>
         </div>
 
-        {/* Child Profile Indicator */}
+        {/* Compact Child Profile */}
         {selectedChild && (
-          <Card className="card-playful border-4 border-primary bg-gradient-to-r from-primary/10 to-secondary/10">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="text-6xl">
-                    {selectedChild.gender === 'boy' ? '👦' : selectedChild.gender === 'girl' ? '👧' : '🧒'}
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-playful font-bold text-primary">
-                      {selectedChild.name}'s Learning Realm
-                    </h2>
-                    <div className="flex items-center space-x-6 text-sm text-muted-foreground font-comic">
-                      <span>Age: {getChildAge(selectedChild.dateOfBirth)} years</span>
-                      <span>Height: {selectedChild.height}cm</span>
-                      <span>Weight: {selectedChild.weight}kg</span>
-                    </div>
-                  </div>
+          <Card className="card-playful border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5 p-4 backdrop-blur-sm bg-white/80">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="text-4xl">
+                  {selectedChild.gender === 'boy' ? '👦' : selectedChild.gender === 'girl' ? '👧' : '🧒'}
                 </div>
-                <div className="text-right">
-                  <div className="text-sm text-muted-foreground font-comic">Current Profile</div>
-                  <div className="text-lg font-bold text-primary">Active</div>
+                <div>
+                  <h2 className="text-lg font-playful font-bold text-primary">
+                    {selectedChild.name}'s Learning
+                  </h2>
+                  <div className="flex items-center space-x-4 text-sm text-muted-foreground font-comic">
+                    <span>Age: {getChildAge(selectedChild.dateOfBirth)}</span>
+                    <span>Height: {selectedChild.height}cm</span>
+                    <span>Weight: {selectedChild.weight}kg</span>
+                  </div>
                 </div>
               </div>
-            </CardContent>
+              <div className="text-right">
+                <div className="text-sm text-muted-foreground font-comic">Active Profile</div>
+                <div className="text-sm font-bold text-primary">✅</div>
+              </div>
+            </div>
           </Card>
         )}
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="card-playful border-2 border-fun-orange/20 hover:scale-105 hover:shadow-lg transition-all duration-300 group">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-playful text-fun-orange mb-2 bounce-gentle">🎮</div>
-              <div className="text-xl font-bold text-foreground group-hover:text-fun-orange transition-colors">12</div>
-              <div className="text-xs text-muted-foreground font-comic">Games Played</div>
-            </CardContent>
+        {/* Compact Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <Card className="card-playful border-2 border-fun-orange/20 hover:scale-105 hover:shadow-lg transition-all duration-300 group p-3 backdrop-blur-sm bg-white/80">
+            <div className="text-center">
+              <div className="text-xl font-playful text-fun-orange mb-1 bounce-gentle">🎮</div>
+              <div className="text-lg font-bold text-foreground group-hover:text-fun-orange transition-colors">12</div>
+              <div className="text-sm text-muted-foreground font-comic">Games</div>
+            </div>
           </Card>
           
-          <Card className="card-playful border-2 border-fun-purple/20 hover:scale-105 hover:shadow-lg transition-all duration-300 group">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-playful text-fun-purple mb-2 float">⭐</div>
-              <div className="text-xl font-bold text-foreground group-hover:text-fun-purple transition-colors">850</div>
-              <div className="text-xs text-muted-foreground font-comic">Stars Earned</div>
-            </CardContent>
+          <Card className="card-playful border-2 border-fun-purple/20 hover:scale-105 hover:shadow-lg transition-all duration-300 group p-3 backdrop-blur-sm bg-white/80">
+            <div className="text-center">
+              <div className="text-xl font-playful text-fun-purple mb-1 float">⭐</div>
+              <div className="text-lg font-bold text-foreground group-hover:text-fun-purple transition-colors">850</div>
+              <div className="text-sm text-muted-foreground font-comic">Stars</div>
+            </div>
           </Card>
           
-          <Card className="card-playful border-2 border-fun-green/20 hover:scale-105 hover:shadow-lg transition-all duration-300 group">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-playful text-fun-green mb-2 wiggle">🏆</div>
-              <div className="text-xl font-bold text-foreground group-hover:text-fun-green transition-colors">2</div>
-              <div className="text-xs text-muted-foreground font-comic">Achievements</div>
-            </CardContent>
+          <Card className="card-playful border-2 border-fun-green/20 hover:scale-105 hover:shadow-lg transition-all duration-300 group p-3 backdrop-blur-sm bg-white/80">
+            <div className="text-center">
+              <div className="text-xl font-playful text-fun-green mb-1 wiggle">🏆</div>
+              <div className="text-lg font-bold text-foreground group-hover:text-fun-green transition-colors">2</div>
+              <div className="text-sm text-muted-foreground font-comic">Achievements</div>
+            </div>
           </Card>
           
-          <Card className="card-playful border-2 border-fun-pink/20 hover:scale-105 hover:shadow-lg transition-all duration-300 group">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-playful text-fun-pink mb-2 pulse-fun">📚</div>
-              <div className="text-xl font-bold text-foreground group-hover:text-fun-pink transition-colors">15</div>
-              <div className="text-xs text-muted-foreground font-comic">Learning Days</div>
-            </CardContent>
+          <Card className="card-playful border-2 border-fun-pink/20 hover:scale-105 hover:shadow-lg transition-all duration-300 group p-3 backdrop-blur-sm bg-white/80">
+            <div className="text-center">
+              <div className="text-xl font-playful text-fun-pink mb-1 pulse-fun">📚</div>
+              <div className="text-lg font-bold text-foreground group-hover:text-fun-pink transition-colors">15</div>
+              <div className="text-sm text-muted-foreground font-comic">Learning Days</div>
+            </div>
           </Card>
         </div>
 
-        {/* Games Grid */}
+        {/* Compact Games Grid */}
         <div>
-          <h2 className="text-2xl font-playful text-foreground mb-6">
-            Your Learning Games 🎯
+          <h2 className="text-xl font-playful text-foreground mb-4 flex items-center">
+            <span className="mr-2">🎯</span>
+            Your Learning Games
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {games.map((game, index) => (
-              <Card key={index} className="card-playful hover:scale-105 hover:shadow-lg transition-all duration-300 group overflow-hidden">
-                {/* Animated background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                
-                <CardHeader className="text-center pb-3 relative z-10">
-                  <div className={`text-3xl mb-2 ${index % 4 === 0 ? 'bounce-gentle' : index % 4 === 1 ? 'float' : index % 4 === 2 ? 'wiggle' : 'pulse-fun'}`}>
+              <Card key={index} className="card-playful hover:scale-105 hover:shadow-lg transition-all duration-300 group overflow-hidden p-3 backdrop-blur-sm bg-white/80">
+                <div className="text-center space-y-2">
+                  <div className={`text-2xl ${index % 4 === 0 ? 'bounce-gentle' : index % 4 === 1 ? 'float' : index % 4 === 2 ? 'wiggle' : 'pulse-fun'}`}>
                     {game.icon}
                   </div>
                   <CardTitle className="font-playful text-base group-hover:text-primary transition-colors">{game.title}</CardTitle>
-                  <CardDescription className="font-comic text-xs">
+                  <CardDescription className="font-comic text-sm">
                     {game.description}
                   </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3 relative z-10">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs font-comic">
+                  
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-sm font-comic">
                       <span>Progress</span>
                       <span className="font-bold">{game.progress}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
                       <div 
-                        className={`${game.color} h-1.5 rounded-full transition-all duration-500`}
+                        className={`bg-gradient-to-r ${game.color} h-2 rounded-full transition-all duration-500`}
                         style={{ width: `${game.progress}%` }}
                       ></div>
                     </div>
                   </div>
+                  
                   <Button 
-                    className="w-full btn-bounce font-comic text-sm py-2 relative z-20"
+                    className="w-full btn-bounce font-comic text-sm py-2"
                     onClick={() => game.route ? navigate(game.route) : console.log(`Playing ${game.title}`)}
                   >
-                    Play Now! 🎮
+                    Play! 🎮
                   </Button>
-                </CardContent>
+                </div>
               </Card>
             ))}
           </div>
         </div>
 
-        {/* Achievements */}
+        {/* Compact Achievements */}
         <div>
-          <h2 className="text-2xl font-playful text-foreground mb-6">
-            Your Achievements 🏆
+          <h2 className="text-xl font-playful text-foreground mb-4 flex items-center">
+            <span className="mr-2">🏆</span>
+            Your Achievements
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {achievements.map((achievement, index) => (
               <Card 
                 key={index} 
-                className={`card-playful text-center p-3 hover:scale-105 transition-all duration-300 group ${
+                className={`card-playful text-center p-3 hover:scale-105 transition-all duration-300 group backdrop-blur-sm bg-white/80 ${
                   achievement.unlocked 
                     ? 'border-fun-orange border-2 bg-fun-orange/5 hover:shadow-lg' 
                     : 'opacity-50 grayscale hover:shadow-md'
                 }`}
               >
-                <div className={`text-2xl mb-1 ${
+                <div className={`text-xl mb-1 ${
                   achievement.unlocked 
                     ? `${index % 4 === 0 ? 'bounce-gentle' : index % 4 === 1 ? 'float' : index % 4 === 2 ? 'wiggle' : 'pulse-fun'}` 
                     : ''
                 }`}>
                   {achievement.icon}
                 </div>
-                <div className="font-comic text-xs">{achievement.title}</div>
+                <div className="font-comic text-sm">{achievement.title}</div>
                 {achievement.unlocked && (
-                  <div className="text-xs text-fun-orange font-bold mt-1 group-hover:scale-110 transition-transform">UNLOCKED!</div>
+                  <div className="text-sm text-fun-orange font-bold mt-1 group-hover:scale-110 transition-transform">UNLOCKED!</div>
                 )}
               </Card>
             ))}
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <Card className="card-playful">
-          <CardHeader>
-            <CardTitle className="font-playful text-xl">
+        {/* Compact Quick Actions */}
+        <Card className="card-playful p-4 backdrop-blur-sm bg-white/80">
+          <div className="text-center mb-3">
+            <h3 className="font-playful text-lg text-primary">
               Ready for More Fun? 🌟
-            </CardTitle>
-            <CardDescription className="font-comic">
+            </h3>
+            <p className="font-comic text-base text-muted-foreground">
               Try these exciting activities!
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button 
-                className="h-16 bg-gradient-fun text-white font-comic text-lg btn-bounce relative z-10"
-                onClick={() => console.log('New Assessment clicked')}
-              >
-                🧪 New Assessment
-              </Button>
-              <Button 
-                className="h-16 bg-gradient-secondary text-white font-comic text-lg btn-bounce relative z-10"
-                onClick={() => console.log('View Progress clicked')}
-              >
-                📊 View Progress
-              </Button>
-              <Button 
-                className="h-16 bg-gradient-primary text-white font-comic text-lg btn-bounce relative z-10"
-                onClick={() => navigate('/children')}
-              >
-                👨‍👩‍👧‍👦 Parent Portal
-              </Button>
-            </div>
-          </CardContent>
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Button 
+              className="h-12 bg-gradient-fun text-white font-comic text-base btn-bounce"
+              onClick={() => console.log('New Assessment clicked')}
+            >
+              🧪 New Assessment
+            </Button>
+            <Button 
+              className="h-12 bg-gradient-secondary text-white font-comic text-base btn-bounce"
+              onClick={() => console.log('View Progress clicked')}
+            >
+              📊 View Progress
+            </Button>
+            <Button 
+              className="h-12 bg-gradient-primary text-white font-comic text-base btn-bounce"
+              onClick={() => navigate('/children')}
+            >
+              👨‍👩‍👧‍👦 Parent Portal
+            </Button>
+          </div>
         </Card>
       </div>
     </div>

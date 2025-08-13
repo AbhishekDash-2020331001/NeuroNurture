@@ -241,6 +241,31 @@ All colors MUST be HSL.
   .text-fun-purple {
     color: hsl(var(--fun-purple));
   }
+
+  /* Animation Classes */
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .animate-wiggle {
+    animation: wiggle 1s ease-in-out infinite;
+  }
+  
+  .animate-pulse-fun {
+    animation: pulse-fun 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  .bounce-gentle {
+    animation: gentle-bounce 2s ease-in-out infinite;
+  }
+  
+  .float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .wiggle {
+    animation: wiggle 1s ease-in-out infinite;
+  }
 }
 
 /* Keyframe Animations */
