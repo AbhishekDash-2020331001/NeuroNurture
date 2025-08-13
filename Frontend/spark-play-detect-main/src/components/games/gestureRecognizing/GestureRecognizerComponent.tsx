@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { toast } from '../../../hooks/use-toast'
 import GestureGameStats from './GestureGameStats'
 
 // RunningMode type is not exported from @mediapipe/tasks-vision, so we define it here.
@@ -92,7 +93,145 @@ const GestureRecognizerComponent: React.FC = () => {
  
      // Create session ID
      const createSessionId = useCallback(() => {
-         return `gesture_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+         const childId = localStorage.getItem('selectedChildId') || 'unknown';
+         const dateTime = new Date().toISOString().replace(/[:.]/g, '-');
+         return `${childId}_${dateTime}`;
+     }, []);
+
+     // Save game data to backend
+     const saveGameDataToBackend = useCallback(async (gameSession: GestureGameSession) => {
+         try {
+             // Extract child data from localStorage
+             const selectedChild = localStorage.getItem('selectedChild');
+             const childData = selectedChild ? JSON.parse(selectedChild) : null;
+             
+             // Calculate age from date of birth
+             const calculateAge = (dateOfBirth: string) => {
+                 const birthDate = new Date(dateOfBirth);
+                 const today = new Date();
+                 let age = today.getFullYear() - birthDate.getFullYear();
+                 const monthDiff = today.getMonth() - birthDate.getMonth();
+                 if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                     age--;
+                 }
+                 return age;
+             };
+
+             // Prepare gesture completion times
+             const gestureTimes = {
+                 thumbs_up: null,
+                 thumbs_down: null,
+                 victory: null,
+                 butterfly: null,
+                 spectacle: null,
+                 heart: null,
+                 pointing_up: null,
+                 iloveyou: null,
+                 dua: null,
+                 closed_fist: null,
+                 open_palm: null
+             };
+
+             // Map gesture names to completion times
+             console.log('=== DEBUGGING GESTURE MAPPING ===');
+             console.log('Total rounds:', gameSession.rounds.length);
+             gameSession.rounds.forEach((round, index) => {
+                 console.log(`Round ${index + 1}:`, {
+                     gestureName: round.gestureName,
+                     completed: round.completed,
+                     timeTaken: round.timeTaken
+                 });
+                 
+                 const gestureName = round.gestureName.toLowerCase().replace(/\s+/g, '');
+                 console.log('Mapping gesture:', round.gestureName, 'to lowercase:', gestureName);
+                 
+                 if (gestureName === 'thumbsup' || gestureName === 'thumbs_up') {
+                     gestureTimes.thumbs_up = round.completed ? round.timeTaken : null;
+                     console.log('Mapped to thumbs_up:', round.timeTaken);
+                 } else if (gestureName === 'thumbsdown' || gestureName === 'thumbs_down') {
+                     gestureTimes.thumbs_down = round.completed ? round.timeTaken : null;
+                     console.log('Mapped to thumbs_down:', round.timeTaken);
+                 } else if (gestureName === 'victory') {
+                     gestureTimes.victory = round.completed ? round.timeTaken : null;
+                     console.log('Mapped to victory:', round.timeTaken);
+                 } else if (gestureName === 'butterfly') {
+                     gestureTimes.butterfly = round.completed ? round.timeTaken : null;
+                     console.log('Mapped to butterfly:', round.timeTaken);
+                 } else if (gestureName === 'spectacle') {
+                     gestureTimes.spectacle = round.completed ? round.timeTaken : null;
+                     console.log('Mapped to spectacle:', round.timeTaken);
+                 } else if (gestureName === 'heart') {
+                     gestureTimes.heart = round.completed ? round.timeTaken : null;
+                     console.log('Mapped to heart:', round.timeTaken);
+                 } else if (gestureName === 'pointingup' || gestureName === 'pointing_up') {
+                     gestureTimes.pointing_up = round.completed ? round.timeTaken : null;
+                     console.log('Mapped to pointing_up:', round.timeTaken);
+                 } else if (gestureName === 'iloveyou' || gestureName === 'i_love_you') {
+                     gestureTimes.iloveyou = round.completed ? round.timeTaken : null;
+                     console.log('Mapped to iloveyou:', round.timeTaken);
+                 } else if (gestureName === 'dua') {
+                     gestureTimes.dua = round.completed ? round.timeTaken : null;
+                     console.log('Mapped to dua:', round.timeTaken);
+                 } else if (gestureName === 'closedfist' || gestureName === 'closed_fist') {
+                     gestureTimes.closed_fist = round.completed ? round.timeTaken : null;
+                     console.log('Mapped to closed_fist:', round.timeTaken);
+                 } else if (gestureName === 'openpalm' || gestureName === 'open_palm') {
+                     gestureTimes.open_palm = round.completed ? round.timeTaken : null;
+                     console.log('Mapped to open_palm:', round.timeTaken);
+                 } else {
+                     console.log('No mapping found for:', round.gestureName);
+                 }
+             });
+             console.log('Final gestureTimes object:', gestureTimes);
+             console.log('=== END DEBUGGING ===');
+
+             const requestData = {
+                 sessionId: gameSession.sessionId,
+                 dateTime: gameSession.startTime,
+                 childId: childData?.id?.toString() || '1',
+                 age: gameSession.consentData?.childAge ? parseInt(gameSession.consentData.childAge) : (childData?.dateOfBirth ? calculateAge(childData.dateOfBirth) : 8),
+                 ...gestureTimes,
+                 videoURL: "https://example.com/dummy-video.mp4", // Dummy URL for now
+                 isTrainingAllowed: gameSession.consentData?.dataConsent === true,
+                 suspectedASD: gameSession.consentData?.suspectedASD || false,
+                 isASD: null // Will be populated by ML model later
+             };
+
+             console.log('Consent data:', gameSession.consentData);
+             console.log('Data consent value:', gameSession.consentData?.dataConsent);
+             console.log('Saving game data to backend:', requestData);
+
+             const response = await fetch('http://localhost:8084/api/gesture-game/save', {
+                 method: 'POST',
+                 headers: {
+                     'Content-Type': 'application/json',
+                 },
+                 body: JSON.stringify(requestData)
+             });
+
+             if (response.ok) {
+                 const savedData = await response.json();
+                 console.log('Game data saved successfully:', savedData);
+                 toast({
+                     title: "Data Saved! 📊",
+                     description: "Game statistics have been saved to the database.",
+                 });
+             } else {
+                 console.error('Failed to save game data:', response.statusText);
+                 toast({
+                     title: "Save Failed! ❌",
+                     description: "Failed to save game data to database.",
+                     variant: "destructive",
+                 });
+             }
+         } catch (error) {
+             console.error('Error saving game data:', error);
+             toast({
+                 title: "Save Error! ❌",
+                 description: "An error occurred while saving game data.",
+                 variant: "destructive",
+             });
+         }
      }, []);
  
      // Test API connection on component mount
@@ -220,6 +359,13 @@ const GestureRecognizerComponent: React.FC = () => {
             streamRef.current.getTracks().forEach(track => track.stop());
             streamRef.current = null;
         }
+        
+        // Also pause the video element to ensure it stops
+        if (videoRef.current) {
+            videoRef.current.pause();
+            videoRef.current.srcObject = null;
+        }
+        
         setIsCameraOn(false);
         setWebcamRunning(false);
     }, []);
@@ -292,7 +438,7 @@ const GestureRecognizerComponent: React.FC = () => {
                  startNextRoundRef.current();
              }
          }, 2000);
-     }, [gestures, gameSession]);
+     }, [gestures, gameSession, saveGameDataToBackend]);
 
     // Start round timer after countdown
     const startRoundTimer = useCallback(() => {
@@ -426,10 +572,15 @@ const GestureRecognizerComponent: React.FC = () => {
              // Finalize game session
              setGameSession(prev => {
                  if (prev) {
-                     return {
+                     const completedSession = {
                          ...prev,
                          endTime: new Date()
                      };
+                     
+                     // Save game data to backend
+                     saveGameDataToBackend(completedSession);
+                     
+                     return completedSession;
                  }
                  return prev;
              });
@@ -448,7 +599,7 @@ const GestureRecognizerComponent: React.FC = () => {
                  setShowCongratulations(false);
              }, 2000);
          }
-     }, [gestures, startRoundCountdown, stopWebcam])
+     }, [gestures, startRoundCountdown, stopWebcam, saveGameDataToBackend])
 
     // Assign function to ref to avoid circular dependency
     useEffect(() => {
@@ -716,17 +867,17 @@ const GestureRecognizerComponent: React.FC = () => {
             // Use setTimeout to ensure state updates are processed first
             setTimeout(() => {
                 initializeWebcam();
-            }, 100);
+            }, 200); // Increased delay to ensure all state updates are processed
         }
     }, [stopWebcam, currentScreen, initializeWebcam])
 
     // Initialize webcam when game screen is active
     useEffect(() => {
-        if (currentScreen === 'game') {
+        if (currentScreen === 'game' && !gameEnded) {
             console.log('Initializing webcam...');
             initializeWebcam();
         } else {
-            console.log('Stopping webcam - leaving game screen');
+            console.log('Stopping webcam - leaving game screen or game ended');
             stopWebcam();
         }
 
@@ -734,11 +885,11 @@ const GestureRecognizerComponent: React.FC = () => {
             console.log('Cleanup: stopping webcam');
             stopWebcam();
         }
-    }, [currentScreen, initializeWebcam, stopWebcam]);
+    }, [currentScreen, gameEnded, initializeWebcam, stopWebcam]);
 
     // Prediction loop using frame capture and API calls - optimized like mirror posture game
     const predictWebcam = useCallback(() => {
-        if (!isConnected || !isCameraOn || !videoRef.current || !canvasRef.current || isProcessing) {
+        if (!isConnected || !isCameraOn || !videoRef.current || !canvasRef.current || isProcessing || gameEnded) {
             return;
         }
 
@@ -828,8 +979,10 @@ const GestureRecognizerComponent: React.FC = () => {
             }
         };
 
-        // Send frame immediately
-        sendFrame();
+        // Send frame immediately only if game hasn't ended
+        if (!gameEnded) {
+            sendFrame();
+        }
     }, [isConnected, isCameraOn, handleGestureDetected, isProcessing, gameStarted, gameEnded])
 
     // Determine if game is active (optimized with useMemo)
@@ -855,9 +1008,63 @@ const GestureRecognizerComponent: React.FC = () => {
         };
     }, [isActive, isCameraOn, predictWebcam]);
 
+    // Stop camera when game ends
+    useEffect(() => {
+        if (gameEnded && isCameraOn) {
+            console.log('Game ended, stopping camera...');
+            stopWebcam();
+        }
+    }, [gameEnded, isCameraOn, stopWebcam]);
+
+    // Additional cleanup when game ends to ensure camera stops
+    useEffect(() => {
+        if (gameEnded) {
+            console.log('Game ended, performing comprehensive cleanup...');
+            
+            // Clear any ongoing prediction intervals
+            if (captureIntervalRef.current) {
+                clearInterval(captureIntervalRef.current);
+                captureIntervalRef.current = null;
+            }
+            
+            // Clear any ongoing timers
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
+            
+            if (resultTimeoutRef.current) {
+                clearTimeout(resultTimeoutRef.current);
+                resultTimeoutRef.current = null;
+            }
+            
+            if (countdownTimerRef.current) {
+                clearInterval(countdownTimerRef.current);
+                countdownTimerRef.current = null;
+            }
+            
+            if (roundCountdownRef.current) {
+                clearInterval(roundCountdownRef.current);
+                roundCountdownRef.current = null;
+            }
+            
+            // Ensure camera is stopped
+            if (isCameraOn) {
+                console.log('Force stopping camera after game end...');
+                stopWebcam();
+            }
+            
+            // Reset processing states
+            setIsProcessing(false);
+            setIsProcessingRound(false);
+            isProcessingRoundRef.current = false;
+        }
+    }, [gameEnded, isCameraOn, stopWebcam]);
+
     // Cleanup all timers and animations on component unmount
     useEffect(() => {
         return () => {
+            console.log('Component unmounting, cleaning up...');
             stopWebcam();
             
             // Clear timers

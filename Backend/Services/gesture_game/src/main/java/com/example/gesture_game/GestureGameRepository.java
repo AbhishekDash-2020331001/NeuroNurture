@@ -1,0 +1,40 @@
+package com.example.gesture_game;
+
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface GestureGameRepository extends JpaRepository<GestureGame, Long> {
+    
+    // Find all records by session ID
+    List<GestureGame> findBySessionId(String sessionId);
+    
+    // Find all records by child ID
+    List<GestureGame> findByChildId(String childId);
+    
+    // Find all records where training is allowed
+    List<GestureGame> findByIsTrainingAllowedTrue();
+    
+    // Find all records by suspected ASD status
+    List<GestureGame> findBySuspectedASD(Boolean suspectedASD);
+    
+    // Custom query to get statistics by child
+    @Query("SELECT g FROM GestureGame g WHERE g.childId = :childId ORDER BY g.dateTime DESC")
+    List<GestureGame> findGameHistoryByChildId(@Param("childId") String childId);
+    
+    // Custom query to get average completion times for all gestures
+    @Query("SELECT AVG(g.thumbs_up), AVG(g.thumbs_down), AVG(g.victory), AVG(g.butterfly), AVG(g.spectacle), AVG(g.heart), AVG(g.pointing_up), AVG(g.iloveyou), AVG(g.dua), AVG(g.closed_fist), AVG(g.open_palm) FROM GestureGame g")
+    List<Object[]> getAverageCompletionTimes();
+    
+    // Custom query to get records where specific gesture was completed
+    @Query("SELECT g FROM GestureGame g WHERE g.thumbs_up IS NOT NULL OR g.thumbs_down IS NOT NULL OR g.victory IS NOT NULL OR g.butterfly IS NOT NULL OR g.spectacle IS NOT NULL OR g.heart IS NOT NULL OR g.pointing_up IS NOT NULL OR g.iloveyou IS NOT NULL OR g.dua IS NOT NULL OR g.closed_fist IS NOT NULL OR g.open_palm IS NOT NULL")
+    List<GestureGame> getCompletedGestures();
+    
+    // Custom query to get training data (where isTrainingAllowed = true)
+    @Query("SELECT g FROM GestureGame g WHERE g.isTrainingAllowed = true")
+    List<GestureGame> getTrainingData();
+}

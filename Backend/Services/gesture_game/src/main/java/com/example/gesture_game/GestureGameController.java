@@ -1,0 +1,123 @@
+package com.example.gesture_game;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/gesture-game")
+@CrossOrigin(origins = "*")
+public class GestureGameController {
+    
+    @Autowired
+    private GestureGameService service;
+    
+    // Save a new game record
+    @PostMapping("/save")
+    public ResponseEntity<GestureGame> saveGameRecord(@RequestBody GestureGameRequest request) {
+        try {
+            GestureGame savedRecord = service.saveGameRecord(request);
+            return ResponseEntity.ok(savedRecord);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    // Get all records
+    @GetMapping("/all")
+    public ResponseEntity<List<GestureGame>> getAllRecords() {
+        List<GestureGame> records = service.getAllRecords();
+        return ResponseEntity.ok(records);
+    }
+    
+    // Get record by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<GestureGame> getRecordById(@PathVariable Long id) {
+        Optional<GestureGame> record = service.getRecordById(id);
+        return record.map(ResponseEntity::ok)
+                   .orElse(ResponseEntity.notFound().build());
+    }
+    
+    // Get records by session ID
+    @GetMapping("/session/{sessionId}")
+    public ResponseEntity<List<GestureGame>> getRecordsBySessionId(@PathVariable String sessionId) {
+        List<GestureGame> records = service.getRecordsBySessionId(sessionId);
+        return ResponseEntity.ok(records);
+    }
+    
+    // Get records by child ID
+    @GetMapping("/child/{childId}")
+    public ResponseEntity<List<GestureGame>> getRecordsByChildId(@PathVariable String childId) {
+        List<GestureGame> records = service.getRecordsByChildId(childId);
+        return ResponseEntity.ok(records);
+    }
+    
+    // Get training data
+    @GetMapping("/training-data")
+    public ResponseEntity<List<GestureGame>> getTrainingData() {
+        List<GestureGame> trainingData = service.getTrainingData();
+        return ResponseEntity.ok(trainingData);
+    }
+    
+    // Get records by suspected ASD status
+    @GetMapping("/suspected-asd/{suspectedASD}")
+    public ResponseEntity<List<GestureGame>> getRecordsBySuspectedASD(@PathVariable Boolean suspectedASD) {
+        List<GestureGame> records = service.getRecordsBySuspectedASD(suspectedASD);
+        return ResponseEntity.ok(records);
+    }
+    
+    // Get game history by child ID
+    @GetMapping("/history/{childId}")
+    public ResponseEntity<List<GestureGame>> getGameHistoryByChildId(@PathVariable String childId) {
+        List<GestureGame> history = service.getGameHistoryByChildId(childId);
+        return ResponseEntity.ok(history);
+    }
+    
+    // Get average completion times for all gestures
+    @GetMapping("/statistics/average-completion-times")
+    public ResponseEntity<List<Object[]>> getAverageCompletionTimes() {
+        List<Object[]> statistics = service.getAverageCompletionTimes();
+        return ResponseEntity.ok(statistics);
+    }
+    
+    // Get completed gestures
+    @GetMapping("/completed-gestures")
+    public ResponseEntity<List<GestureGame>> getCompletedGestures() {
+        List<GestureGame> completedGestures = service.getCompletedGestures();
+        return ResponseEntity.ok(completedGestures);
+    }
+    
+    // Update ASD prediction
+    @PutMapping("/{id}/asd-prediction")
+    public ResponseEntity<GestureGame> updateASDPrediction(@PathVariable Long id, @RequestBody Boolean asd) {
+        GestureGame updatedRecord = service.updateASDPrediction(id, asd);
+        if (updatedRecord != null) {
+            return ResponseEntity.ok(updatedRecord);
+        }
+        return ResponseEntity.notFound().build();
+    }
+    
+    // Delete record by ID
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteRecord(@PathVariable Long id) {
+        service.deleteRecord(id);
+        return ResponseEntity.ok().build();
+    }
+    
+    // Health check endpoint
+    @GetMapping("/health")
+    public ResponseEntity<String> healthCheck() {
+        return ResponseEntity.ok("Gesture Game Service is running!");
+    }
+}

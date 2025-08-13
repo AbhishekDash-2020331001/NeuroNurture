@@ -1,0 +1,13 @@
+spring:
+  config:
+    import: optional:configserver:http://localhost:8888
+  application:
+    name: gesture-game-service
+
+server:
+  port: 8084
+
+
+
+
+
