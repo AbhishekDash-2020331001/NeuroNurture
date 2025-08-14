@@ -16,6 +16,7 @@ import EmailVerificationRequired from "./pages/EmailVerificationRequired";
 import GestureGame from "./pages/GestureGame";
 import GestureGameInsights from "./pages/GestureGameInsights";
 import Index from "./pages/Index";
+import MirrorPostureGameInsights from "./pages/MirrorPostureGameInsights";
 import MirrorPostureGamePage from "./pages/MirrorPostureGamePage";
 import NotFound from "./pages/NotFound";
 import ParentInfo from "./pages/ParentInfo";
@@ -92,6 +93,13 @@ const App = () => (
             <ProtectedRoute>
               <EmailVerificationGuard>
                 <GestureGameInsights />
+              </EmailVerificationGuard>
+            </ProtectedRoute>
+          } />
+          <Route path="/games/posture/insights" element={
+            <ProtectedRoute>
+              <EmailVerificationGuard>
+                <MirrorPostureGameInsights />
               </EmailVerificationGuard>
             </ProtectedRoute>
           } />

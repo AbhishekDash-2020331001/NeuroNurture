@@ -1,9 +1,13 @@
 package com.example.mirror_posture_game;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -91,5 +95,183 @@ public class MirrorPostureGameService {
     // Delete record by ID
     public void deleteRecord(Long id) {
         repository.deleteById(id);
+    }
+    
+    // Get paginated game history by child ID
+    public Page<MirrorPostureGame> getPaginatedGameHistoryByChildId(String childId, Pageable pageable) {
+        return repository.findByChildIdOrderByDateTimeDesc(childId, pageable);
+    }
+    
+    // Get comprehensive child statistics
+    public Map<String, Object> getChildStatistics(String childId) {
+        Map<String, Object> statistics = new HashMap<>();
+        
+        Long totalGames = repository.countGamesByChildId(childId);
+        List<Object[]> avgTimes = repository.getAverageCompletionTimesByChild(childId);
+        List<Object[]> completionCounts = repository.getPostureCompletionCountsByChild(childId);
+        
+        statistics.put("totalGames", totalGames);
+        
+        Map<String, Double> averageCompletionTimes = new HashMap<>();
+        Map<String, Long> postureCompletionCounts = new HashMap<>();
+        
+        if (!avgTimes.isEmpty() && avgTimes.get(0) != null) {
+            Object[] avgData = avgTimes.get(0);
+            averageCompletionTimes.put("Looking Left 👀", avgData[0] != null ? ((Number) avgData[0]).doubleValue() : 0.0);
+            averageCompletionTimes.put("Looking Right 👀", avgData[1] != null ? ((Number) avgData[1]).doubleValue() : 0.0);
+            averageCompletionTimes.put("Mouth Open 😮", avgData[2] != null ? ((Number) avgData[2]).doubleValue() : 0.0);
+            averageCompletionTimes.put("Showing Teeth 😁", avgData[3] != null ? ((Number) avgData[3]).doubleValue() : 0.0);
+            averageCompletionTimes.put("Kiss 💋", avgData[4] != null ? ((Number) avgData[4]).doubleValue() : 0.0);
+        }
+        
+        if (!completionCounts.isEmpty() && completionCounts.get(0) != null) {
+            Object[] countData = completionCounts.get(0);
+            postureCompletionCounts.put("Looking Left 👀", ((Number) countData[0]).longValue());
+            postureCompletionCounts.put("Looking Right 👀", ((Number) countData[1]).longValue());
+            postureCompletionCounts.put("Mouth Open 😮", ((Number) countData[2]).longValue());
+            postureCompletionCounts.put("Showing Teeth 😁", ((Number) countData[3]).longValue());
+            postureCompletionCounts.put("Kiss 💋", ((Number) countData[4]).longValue());
+        }
+        
+        statistics.put("averageCompletionTimes", averageCompletionTimes);
+        statistics.put("postureCompletionCounts", postureCompletionCounts);
+        
+        return statistics;
+    }
+    
+    // Get posture performance analysis for a child
+    public Map<String, Object> getPostureAnalysis(String childId) {
+        Map<String, Object> analysis = new HashMap<>();
+        
+        List<Object[]> bestPerformance = repository.getBestPerformanceByChild(childId);
+        List<Object[]> worstPerformance = repository.getWorstPerformanceByChild(childId);
+        
+        Map<String, Double> bestPerformanceMap = new HashMap<>();
+        Map<String, Double> worstPerformanceMap = new HashMap<>();
+        Map<String, Double> consistencyScore = new HashMap<>();
+        
+        if (!bestPerformance.isEmpty() && bestPerformance.get(0) != null) {
+            Object[] bestData = bestPerformance.get(0);
+            bestPerformanceMap.put("Looking Left 👀", bestData[0] != null ? ((Number) bestData[0]).doubleValue() : 0.0);
+            bestPerformanceMap.put("Looking Right 👀", bestData[1] != null ? ((Number) bestData[1]).doubleValue() : 0.0);
+            bestPerformanceMap.put("Mouth Open 😮", bestData[2] != null ? ((Number) bestData[2]).doubleValue() : 0.0);
+            bestPerformanceMap.put("Showing Teeth 😁", bestData[3] != null ? ((Number) bestData[3]).doubleValue() : 0.0);
+            bestPerformanceMap.put("Kiss 💋", bestData[4] != null ? ((Number) bestData[4]).doubleValue() : 0.0);
+        }
+        
+        if (!worstPerformance.isEmpty() && worstPerformance.get(0) != null) {
+            Object[] worstData = worstPerformance.get(0);
+            worstPerformanceMap.put("Looking Left 👀", worstData[0] != null ? ((Number) worstData[0]).doubleValue() : 0.0);
+            worstPerformanceMap.put("Looking Right 👀", worstData[1] != null ? ((Number) worstData[1]).doubleValue() : 0.0);
+            worstPerformanceMap.put("Mouth Open 😮", worstData[2] != null ? ((Number) worstData[2]).doubleValue() : 0.0);
+            worstPerformanceMap.put("Showing Teeth 😁", worstData[3] != null ? ((Number) worstData[3]).doubleValue() : 0.0);
+            worstPerformanceMap.put("Kiss 💋", worstData[4] != null ? ((Number) worstData[4]).doubleValue() : 0.0);
+        }
+        
+        // Calculate consistency scores (lower variance = higher consistency)
+        String[] postures = {"Looking Left 👀", "Looking Right 👀", "Mouth Open 😮", "Showing Teeth 😁", "Kiss 💋"};
+        for (String posture : postures) {
+            double best = bestPerformanceMap.getOrDefault(posture, 0.0);
+            double worst = worstPerformanceMap.getOrDefault(posture, 0.0);
+            double consistency = best > 0 && worst > 0 ? (best / worst) * 100 : 0.0;
+            consistencyScore.put(posture, Math.min(consistency, 100.0));
+        }
+        
+        analysis.put("bestPerformance", bestPerformanceMap);
+        analysis.put("worstPerformance", worstPerformanceMap);
+        analysis.put("consistencyScore", consistencyScore);
+        
+        return analysis;
+    }
+    
+    // Get improvement trends for a child
+    public Map<String, Object> getImprovementTrends(String childId) {
+        Map<String, Object> trends = new HashMap<>();
+        
+        List<MirrorPostureGame> recentGames = repository.getRecentGamesByChildId(childId);
+        Map<String, Double> overallTrend = new HashMap<>();
+        
+        if (recentGames.size() >= 2) {
+            MirrorPostureGame latest = recentGames.get(0);
+            MirrorPostureGame previous = recentGames.get(1);
+            
+            String[] postures = {"Looking Left 👀", "Looking Right 👀", "Mouth Open 😮", "Showing Teeth 😁", "Kiss 💋"};
+            Integer[] latestTimes = {latest.getLookingLeft(), latest.getLookingRight(), latest.getMouthOpen(), latest.getShowingTeeth(), latest.getKiss()};
+            Integer[] previousTimes = {previous.getLookingLeft(), previous.getLookingRight(), previous.getMouthOpen(), previous.getShowingTeeth(), previous.getKiss()};
+            
+            for (int i = 0; i < postures.length; i++) {
+                if (latestTimes[i] != null && previousTimes[i] != null) {
+                    double improvement = ((double) (previousTimes[i] - latestTimes[i]) / previousTimes[i]) * 100;
+                    overallTrend.put(postures[i], improvement);
+                } else {
+                    overallTrend.put(postures[i], 0.0);
+                }
+            }
+        }
+        
+        trends.put("overallTrend", overallTrend);
+        return trends;
+    }
+    
+    // Get performance summary for a child
+    public Map<String, Object> getPerformanceSummary(String childId) {
+        Map<String, Object> summary = new HashMap<>();
+        
+        List<Object[]> bestPerformance = repository.getBestPerformanceByChild(childId);
+        List<Object[]> worstPerformance = repository.getWorstPerformanceByChild(childId);
+        
+        if (!bestPerformance.isEmpty() && bestPerformance.get(0) != null) {
+            Object[] bestData = bestPerformance.get(0);
+            String[] postures = {"Looking Left 👀", "Looking Right 👀", "Mouth Open 😮", "Showing Teeth 😁", "Kiss 💋"};
+            Double[] times = {
+                bestData[0] != null ? ((Number) bestData[0]).doubleValue() : 0.0,
+                bestData[1] != null ? ((Number) bestData[1]).doubleValue() : 0.0,
+                bestData[2] != null ? ((Number) bestData[2]).doubleValue() : 0.0,
+                bestData[3] != null ? ((Number) bestData[3]).doubleValue() : 0.0,
+                bestData[4] != null ? ((Number) bestData[4]).doubleValue() : 0.0
+            };
+            
+            int bestIndex = 0;
+            double bestTime = Double.MAX_VALUE;
+            for (int i = 0; i < times.length; i++) {
+                if (times[i] > 0 && times[i] < bestTime) {
+                    bestTime = times[i];
+                    bestIndex = i;
+                }
+            }
+            
+            if (bestTime < Double.MAX_VALUE) {
+                summary.put("bestPosture", postures[bestIndex]);
+                summary.put("bestTime", bestTime);
+            }
+        }
+        
+        if (!worstPerformance.isEmpty() && worstPerformance.get(0) != null) {
+            Object[] worstData = worstPerformance.get(0);
+            String[] postures = {"Looking Left 👀", "Looking Right 👀", "Mouth Open 😮", "Showing Teeth 😁", "Kiss 💋"};
+            Double[] times = {
+                worstData[0] != null ? ((Number) worstData[0]).doubleValue() : 0.0,
+                worstData[1] != null ? ((Number) worstData[1]).doubleValue() : 0.0,
+                worstData[2] != null ? ((Number) worstData[2]).doubleValue() : 0.0,
+                worstData[3] != null ? ((Number) worstData[3]).doubleValue() : 0.0,
+                worstData[4] != null ? ((Number) worstData[4]).doubleValue() : 0.0
+            };
+            
+            int worstIndex = 0;
+            double worstTime = 0.0;
+            for (int i = 0; i < times.length; i++) {
+                if (times[i] > worstTime) {
+                    worstTime = times[i];
+                    worstIndex = i;
+                }
+            }
+            
+            if (worstTime > 0) {
+                summary.put("worstPosture", postures[worstIndex]);
+                summary.put("worstTime", worstTime);
+            }
+        }
+        
+        return summary;
     }
 } 

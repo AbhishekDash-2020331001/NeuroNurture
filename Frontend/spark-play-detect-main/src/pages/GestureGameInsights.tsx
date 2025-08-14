@@ -6,20 +6,20 @@ import { getCurrentChild } from '@/utils/childUtils';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-    Bar,
-    BarChart,
-    CartesianGrid,
-    Line,
-    LineChart,
-    PolarAngleAxis,
-    PolarGrid,
-    PolarRadiusAxis,
-    Radar,
-    RadarChart,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
 } from 'recharts';
 
 interface GestureGameRecord {
@@ -97,6 +97,7 @@ export default function GestureGameInsights() {
   const [gameHistory, setGameHistory] = useState<GestureGameRecord[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
 
   useEffect(() => {
     const childData = getCurrentChild();
@@ -236,10 +237,19 @@ export default function GestureGameInsights() {
         const data = await response.json();
         setGameHistory(data.content || []);
         setTotalPages(data.totalPages || 0);
+        setTotalElements(data.totalElements || 0);
         setCurrentPage(page);
+      } else {
+        console.error('Game History API failed:', response.status, response.statusText);
+        setGameHistory([]);
+        setTotalPages(0);
+        setTotalElements(0);
       }
     } catch (error) {
       console.error('Error loading game history:', error);
+      setGameHistory([]);
+      setTotalPages(0);
+      setTotalElements(0);
     }
   };
 
@@ -475,186 +485,543 @@ export default function GestureGameInsights() {
               </TabsList>
 
               {/* Overview Tab */}
-              <TabsContent value="overview" className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Average Completion Times */}
-                                     <Card className="card-playful backdrop-blur-sm bg-white/90 border-2 border-blue-200 shadow-xl">
-                     <CardHeader className="pb-3">
-                       <CardTitle className="font-playful text-xl text-blue-600">Average Completion Times ⏱️</CardTitle>
-                       <CardDescription className="font-comic text-base">
-                         How long it takes to complete each gesture on average
-                       </CardDescription>
-                     </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={averageTimesData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                          <XAxis dataKey="gesture" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 10 }} />
-                          <YAxis tick={{ fontSize: 10 }} />
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-                              border: '2px solid #3b82f6',
-                              borderRadius: '12px',
-                              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
-                            }}
-                          />
-                          <Bar dataKey="averageTime" fill="url(#blueGradient)" radius={[4, 4, 0, 0]} />
-                          <defs>
-                            <linearGradient id="blueGradient" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#3b82f6" />
-                              <stop offset="100%" stopColor="#8b5cf6" />
-                            </linearGradient>
-                          </defs>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-
-                  {/* Gesture Completion Ratios - Compact Design */}
-                                     <Card className="card-playful backdrop-blur-sm bg-white/90 border-2 border-purple-200 shadow-xl">
-                     <CardHeader className="pb-3">
-                       <CardTitle className="font-playful text-xl text-purple-600">Gesture Completion Ratios 🎯</CardTitle>
-                       <CardDescription className="font-comic text-base">
-                         Percentage of games where each gesture was completed
-                       </CardDescription>
-                     </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 gap-2">
-                        {averageTimesData
-                          .filter(d => d.completionRatio > 0)
-                          .sort((a, b) => b.completionRatio - a.completionRatio)
-                          .map((item, index) => (
-                                                         <div key={item.gesture} className="p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200 hover:scale-105 transition-all">
-                               <div className="flex items-center justify-between mb-2">
-                                 <div className="text-base font-medium truncate">{item.gesture}</div>
-                                 <span className="font-bold text-purple-600 text-base">
-                                   {item.completionRatio.toFixed(0)}%
-                                 </span>
-                               </div>
-                              <div className="w-full bg-gray-200 rounded-full h-1.5">
-                                <div 
-                                  className="bg-gradient-to-r from-purple-500 to-blue-600 h-1.5 rounded-full transition-all duration-700 shadow-sm"
-                                  style={{ width: `${item.completionRatio}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                          ))}
+              <TabsContent value="overview" className="space-y-8">
+                {/* Hero Stats Section */}
+                <div className="relative">
+                  {/* Background decorative elements */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-100/30 via-purple-100/30 to-pink-100/30 rounded-3xl"></div>
+                  <div className="absolute top-4 left-4 text-6xl animate-bounce opacity-20">🎮</div>
+                  <div className="absolute top-8 right-8 text-4xl animate-float opacity-20">✨</div>
+                  <div className="absolute bottom-4 left-1/2 text-5xl animate-pulse-fun opacity-20">🏆</div>
+                  
+                  <div className="relative bg-gradient-to-br from-white/95 to-white/85 backdrop-blur-sm rounded-3xl border-2 border-blue-200/50 shadow-2xl p-8">
+                    <div className="text-center mb-8">
+                      <h3 className="text-3xl font-playful text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 mb-2">
+                        Your Amazing Progress! 🌟
+                      </h3>
+                      <p className="text-lg font-comic text-gray-600">
+                        Let's see how {selectedChild.name} is doing with hand gestures!
+                      </p>
+                    </div>
+                    
+                    {/* Main Stats Grid */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                      {/* Total Sessions */}
+                      <div className="group relative">
+                        <div className="absolute inset-0 bg-gradient-to-br from-green-400/20 to-emerald-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                        <div className="relative bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border-2 border-green-200 p-6 text-center hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl">
+                          <div className="text-4xl mb-3 animate-bounce">🎮</div>
+                          <div className="text-4xl font-bold text-green-600 mb-2">
+                            {statistics?.totalGames || 0}
+                          </div>
+                          <div className="text-sm font-comic text-green-700 font-semibold">
+                            Games Played
+                          </div>
+                          <div className="text-xs text-green-600 mt-1">
+                            Keep going! 🚀
+                          </div>
+                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
+
+                      {/* Average Session Time */}
+                      <div className="group relative">
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 to-indigo-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                        <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border-2 border-blue-200 p-6 text-center hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl">
+                          <div className="text-4xl mb-3 animate-pulse">⏱️</div>
+                          <div className="text-4xl font-bold text-blue-600 mb-2">
+                            {(() => {
+                              const avgTime = Object.values(statistics?.averageCompletionTimes || {}).reduce((sum, time) => sum + time, 0) / Math.max(Object.keys(statistics?.averageCompletionTimes || {}).length, 1);
+                              return avgTime.toFixed(1);
+                            })()}s
+                          </div>
+                          <div className="text-sm font-comic text-blue-700 font-semibold">
+                            Avg Time
+                          </div>
+                          <div className="text-xs text-blue-600 mt-1">
+                            Per gesture
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Average Accuracy */}
+                      <div className="group relative">
+                        <div className="absolute inset-0 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                        <div className="relative bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl border-2 border-purple-200 p-6 text-center hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl">
+                          <div className="text-4xl mb-3 animate-wiggle">🎯</div>
+                          <div className="text-4xl font-bold text-purple-600 mb-2">
+                            {(() => {
+                              const totalGestures = Object.values(statistics?.gestureCompletionCounts || {}).reduce((sum, count) => sum + count, 0);
+                              const totalPossible = (statistics?.totalGames || 0) * GESTURE_NAMES.length;
+                              const accuracy = totalPossible > 0 ? (totalGestures / totalPossible) * 100 : 0;
+                              return accuracy.toFixed(0);
+                            })()}%
+                          </div>
+                          <div className="text-sm font-comic text-purple-700 font-semibold">
+                            Accuracy
+                          </div>
+                          <div className="text-xs text-purple-600 mt-1">
+                            Gestures completed
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Best Gesture */}
+                      <div className="group relative">
+                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/20 to-green-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                        <div className="relative bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl border-2 border-emerald-200 p-6 text-center hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl">
+                          <div className="text-4xl mb-3 animate-bounce">🏆</div>
+                          {smallestAvgTime ? (
+                            <>
+                              <div className="text-3xl font-bold text-emerald-600 mb-2">
+                                {smallestAvgTime.averageTime.toFixed(1)}s
+                              </div>
+                              <div className="text-sm font-comic text-emerald-700 font-semibold">
+                                Best Gesture
+                              </div>
+                              <div className="text-xs text-emerald-600 mt-1">
+                                {smallestAvgTime.gesture}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="text-3xl font-bold text-emerald-600 mb-2">--</div>
+                              <div className="text-sm font-comic text-emerald-700 font-semibold">
+                                Best Gesture
+                              </div>
+                              <div className="text-xs text-emerald-600 mt-1">
+                                Coming soon!
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Best and Worst Performance - Compact Design */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                     <Card className="card-playful backdrop-blur-sm bg-white/90 border-2 border-green-200 shadow-xl">
-                     <CardHeader className="pb-2">
-                       <CardTitle className="font-playful text-lg text-green-600">🏆 Fastest Gesture</CardTitle>
-                     </CardHeader>
-                    <CardContent className="pt-0">
-                      {smallestAvgTime ? (
-                        <div className="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border border-green-200">
-                          <div className="text-2xl mb-2">{smallestAvgTime.gesture}</div>
-                          <div className="text-2xl font-bold text-green-600 mb-1">
-                            {smallestAvgTime.averageTime.toFixed(1)}s
-                          </div>
-                          <div className="text-base text-muted-foreground font-comic">
-                            Average completion time
-                          </div>
+                {/* Performance Highlights Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Fastest Gesture */}
+                  <div className="group relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-green-400/10 to-emerald-400/10 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                    <div className="relative bg-gradient-to-br from-green-50/90 to-emerald-50/90 backdrop-blur-sm rounded-3xl border-2 border-green-200/70 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+                      {/* Decorative elements */}
+                      <div className="absolute top-4 right-4 text-6xl opacity-20 animate-float">⚡</div>
+                      <div className="absolute bottom-4 left-4 text-4xl opacity-20 animate-bounce">🚀</div>
+                      
+                      <div className="p-8 relative z-10">
+                        <div className="text-center">
+                          <div className="text-5xl mb-4 animate-bounce">🏆</div>
+                          <h3 className="text-2xl font-playful text-green-700 mb-6">Fastest Gesture</h3>
+                          
+                          {smallestAvgTime ? (
+                            <div className="space-y-4">
+                              <div className="bg-white/70 rounded-2xl p-6 border border-green-200/50">
+                                <div className="text-3xl mb-3">{smallestAvgTime.gesture}</div>
+                                <div className="text-5xl font-bold text-green-600 mb-2 animate-pulse">
+                                  {smallestAvgTime.averageTime.toFixed(1)}s
+                                </div>
+                                <div className="text-lg font-comic text-green-700">
+                                  Average completion time
+                                </div>
+                              </div>
+                              <div className="text-sm text-green-600 font-comic">
+                                Amazing speed! Keep it up! 🎉
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-4">
+                              <div className="bg-white/70 rounded-2xl p-6 border border-green-200/50">
+                                <div className="text-4xl mb-3">🤔</div>
+                                <div className="text-2xl font-bold text-green-600 mb-2">No data yet</div>
+                                <div className="text-lg font-comic text-green-700">
+                                  Start playing to see results!
+                                </div>
+                              </div>
+                              <div className="text-sm text-green-600 font-comic">
+                                Ready to set records! 🚀
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      ) : (
-                        <div className="text-center text-muted-foreground p-4">
-                          <div className="text-2xl mb-2">🤔</div>
-                          <div className="text-xs">No data available yet</div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                      </div>
+                    </div>
+                  </div>
 
-                                     <Card className="card-playful backdrop-blur-sm bg-white/90 border-2 border-red-200 shadow-xl">
-                     <CardHeader className="pb-2">
-                       <CardTitle className="font-playful text-lg text-red-600">📉 Slowest Gesture</CardTitle>
-                     </CardHeader>
-                    <CardContent className="pt-0">
-                      {highestAvgTime ? (
-                        <div className="text-center p-4 bg-gradient-to-br from-red-50 to-pink-50 rounded-lg border border-red-200">
-                          <div className="text-2xl mb-2">{highestAvgTime.gesture}</div>
-                          <div className="text-2xl font-bold text-red-600 mb-1">
-                            {highestAvgTime.averageTime.toFixed(1)}s
-                          </div>
-                          <div className="text-base text-muted-foreground font-comic">
-                            Average completion time
-                          </div>
+                  {/* Slowest Gesture */}
+                  <div className="group relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-red-400/10 to-pink-400/10 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                    <div className="relative bg-gradient-to-br from-red-50/90 to-pink-50/90 backdrop-blur-sm rounded-3xl border-2 border-red-200/70 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+                      {/* Decorative elements */}
+                      <div className="absolute top-4 right-4 text-6xl opacity-20 animate-wiggle">📈</div>
+                      <div className="absolute bottom-4 left-4 text-4xl opacity-20 animate-pulse">💪</div>
+                      
+                      <div className="p-8 relative z-10">
+                        <div className="text-center">
+                          <div className="text-5xl mb-4 animate-pulse">📉</div>
+                          <h3 className="text-2xl font-playful text-red-700 mb-6">Needs Practice</h3>
+                          
+                          {highestAvgTime ? (
+                            <div className="space-y-4">
+                              <div className="bg-white/70 rounded-2xl p-6 border border-red-200/50">
+                                <div className="text-3xl mb-3">{highestAvgTime.gesture}</div>
+                                <div className="text-5xl font-bold text-red-600 mb-2 animate-pulse">
+                                  {highestAvgTime.averageTime.toFixed(1)}s
+                                </div>
+                                <div className="text-lg font-comic text-red-700">
+                                  Average completion time
+                                </div>
+                              </div>
+                              <div className="text-sm text-red-600 font-comic">
+                                Practice makes perfect! 💪
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-4">
+                              <div className="bg-white/70 rounded-2xl p-6 border border-red-200/50">
+                                <div className="text-4xl mb-3">🤔</div>
+                                <div className="text-2xl font-bold text-red-600 mb-2">No data yet</div>
+                                <div className="text-lg font-comic text-red-700">
+                                  Start playing to see results!
+                                </div>
+                              </div>
+                              <div className="text-sm text-red-600 font-comic">
+                                Ready to improve! 💪
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      ) : (
-                        <div className="text-center text-muted-foreground p-4">
-                          <div className="text-2xl mb-2">🤔</div>
-                          <div className="text-xs">No data available yet</div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Motivation Section */}
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-yellow-100/30 via-orange-100/30 to-red-100/30 rounded-3xl"></div>
+                  <div className="relative bg-gradient-to-br from-yellow-50/90 to-orange-50/90 backdrop-blur-sm rounded-3xl border-2 border-yellow-200/70 shadow-xl p-8">
+                    <div className="text-center">
+                      <div className="text-6xl mb-4 animate-bounce">🌟</div>
+                      <h3 className="text-2xl font-playful text-orange-700 mb-4">
+                        Keep Up the Great Work!
+                      </h3>
+                      <p className="text-lg font-comic text-orange-600 mb-6 max-w-2xl mx-auto">
+                        Every practice session makes you better at hand gestures. 
+                        You're doing amazing, {selectedChild.name}! 🎉
+                      </p>
+                      <div className="flex justify-center space-x-4 text-2xl">
+                        <span className="animate-float" style={{ animationDelay: '0s' }}>🎮</span>
+                        <span className="animate-float" style={{ animationDelay: '0.5s' }}>✨</span>
+                        <span className="animate-float" style={{ animationDelay: '1s' }}>🏆</span>
+                        <span className="animate-float" style={{ animationDelay: '1.5s' }}>🎯</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </TabsContent>
 
               {/* Performance Tab */}
-              <TabsContent value="performance" className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card className="card-playful backdrop-blur-sm bg-white/90 border-2 border-blue-200 shadow-xl">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="font-playful text-xl text-blue-600">Average Completion Times 📊</CardTitle>
-                      <CardDescription className="font-comic text-base">
-                        Average completion time for each gesture
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={performanceData}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="gesture" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 10 }} />
-                          <YAxis tick={{ fontSize: 10 }} />
-                          <Tooltip />
-                          <Bar dataKey="average" fill="#2196F3" name="Average Time" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
+              <TabsContent value="performance" className="space-y-8">
+                {/* Hero Performance Section */}
+                <div className="relative">
+                  {/* Background decorative elements */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-100/30 via-indigo-100/30 to-purple-100/30 rounded-3xl"></div>
+                  <div className="absolute top-4 left-4 text-6xl animate-bounce opacity-20">📊</div>
+                  <div className="absolute top-8 right-8 text-4xl animate-float opacity-20">⚡</div>
+                  <div className="absolute bottom-4 left-1/2 text-5xl animate-pulse-fun opacity-20">🎯</div>
+                  
+                  <div className="relative bg-gradient-to-br from-white/95 to-white/85 backdrop-blur-sm rounded-3xl border-2 border-blue-200/50 shadow-2xl p-8">
+                    <div className="text-center mb-8">
+                      <h3 className="text-3xl font-playful text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 mb-2">
+                        Performance Analytics! 📈
+                      </h3>
+                      <p className="text-lg font-comic text-gray-600">
+                        Deep dive into {selectedChild.name}'s hand gesture mastery!
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-                  <Card className="card-playful backdrop-blur-sm bg-white/90 border-2 border-purple-200 shadow-xl">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="font-playful text-xl text-purple-600">Session Improvement Curve 📈</CardTitle>
-                      <CardDescription className="font-comic text-base">
-                        Average completion time improvement across sessions
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {sessionImprovementData.length > 1 ? (
-                        <ResponsiveContainer width="100%" height={300}>
-                          <LineChart data={sessionImprovementData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="session" tick={{ fontSize: 10 }} />
-                            <YAxis tick={{ fontSize: 10 }} />
-                            <Tooltip 
-                              formatter={(value, name) => [value + 's', 'Average Time']}
-                              labelFormatter={(label) => `Session: ${label}`}
-                            />
-                            <Line 
-                              type="monotone" 
-                              dataKey="averageTime" 
-                              stroke="#8884d8" 
-                              strokeWidth={3}
-                              dot={{ fill: '#8884d8', strokeWidth: 2, r: 6 }}
-                              activeDot={{ r: 8 }}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      ) : (
-                        <div className="text-center text-muted-foreground p-6">
-                          <div className="text-base">Need at least 2 sessions to show improvement curve</div>
+                {/* Main Performance Charts Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Average Completion Times Chart */}
+                  <div className="group relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-indigo-400/10 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                    <div className="relative bg-gradient-to-br from-blue-50/90 to-indigo-50/90 backdrop-blur-sm rounded-3xl border-2 border-blue-200/70 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+                      {/* Decorative elements */}
+                      <div className="absolute top-4 right-4 text-6xl opacity-20 animate-float">⏱️</div>
+                      <div className="absolute bottom-4 left-4 text-4xl opacity-20 animate-pulse">📊</div>
+                      
+                      <div className="p-8 relative z-10">
+                        <div className="text-center mb-6">
+                          <div className="text-5xl mb-4 animate-bounce">⏱️</div>
+                          <h3 className="text-2xl font-playful text-blue-700 mb-2">Average Completion Times</h3>
+                          <p className="text-sm font-comic text-blue-600">
+                            How long it takes to complete each gesture on average
+                          </p>
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                        
+                        <div className="bg-white/70 rounded-2xl p-4 border border-blue-200/50">
+                          <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={averageTimesData}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                              <XAxis dataKey="gesture" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 10 }} />
+                              <YAxis tick={{ fontSize: 10 }} />
+                              <Tooltip 
+                                contentStyle={{ 
+                                  backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                                  border: '2px solid #3b82f6',
+                                  borderRadius: '12px',
+                                  boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
+                                }}
+                              />
+                              <Bar dataKey="averageTime" fill="url(#blueGradient)" radius={[4, 4, 0, 0]} />
+                              <defs>
+                                <linearGradient id="blueGradient" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor="#3b82f6" />
+                                  <stop offset="100%" stopColor="#8b5cf6" />
+                                </linearGradient>
+                              </defs>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Gesture Completion Ratios */}
+                  <div className="group relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                    <div className="relative bg-gradient-to-br from-purple-50/90 to-pink-50/90 backdrop-blur-sm rounded-3xl border-2 border-purple-200/70 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+                      {/* Decorative elements */}
+                      <div className="absolute top-4 right-4 text-6xl opacity-20 animate-wiggle">🎯</div>
+                      <div className="absolute bottom-4 left-4 text-4xl opacity-20 animate-bounce">✨</div>
+                      
+                      <div className="p-8 relative z-10">
+                        <div className="text-center mb-6">
+                          <div className="text-5xl mb-4 animate-wiggle">🎯</div>
+                          <h3 className="text-2xl font-playful text-purple-700 mb-2">Completion Ratios</h3>
+                          <p className="text-sm font-comic text-purple-600">
+                            Percentage of games where each gesture was completed
+                          </p>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          {averageTimesData
+                            .filter(d => d.completionRatio > 0)
+                            .sort((a, b) => b.completionRatio - a.completionRatio)
+                            .map((item, index) => (
+                              <div key={item.gesture} className="group/item bg-white/70 rounded-xl border border-purple-200/50 p-4 hover:scale-105 transition-all duration-300 hover:shadow-lg">
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-2xl">{item.gesture.split(' ').pop()}</span>
+                                    <span className="font-comic text-sm font-medium text-purple-700">
+                                      {item.gesture.split(' ').slice(0, -1).join(' ')}
+                                    </span>
+                                  </div>
+                                  <div className="bg-gradient-to-r from-purple-100 to-pink-100 px-3 py-1 rounded-full border border-purple-200">
+                                    <span className="font-bold text-purple-600 text-sm">
+                                      {item.completionRatio.toFixed(0)}%
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-gradient-to-r from-purple-500 to-pink-600 h-2 rounded-full transition-all duration-700 shadow-sm"
+                                    style={{ width: `${item.completionRatio}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Improvement Curve Section */}
+                <div className="group relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-green-400/10 to-emerald-400/10 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                  <div className="relative bg-gradient-to-br from-green-50/90 to-emerald-50/90 backdrop-blur-sm rounded-3xl border-2 border-green-200/70 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+                    {/* Decorative elements */}
+                    <div className="absolute top-4 right-4 text-6xl opacity-20 animate-float">📈</div>
+                    <div className="absolute bottom-4 left-4 text-4xl opacity-20 animate-bounce">🚀</div>
+                    <div className="absolute top-1/2 left-4 text-3xl opacity-20 animate-pulse">💪</div>
+                    
+                    <div className="p-8 relative z-10">
+                      <div className="text-center mb-6">
+                        <div className="text-5xl mb-4 animate-bounce">📈</div>
+                        <h3 className="text-2xl font-playful text-green-700 mb-2">Progress Journey</h3>
+                        <p className="text-sm font-comic text-green-600">
+                          Track your improvement over time - lower times mean better performance!
+                        </p>
+                      </div>
+                      
+                      <div className="bg-white/70 rounded-2xl p-4 border border-green-200/50">
+                        {sessionImprovementData.length > 0 ? (
+                          <ResponsiveContainer width="100%" height={400}>
+                            <LineChart data={sessionImprovementData}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                              <XAxis 
+                                dataKey="session" 
+                                tick={{ fontSize: 12 }}
+                                label={{ value: 'Session Number', position: 'insideBottom', offset: -10 }}
+                              />
+                              <YAxis 
+                                tick={{ fontSize: 12 }}
+                                label={{ value: 'Total Time (seconds)', angle: -90, position: 'insideLeft' }}
+                              />
+                              <Tooltip 
+                                contentStyle={{ 
+                                  backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                                  border: '2px solid #10b981',
+                                  borderRadius: '12px',
+                                  boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
+                                }}
+                                formatter={(value: any, name: any) => [
+                                  `${value.toFixed(1)}s`, 
+                                  'Total Time'
+                                ]}
+                                labelFormatter={(label) => `Session ${label}`}
+                              />
+                              <Line 
+                                type="monotone" 
+                                dataKey="averageTime" 
+                                stroke="url(#lineGradientGreen)" 
+                                strokeWidth={3}
+                                dot={{ fill: '#10b981', strokeWidth: 2, r: 6 }}
+                                activeDot={{ r: 8, stroke: '#10b981', strokeWidth: 2 }}
+                              />
+                              <defs>
+                                <linearGradient id="lineGradientGreen" x1="0" y1="0" x2="1" y2="0">
+                                  <stop offset="0%" stopColor="#10b981" />
+                                  <stop offset="100%" stopColor="#059669" />
+                                </linearGradient>
+                              </defs>
+                            </LineChart>
+                          </ResponsiveContainer>
+                        ) : (
+                          <div className="text-center text-muted-foreground p-8">
+                            <div className="text-6xl mb-4 animate-bounce">📈</div>
+                            <div className="text-xl font-comic text-green-600 mb-2">No session data available yet</div>
+                            <div className="text-sm text-green-500">Start playing to see your progress!</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Performance Metrics */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Improvement Trend */}
+                  <div className="group relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-400/10 to-yellow-400/10 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                    <div className="relative bg-gradient-to-br from-orange-50/90 to-yellow-50/90 backdrop-blur-sm rounded-3xl border-2 border-orange-200/70 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+                      {/* Decorative elements */}
+                      <div className="absolute top-4 right-4 text-6xl opacity-20 animate-float">📈</div>
+                      <div className="absolute bottom-4 left-4 text-4xl opacity-20 animate-pulse">🎯</div>
+                      
+                      <div className="p-8 relative z-10">
+                        <div className="text-center">
+                          <div className="text-5xl mb-4 animate-bounce">📈</div>
+                          <h3 className="text-2xl font-playful text-orange-700 mb-6">Improvement Trend</h3>
+                          
+                          <div className="bg-white/70 rounded-2xl p-6 border border-orange-200/50">
+                            <div className="text-5xl font-bold text-orange-600 mb-2 animate-pulse">
+                              {(() => {
+                                if (sessionImprovementData.length < 2) return '0';
+                                const firstSession = sessionImprovementData[0];
+                                const lastSession = sessionImprovementData[sessionImprovementData.length - 1];
+                                const improvement = ((firstSession.averageTime - lastSession.averageTime) / firstSession.averageTime) * 100;
+                                return improvement.toFixed(1);
+                              })()}%
+                            </div>
+                            <div className="text-lg font-comic text-orange-700 font-semibold mb-2">
+                              Recent Performance
+                            </div>
+                            <div className="text-sm text-orange-600">
+                              {(() => {
+                                if (sessionImprovementData.length < 2) return "Starting your journey! 🌟";
+                                const firstSession = sessionImprovementData[0];
+                                const lastSession = sessionImprovementData[sessionImprovementData.length - 1];
+                                const improvement = ((firstSession.averageTime - lastSession.averageTime) / firstSession.averageTime) * 100;
+                                return improvement > 0 
+                                  ? "You're getting better! 🚀" 
+                                  : improvement < 0
+                                    ? "Keep practicing! 💪"
+                                    : "Starting your journey! 🌟";
+                              })()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Gesture Distribution */}
+                  <div className="group relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-pink-400/10 to-rose-400/10 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+                    <div className="relative bg-gradient-to-br from-pink-50/90 to-rose-50/90 backdrop-blur-sm rounded-3xl border-2 border-pink-200/70 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+                      {/* Decorative elements */}
+                      <div className="absolute top-4 right-4 text-6xl opacity-20 animate-wiggle">🥧</div>
+                      <div className="absolute bottom-4 left-4 text-4xl opacity-20 animate-bounce">🎨</div>
+                      
+                      <div className="p-8 relative z-10">
+                        <div className="text-center">
+                          <div className="text-5xl mb-4 animate-wiggle">🥧</div>
+                          <h3 className="text-2xl font-playful text-pink-700 mb-6">Gesture Distribution</h3>
+                          
+                          <div className="bg-white/70 rounded-2xl p-4 border border-pink-200/50">
+                            <div className="space-y-3">
+                              {averageTimesData
+                                .filter(d => d.completionRatio > 0)
+                                .sort((a, b) => b.completionRatio - a.completionRatio)
+                                .slice(0, 5)
+                                .map((item, index) => (
+                                  <div key={item.gesture} className="flex items-center justify-between p-2 bg-gradient-to-r from-pink-50 to-rose-50 rounded-lg border border-pink-200/50">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-lg">{item.gesture.split(' ').pop()}</span>
+                                      <span className="text-sm font-comic text-pink-700">
+                                        {item.gesture.split(' ').slice(0, -1).join(' ')}
+                                      </span>
+                                    </div>
+                                    <div className="bg-gradient-to-r from-pink-100 to-rose-100 px-2 py-1 rounded-full border border-pink-200">
+                                      <span className="font-bold text-pink-600 text-xs">
+                                        {item.completionRatio.toFixed(0)}%
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Performance Summary Section */}
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-100/30 via-purple-100/30 to-pink-100/30 rounded-3xl"></div>
+                  <div className="relative bg-gradient-to-br from-indigo-50/90 to-purple-50/90 backdrop-blur-sm rounded-3xl border-2 border-indigo-200/70 shadow-xl p-8">
+                    <div className="text-center">
+                      <div className="text-6xl mb-4 animate-bounce">🎯</div>
+                      <h3 className="text-2xl font-playful text-indigo-700 mb-4">
+                        Performance Summary
+                      </h3>
+                      <p className="text-lg font-comic text-indigo-600 mb-6 max-w-2xl mx-auto">
+                        {selectedChild.name} is showing amazing progress in hand gestures! 
+                        Keep practicing to improve even more! 🌟
+                      </p>
+                      <div className="flex justify-center space-x-4 text-2xl">
+                        <span className="animate-float" style={{ animationDelay: '0s' }}>📊</span>
+                        <span className="animate-float" style={{ animationDelay: '0.5s' }}>⚡</span>
+                        <span className="animate-float" style={{ animationDelay: '1s' }}>🎯</span>
+                        <span className="animate-float" style={{ animationDelay: '1.5s' }}>🏆</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </TabsContent>
 
@@ -785,80 +1152,81 @@ export default function GestureGameInsights() {
                 </Card>
               </TabsContent>
 
-              {/* History Tab */}
-              <TabsContent value="history" className="space-y-6">
-                                 <Card className="card-playful backdrop-blur-sm bg-white/90 border-2 border-purple-200 shadow-xl">
+                             {/* History Tab */}
+               <TabsContent value="history" className="space-y-6">
+                 <Card className="card-playful backdrop-blur-sm bg-white/90 border-2 border-purple-200 shadow-xl">
                    <CardHeader className="pb-3">
                      <CardTitle className="font-playful text-xl text-purple-600">Session History 📚</CardTitle>
                      <CardDescription className="font-comic text-base">
                        Your recent performance history with detailed gesture breakdowns
                      </CardDescription>
                    </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {gameHistory.slice(0, 5).map((record, index) => {
-                        const totalTime = GESTURE_NAMES.reduce((sum, gesture) => {
-                          const time = getGestureTime(record, gesture);
-                          return sum + (time || 0);
-                        }, 0);
-                        const completedGestures = GESTURE_NAMES.filter(gesture => {
-                          const time = getGestureTime(record, gesture);
-                          return time && time > 0;
-                        }).length;
-                        const averageTime = completedGestures > 0 ? totalTime / completedGestures : 0;
-                        const completionRate = (completedGestures / GESTURE_NAMES.length) * 100;
-                        
-                        return (
-                          <div key={record.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                            {/* Session Header */}
-                            <div className="flex items-center justify-between mb-3">
-                              <div>
-                                <div className="font-bold text-primary text-sm">
-                                  Session {gameHistory.length - index}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {formatDateTime(record.dateTime)}
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-lg font-bold text-blue-600">
-                                  {averageTime.toFixed(1)}s
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  Avg Time
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {/* Session Summary */}
-                            <div className="grid grid-cols-3 gap-2 mb-3">
-                              <div className="text-center p-2 bg-blue-50 rounded">
-                                <div className="text-sm font-bold text-blue-600">{completedGestures}</div>
-                                <div className="text-xs text-muted-foreground">Completed</div>
-                              </div>
-                              <div className="text-center p-2 bg-green-50 rounded">
-                                <div className="text-sm font-bold text-green-600">{completionRate.toFixed(0)}%</div>
-                                <div className="text-xs text-muted-foreground">Success Rate</div>
-                              </div>
-                              <div className="text-center p-2 bg-purple-50 rounded">
-                                <div className="text-sm font-bold text-purple-600">{totalTime.toFixed(1)}s</div>
-                                <div className="text-xs text-muted-foreground">Total Time</div>
-                              </div>
-                            </div>
+                   <CardContent>
+                     <div className="space-y-4">
+                       {gameHistory.slice(currentPage * 5, (currentPage + 1) * 5).map((record, index) => {
+                         const totalTime = GESTURE_NAMES.reduce((sum, gesture) => {
+                           const time = getGestureTime(record, gesture);
+                           return sum + (time || 0);
+                         }, 0);
+                         const completedGestures = GESTURE_NAMES.filter(gesture => {
+                           const time = getGestureTime(record, gesture);
+                           return time && time > 0;
+                         }).length;
+                         const averageTime = completedGestures > 0 ? totalTime / completedGestures : 0;
+                         const completionRate = (completedGestures / GESTURE_NAMES.length) * 100;
+                                                   const sessionNumber = totalElements - (currentPage * 5 + index);
+                         
+                         return (
+                           <div key={record.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                             {/* Session Header */}
+                             <div className="flex items-center justify-between mb-3">
+                               <div>
+                                 <div className="font-bold text-primary text-sm">
+                                   Session {sessionNumber}
+                                 </div>
+                                 <div className="text-xs text-muted-foreground">
+                                   {formatDateTime(record.dateTime)}
+                                 </div>
+                               </div>
+                               <div className="text-right">
+                                 <div className="text-lg font-bold text-blue-600">
+                                   {averageTime.toFixed(1)}s
+                                 </div>
+                                 <div className="text-xs text-muted-foreground">
+                                   Avg Time
+                                 </div>
+                               </div>
+                             </div>
+                             
+                             {/* Session Summary */}
+                             <div className="grid grid-cols-3 gap-2 mb-3">
+                               <div className="text-center p-2 bg-blue-50 rounded">
+                                 <div className="text-sm font-bold text-blue-600">{completedGestures}</div>
+                                 <div className="text-xs text-muted-foreground">Completed</div>
+                               </div>
+                               <div className="text-center p-2 bg-green-50 rounded">
+                                 <div className="text-sm font-bold text-green-600">{completionRate.toFixed(0)}%</div>
+                                 <div className="text-xs text-muted-foreground">Success Rate</div>
+                               </div>
+                               <div className="text-center p-2 bg-purple-50 rounded">
+                                 <div className="text-sm font-bold text-purple-600">{totalTime.toFixed(1)}s</div>
+                                 <div className="text-xs text-muted-foreground">Total Time</div>
+                               </div>
+                             </div>
 
-                            {/* Emoji-by-Emoji Breakdown */}
-                            <div className="border-t pt-3">
-                              <div className="text-xs font-semibold text-gray-600 mb-2">Gesture Performance:</div>
-                              <div className="grid grid-cols-2 gap-2">
-                                {GESTURE_NAMES.map((gesture) => {
-                                  const time = getGestureTime(record, gesture);
-                                  const isCompleted = time && time > 0;
-                                  
-                                  // Extract emoji and name properly
-                                  const emoji = gesture.split(' ').pop(); // Get the emoji
-                                  const name = gesture.split(' ').slice(0, -1).join(' '); // Get the name without emoji
-                                  
-                                                                     return (
+                             {/* Emoji-by-Emoji Breakdown */}
+                             <div className="border-t pt-3">
+                               <div className="text-xs font-semibold text-gray-600 mb-2">Gesture Performance:</div>
+                               <div className="grid grid-cols-2 gap-2">
+                                 {GESTURE_NAMES.map((gesture) => {
+                                   const time = getGestureTime(record, gesture);
+                                   const isCompleted = time && time > 0;
+                                   
+                                   // Extract emoji and name properly
+                                   const emoji = gesture.split(' ').pop(); // Get the emoji
+                                   const name = gesture.split(' ').slice(0, -1).join(' '); // Get the name without emoji
+                                   
+                                   return (
                                      <div key={gesture} className={`flex items-center justify-between p-2 rounded text-xs ${
                                        isCompleted ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
                                      }`}>
@@ -871,30 +1239,75 @@ export default function GestureGameInsights() {
                                        </div>
                                      </div>
                                    );
-                                })}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    
-                    {/* View All History Button */}
-                    {gameHistory.length > 5 && (
-                      <div className="text-center mt-4">
-                        <Button
-                          onClick={() => loadGameHistory(0)}
-                          variant="outline"
-                          size="sm"
-                          className="text-xs"
-                        >
-                          View All {gameHistory.length} Sessions
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                                 })}
+                               </div>
+                             </div>
+                           </div>
+                         );
+                       })}
+                     </div>
+                     
+                     {/* Pagination Controls */}
+                     {totalPages > 1 && (
+                       <div className="flex items-center justify-center space-x-2 mt-6">
+                         <Button
+                           onClick={() => loadGameHistory(currentPage - 1)}
+                           disabled={currentPage === 0}
+                           variant="outline"
+                           size="sm"
+                           className="text-xs"
+                         >
+                           ← Previous
+                         </Button>
+                         
+                         <div className="flex items-center space-x-1">
+                           {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                             let pageNum;
+                             if (totalPages <= 5) {
+                               pageNum = i;
+                             } else if (currentPage < 3) {
+                               pageNum = i;
+                             } else if (currentPage >= totalPages - 3) {
+                               pageNum = totalPages - 5 + i;
+                             } else {
+                               pageNum = currentPage - 2 + i;
+                             }
+                             
+                             return (
+                               <Button
+                                 key={pageNum}
+                                 onClick={() => loadGameHistory(pageNum)}
+                                 variant={currentPage === pageNum ? "default" : "outline"}
+                                 size="sm"
+                                 className="text-xs w-8 h-8 p-0"
+                               >
+                                 {pageNum + 1}
+                               </Button>
+                             );
+                           })}
+                         </div>
+                         
+                         <Button
+                           onClick={() => loadGameHistory(currentPage + 1)}
+                           disabled={currentPage === totalPages - 1}
+                           variant="outline"
+                           size="sm"
+                           className="text-xs"
+                         >
+                           Next →
+                         </Button>
+                       </div>
+                     )}
+                     
+                     {/* Page Info */}
+                     {totalPages > 1 && (
+                       <div className="text-center mt-4 text-sm text-gray-600">
+                         Page {currentPage + 1} of {totalPages} • Showing {Math.min(5, gameHistory.length)} of {gameHistory.length} sessions
+                       </div>
+                     )}
+                   </CardContent>
+                 </Card>
+               </TabsContent>
             </Tabs>
           </div>
         )}

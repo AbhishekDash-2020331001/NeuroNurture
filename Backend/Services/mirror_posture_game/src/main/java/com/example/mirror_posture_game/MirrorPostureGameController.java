@@ -1,9 +1,13 @@
 package com.example.mirror_posture_game;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -13,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -82,6 +87,45 @@ public class MirrorPostureGameController {
     public ResponseEntity<List<MirrorPostureGame>> getGameHistoryByChildId(@PathVariable String childId) {
         List<MirrorPostureGame> history = service.getGameHistoryByChildId(childId);
         return ResponseEntity.ok(history);
+    }
+    
+    // Get paginated game history by child ID
+    @GetMapping("/child/{childId}/history")
+    public ResponseEntity<Page<MirrorPostureGame>> getPaginatedGameHistoryByChildId(
+            @PathVariable String childId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<MirrorPostureGame> history = service.getPaginatedGameHistoryByChildId(childId, pageable);
+        return ResponseEntity.ok(history);
+    }
+    
+    // Get comprehensive child statistics
+    @GetMapping("/child/{childId}/statistics")
+    public ResponseEntity<Map<String, Object>> getChildStatistics(@PathVariable String childId) {
+        Map<String, Object> statistics = service.getChildStatistics(childId);
+        return ResponseEntity.ok(statistics);
+    }
+    
+    // Get posture performance analysis for a child
+    @GetMapping("/child/{childId}/posture-analysis")
+    public ResponseEntity<Map<String, Object>> getPostureAnalysis(@PathVariable String childId) {
+        Map<String, Object> analysis = service.getPostureAnalysis(childId);
+        return ResponseEntity.ok(analysis);
+    }
+    
+    // Get improvement trends for a child
+    @GetMapping("/child/{childId}/improvement-trends")
+    public ResponseEntity<Map<String, Object>> getImprovementTrends(@PathVariable String childId) {
+        Map<String, Object> trends = service.getImprovementTrends(childId);
+        return ResponseEntity.ok(trends);
+    }
+    
+    // Get best and worst performing postures for a child
+    @GetMapping("/child/{childId}/performance-summary")
+    public ResponseEntity<Map<String, Object>> getPerformanceSummary(@PathVariable String childId) {
+        Map<String, Object> summary = service.getPerformanceSummary(childId);
+        return ResponseEntity.ok(summary);
     }
     
     // Get average completion times for all postures

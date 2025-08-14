@@ -70,7 +70,7 @@ export default function Dashboard() {
       icon: "😎",
       color: "from-orange-400 to-pink-500",
       progress: 45,
-      route: "/games/mirror-posture"
+      route: "/games/posture/insights"
     },
     {
       title: "Shape Sorter",
