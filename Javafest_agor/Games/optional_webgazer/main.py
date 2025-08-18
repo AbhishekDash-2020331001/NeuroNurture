@@ -1,21 +1,22 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+import cv2
+import mediapipe as mp
+import threading
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# Screen dimensions (adjust to your screen resolution)
-W, H = 1920, 1080  
+# Screen size (adjust to your actual screen)
+W, H = 1920, 1080
 
-# Confidence mapping
 CONF_MAP = {
     "high": "HIGH",
     "med": "MEDIUM",
     "low": "LOW"
 }
 
-# Store last gaze data
-last_gaze = None  
+# Last gaze data
+last_gaze = None
 
 # Allow CORS
 app.add_middleware(
@@ -25,71 +26,45 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.get("/", response_class=HTMLResponse)
-async def index():
-    """
-    Serves the WebGazer page (runs automatically in browser when server starts).
-    """
-    return f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>WebGazer FastAPI</title>
-        <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
-    </head>
-    <body>
-        <h1>WebGazer is running...</h1>
-        <p>Keep this page open so gaze data is sent to FastAPI.</p>
-        <script>
-            window.onload = function() {{
-                webgazer.setGazeListener(function(data, elapsedTime) {{
-                    if (data == null) return;
-
-                    // Add a fake confidence value (WebGazer doesn’t provide one natively)
-                    let conf = "high";
-
-                    fetch("http://127.0.0.1:8000/gaze", {{
-                        method: "POST",
-                        headers: {{"Content-Type": "application/json"}},
-                        body: JSON.stringify({{
-                            x: data.x,
-                            y: data.y,
-                            confidence: conf
-                        }})
-                    }});
-                }}).begin();
-            }};
-        </script>
-    </body>
-    </html>
-    """
+# Mediapipe Face Mesh for eye tracking
+mp_face_mesh = mp.solutions.face_mesh
+face_mesh = mp_face_mesh.FaceMesh(refine_landmarks=True)
 
 
-@app.post("/gaze")
-async def receive_gaze(request: Request):
-    """
-    Receives gaze data from WebGazer.
-    """
+def gaze_tracker():
     global last_gaze
-    data = await request.json()
+    cap = cv2.VideoCapture(0)  # open webcam
+    while True:
+        ret, frame = cap.read()
+        frame=cv2.flip(frame,1)# horizontal flip
+        if not ret:
+            continue
 
-    conf = data.get("confidence", "low")  # default "low"
-    last_gaze = {
-        "x": data.get("x"),
-        "y": data.get("y"),
-        "confidence": CONF_MAP.get(conf, "UNKNOWN"),
-        "screen_width": W,
-        "screen_height": H
-    }
-    return {"status": "received"}
+        # Convert to RGB for MediaPipe
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = face_mesh.process(rgb_frame)
+
+        if results.multi_face_landmarks:
+            landmarks = results.multi_face_landmarks[0].landmark
+            # Use right iris center as approximate gaze point
+            iris = landmarks[468]  
+            x, y = int(iris.x * W), int(iris.y * H)
+
+            last_gaze = {
+                "x": x,
+                "y": y,
+                "confidence": CONF_MAP["high"],  # we just mark as HIGH
+                "screen_width": W,
+                "screen_height": H
+            }
+
+
+# Run gaze tracker in background
+threading.Thread(target=gaze_tracker, daemon=True).start()
 
 
 @app.get("/current-gaze")
 async def get_current_gaze():
-    """
-    Returns the latest gaze data for your React frontend (or any client).
-    """
     if last_gaze:
-        return last_gaze
+        return {"status": "success", "data": last_gaze}
     return {"error": "No gaze data"}

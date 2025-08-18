@@ -281,9 +281,9 @@ export default function GazeTracker() {
         
         intervalRef.current = setInterval(async () => {
             try {
-                const response = await fetch('http://localhost:8000/getGaze');
+                const response = await fetch('http://localhost:8000/current-gaze');
                 const data = await response.json();
-                
+                console.log(data);
                 if (data.status === 'success' && data.data) {
                     let rawX = data.data.x;
                     let rawY = data.data.y;
