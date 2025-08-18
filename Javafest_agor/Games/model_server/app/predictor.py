@@ -7,6 +7,7 @@ from mediapipe.tasks.python import vision
 from mediapipe.tasks import python
 import mediapipe as mp
 
+
 # Load model and label encoder
 posture_model = joblib.load("app/models/mirror_posture/svm_posture_model_acc_99.0.pkl")
 gesture_model = joblib.load("app/models/gesture/gesture_model.pkl")
