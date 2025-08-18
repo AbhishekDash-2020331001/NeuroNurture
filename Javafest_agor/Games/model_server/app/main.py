@@ -2,6 +2,53 @@ from fastapi import FastAPI, UploadFile, File
 from app.predictor import *
 from app.gaze import get_gaze
 from fastapi.middleware.cors import CORSMiddleware
+import cv2
+import threading
+import mediapipe as mp
+
+
+#############################################
+W, H = 1920, 1080
+CONF_MAP = {
+    "high": "HIGH",
+    "med": "MEDIUM",
+    "low": "LOW"
+}
+last_gaze = None
+mp_face_mesh = mp.solutions.face_mesh
+face_mesh = mp_face_mesh.FaceMesh(refine_landmarks=True)
+def gaze_tracker():
+    global last_gaze
+    cap = cv2.VideoCapture(0)  # open webcam
+    while True:
+        ret, frame = cap.read()
+        frame=cv2.flip(frame,1)# horizontal flip
+        if not ret:
+            continue
+
+        # Convert to RGB for MediaPipe
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = face_mesh.process(rgb_frame)
+
+        if results.multi_face_landmarks:
+            landmarks = results.multi_face_landmarks[0].landmark
+            # Use right iris center as approximate gaze point
+            iris = landmarks[468]  
+            x, y = int(iris.x * W), int(iris.y * H)
+
+            last_gaze = {
+                "x": x,
+                "y": y,
+                "confidence": CONF_MAP["high"],  # we just mark as HIGH
+                "screen_width": W,
+                "screen_height": H
+            }
+
+threading.Thread(target=gaze_tracker, daemon=True).start()
+#############################################
+
+
+
 
 
 app = FastAPI()
@@ -14,6 +61,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+#############################################
+@app.get("/current-gaze")
+async def get_current_gaze():
+    if last_gaze:
+        return {"status": "success", "data": last_gaze}
+    return {"error": "No gaze data"}
+#############################################
 
 @app.post("/predictPosture")
 async def predict_posture(file: UploadFile = File(...)):
@@ -65,9 +119,6 @@ async def get_gaze_status():
         }
     except Exception as e:
         return {"status": "error", "message": str(e)}
+    
 
-
-
-
-
-# Run the server with: uvicorn app.main:app --reload
+    
