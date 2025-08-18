@@ -36,3 +36,30 @@ def get_gaze():
             "screen_height": H
         }
     return {"error": "No gaze data"}
+
+def get_wegazer():
+    try:
+        import webgazer
+        prediction = webgazer.getCurrentPrediction()
+        
+        if prediction:
+            x = prediction.x
+            y = prediction.y
+            confidence = prediction.confidence
+            
+            # Debug: print coordinates and screen resolution
+            print(f"Raw webgazer: x={x}, y={y}, Screen: {W}x{H}, Confidence: {confidence}")
+            
+            return {
+                "x": x,
+                "y": y,
+                "confidence": confidence,
+                "screen_width": W,
+                "screen_height": H
+            }
+        else:
+            return {"error": "No webgazer prediction available"}
+    except ImportError:
+        return {"error": "webgazer library not available"}
+    except Exception as e:
+        return {"error": f"webgazer error: {str(e)}"}
