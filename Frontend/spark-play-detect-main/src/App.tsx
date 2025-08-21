@@ -13,6 +13,8 @@ import ChildrenProfiles from "./pages/ChildrenProfiles";
 import Dashboard from "./pages/Dashboard";
 import EmailVerificationPage from "./pages/EmailVerification";
 import EmailVerificationRequired from "./pages/EmailVerificationRequired";
+import GazeTrackingGamePage from "./pages/GazeTrackingGamePage";
+import GazeTrackingGamePlayPage from "./pages/GazeTrackingGamePlayPage";
 import GestureGame from "./pages/GestureGame";
 import GestureGameInsights from "./pages/GestureGameInsights";
 import Index from "./pages/Index";
@@ -21,7 +23,6 @@ import MirrorPostureGamePage from "./pages/MirrorPostureGamePage";
 import NotFound from "./pages/NotFound";
 import ParentInfo from "./pages/ParentInfo";
 import ViewParentInfo from "./pages/ViewParentInfo";
-
 const queryClient = new QueryClient();
 
 // Component to handle global camera cleanup
@@ -104,6 +105,8 @@ const App = () => (
             </ProtectedRoute>
           } />
           <Route path="/games/mirror-posture" element={<MirrorPostureGamePage />} />
+          <Route path="/games/gaze-tracking" element={<GazeTrackingGamePage />} />
+          <Route path="/games/gaze-tracking/play" element={<GazeTrackingGamePlayPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

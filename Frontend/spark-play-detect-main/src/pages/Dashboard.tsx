@@ -5,12 +5,15 @@ import { Card, CardDescription, CardTitle } from '@/components/ui/card';
 import { getCurrentChild } from '@/utils/childUtils';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import FloatingGeminiButton from '../components/FloatingGeminiButton';
+import GeminiChat from '../components/GeminiChat';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [username, setUsername] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [selectedChild, setSelectedChild] = useState<any>(null);
+  const [isGeminiOpen, setIsGeminiOpen] = useState(false);
 
   useEffect(() => {
     fetch('http://localhost:8080/auth/session', { credentials: 'include' })
@@ -71,6 +74,14 @@ export default function Dashboard() {
       color: "from-orange-400 to-pink-500",
       progress: 45,
       route: "/games/posture/insights"
+    },
+    {
+      title: "Eye Gaze Tracking",
+      description: "Pop balloons with your eyes!",
+      icon: "👁️",
+      color: "from-purple-400 to-blue-500",
+      progress: 60,
+      route: "/games/gaze-tracking"
     },
     {
       title: "Shape Sorter",
@@ -144,7 +155,7 @@ export default function Dashboard() {
       {/* Beautiful Navbar */}
       <Navbar onLogout={handleLogout} />
 
-      <div className="max-w-6xl mx-auto space-y-6 p-4 lg:p-6 relative z-10">
+      <div className="max-w-7xl mx-auto space-y-6 p-4 lg:p-8 relative z-10">
         {/* Compact Header */}
         <div className="flex flex-col lg:flex-row items-center justify-between space-y-3 lg:space-y-0">
           <div className="flex items-center space-x-3">
@@ -154,10 +165,10 @@ export default function Dashboard() {
               className="w-12 h-12 animate-pulse-fun"
             />
             <div>
-              <h1 className="text-2xl lg:text-3xl font-playful text-primary">
+              <h1 className="text-3xl lg:text-4xl font-playful text-primary">
                 {selectedChild ? `Hi ${selectedChild.name}! 🎉` : username ? `Hi ${username}! 🎉` : 'Welcome! 🎉'}
               </h1>
-              <p className="text-base lg:text-lg font-comic text-muted-foreground">
+              <p className="text-lg lg:text-xl font-comic text-muted-foreground">
                 {selectedChild ? `Ready for fun learning, ${selectedChild.name}?` : 'Ready for fun learning?'}
               </p>
             </div>
@@ -177,7 +188,7 @@ export default function Dashboard() {
                   {selectedChild.gender === 'boy' ? '👦' : selectedChild.gender === 'girl' ? '👧' : '🧒'}
                 </div>
                 <div>
-                  <h2 className="text-lg font-playful font-bold text-primary">
+                  <h2 className="text-xl font-playful text-primary">
                     {selectedChild.name}'s Learning
                   </h2>
                   <div className="flex items-center space-x-4 text-sm text-muted-foreground font-comic">
@@ -200,39 +211,39 @@ export default function Dashboard() {
           <Card className="card-playful border-2 border-fun-orange/20 hover:scale-105 hover:shadow-lg transition-all duration-300 group p-3 backdrop-blur-sm bg-white/80">
             <div className="text-center">
               <div className="text-xl font-playful text-fun-orange mb-1 bounce-gentle">🎮</div>
-              <div className="text-lg font-bold text-foreground group-hover:text-fun-orange transition-colors">12</div>
-              <div className="text-sm text-muted-foreground font-comic">Games</div>
+              <div className="text-xl text-foreground group-hover:text-fun-orange transition-colors">12</div>
+              <div className="text-base text-muted-foreground font-comic">Games</div>
             </div>
           </Card>
           
           <Card className="card-playful border-2 border-fun-purple/20 hover:scale-105 hover:shadow-lg transition-all duration-300 group p-3 backdrop-blur-sm bg-white/80">
             <div className="text-center">
               <div className="text-xl font-playful text-fun-purple mb-1 float">⭐</div>
-              <div className="text-lg font-bold text-foreground group-hover:text-fun-purple transition-colors">850</div>
-              <div className="text-sm text-muted-foreground font-comic">Stars</div>
+              <div className="text-xl text-foreground group-hover:text-fun-purple transition-colors">850</div>
+              <div className="text-base text-muted-foreground font-comic">Stars</div>
             </div>
           </Card>
           
           <Card className="card-playful border-2 border-fun-green/20 hover:scale-105 hover:shadow-lg transition-all duration-300 group p-3 backdrop-blur-sm bg-white/80">
             <div className="text-center">
               <div className="text-xl font-playful text-fun-green mb-1 wiggle">🏆</div>
-              <div className="text-lg font-bold text-foreground group-hover:text-fun-green transition-colors">2</div>
-              <div className="text-sm text-muted-foreground font-comic">Achievements</div>
+              <div className="text-xl text-foreground group-hover:text-fun-green transition-colors">2</div>
+              <div className="text-base text-muted-foreground font-comic">Achievements</div>
             </div>
           </Card>
           
           <Card className="card-playful border-2 border-fun-pink/20 hover:scale-105 hover:shadow-lg transition-all duration-300 group p-3 backdrop-blur-sm bg-white/80">
             <div className="text-center">
               <div className="text-xl font-playful text-fun-pink mb-1 pulse-fun">📚</div>
-              <div className="text-lg font-bold text-foreground group-hover:text-fun-pink transition-colors">15</div>
-              <div className="text-sm text-muted-foreground font-comic">Learning Days</div>
+              <div className="text-xl text-foreground group-hover:text-fun-pink transition-colors">15</div>
+              <div className="text-base text-muted-foreground font-comic">Learning Days</div>
             </div>
           </Card>
         </div>
 
         {/* Compact Games Grid */}
         <div>
-          <h2 className="text-xl font-playful text-foreground mb-4 flex items-center">
+          <h2 className="text-2xl font-playful text-foreground mb-4 flex items-center">
             <span className="mr-2">🎯</span>
             Your Learning Games
           </h2>
@@ -243,15 +254,15 @@ export default function Dashboard() {
                   <div className={`text-2xl ${index % 4 === 0 ? 'bounce-gentle' : index % 4 === 1 ? 'float' : index % 4 === 2 ? 'wiggle' : 'pulse-fun'}`}>
                     {game.icon}
                   </div>
-                  <CardTitle className="font-playful text-base group-hover:text-primary transition-colors">{game.title}</CardTitle>
-                  <CardDescription className="font-comic text-sm">
+                  <CardTitle className="font-playful text-lg group-hover:text-primary transition-colors">{game.title}</CardTitle>
+                  <CardDescription className="font-comic text-base">
                     {game.description}
                   </CardDescription>
                   
                   <div className="space-y-1">
-                    <div className="flex justify-between text-sm font-comic">
+                    <div className="flex justify-between text-base font-comic">
                       <span>Progress</span>
-                      <span className="font-bold">{game.progress}%</span>
+                      <span>{game.progress}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div 
@@ -275,7 +286,7 @@ export default function Dashboard() {
 
         {/* Compact Achievements */}
         <div>
-          <h2 className="text-xl font-playful text-foreground mb-4 flex items-center">
+          <h2 className="text-2xl font-playful text-foreground mb-4 flex items-center">
             <span className="mr-2">🏆</span>
             Your Achievements
           </h2>
@@ -296,7 +307,7 @@ export default function Dashboard() {
                 }`}>
                   {achievement.icon}
                 </div>
-                <div className="font-comic text-sm">{achievement.title}</div>
+                <div className="font-comic text-base">{achievement.title}</div>
                 {achievement.unlocked && (
                   <div className="text-sm text-fun-orange font-bold mt-1 group-hover:scale-110 transition-transform">UNLOCKED!</div>
                 )}
@@ -308,10 +319,10 @@ export default function Dashboard() {
         {/* Compact Quick Actions */}
         <Card className="card-playful p-4 backdrop-blur-sm bg-white/80">
           <div className="text-center mb-3">
-            <h3 className="font-playful text-lg text-primary">
+            <h3 className="font-playful text-xl text-primary">
               Ready for More Fun? 🌟
             </h3>
-            <p className="font-comic text-base text-muted-foreground">
+            <p className="font-comic text-lg text-muted-foreground">
               Try these exciting activities!
             </p>
           </div>
@@ -337,6 +348,16 @@ export default function Dashboard() {
           </div>
         </Card>
       </div>
+      
+      {/* Gemini Chat Components */}
+      <FloatingGeminiButton 
+        onClick={() => setIsGeminiOpen(true)}
+        isOpen={isGeminiOpen}
+      />
+      <GeminiChat 
+        isOpen={isGeminiOpen}
+        onClose={() => setIsGeminiOpen(false)}
+      />
     </div>
   );
 }
