@@ -1,10 +1,86 @@
-from fastapi import FastAPI, UploadFile, File
-from app.predictor import *
+from fastapi import FastAPI, UploadFile, File, Form
+from app.predictor import predict_posture_from_image_bytes, predict_gesture_from_image_bytes
 from app.gaze import get_gaze
 from fastapi.middleware.cors import CORSMiddleware
 import cv2
+from groq import Groq
 import threading
 import mediapipe as mp
+from threading import Thread
+import time
+from Levenshtein import distance as levenshtein_distance
+
+import os
+from app.config import GROQ_API_KEY
+
+os.environ["GROQ_API_KEY"] = GROQ_API_KEY
+client = Groq(api_key=os.environ["GROQ_API_KEY"])
+
+# Store game results with round information
+game_results = {}
+
+def sentence_similarity(target_sentence, spoken_sentence):
+    """
+    Compute similarity between two sentences (Bangla or any language)
+    Returns a percentage (0-100) of similarity
+    """
+    # Compute edit distance
+    dist = levenshtein_distance(target_sentence, spoken_sentence)
+    # Normalize by the length of the longer sentence
+    max_len = max(len(target_sentence), len(spoken_sentence))
+    similarity = (1 - dist / max_len) * 100
+    return round(similarity, 2)
+
+def transcribe_audio(file_bytes, file_id, target_text, round_number):
+    tmp_path = f"tmp_{file_id}.mp3"
+    with open(tmp_path, "wb") as f:
+        f.write(file_bytes)
+
+    print(f"Transcribing audio for round {round_number}...")
+    
+    try:
+        with open(tmp_path, "rb") as f:
+            transcription = client.audio.transcriptions.create(
+                file=f,
+                model="whisper-large-v3",
+                response_format="verbose_json",
+                language="bn",
+                temperature=0.0
+            )
+
+        transcribed_text = transcription.text.strip()
+        print(f"Transcription complete for round {round_number}: {transcribed_text}")
+        
+        # Calculate similarity
+        similarity_score = sentence_similarity(target_text, transcribed_text)
+        
+        # Store result with round information
+        game_results[round_number] = {
+            "target_text": target_text,
+            "transcribed_text": transcribed_text,
+            "similarity_score": similarity_score,
+            "status": "completed"
+        }
+        
+        print(f"Round {round_number} - Target: {target_text}")
+        print(f"Round {round_number} - Transcribed: {transcribed_text}")
+        print(f"Round {round_number} - Similarity: {similarity_score}%")
+        
+    except Exception as e:
+        print(f"Error in transcription for round {round_number}: {e}")
+        game_results[round_number] = {
+            "target_text": target_text,
+            "transcribed_text": "Error in transcription",
+            "similarity_score": 0,
+            "status": "error",
+            "error": str(e)
+        }
+    finally:
+        # Clean up temp file
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+
 
 
 #############################################
@@ -43,8 +119,11 @@ def gaze_tracker():
                 "screen_width": W,
                 "screen_height": H
             }
+        time.sleep(0.01)
 
-threading.Thread(target=gaze_tracker, daemon=True).start()
+thread = threading.Thread(target=gaze_tracker, daemon=True)
+thread.start()
+
 #############################################
 
 
@@ -119,6 +198,61 @@ async def get_gaze_status():
         }
     except Exception as e:
         return {"status": "error", "message": str(e)}
+    
+    
+@app.post("/transcribe")
+async def transcribe(file: UploadFile = File(...), target_text: str = Form(...), round_number: int = Form(...)):
+    file_bytes = await file.read()
+    file_id = file.filename  # you can generate UUID for uniqueness
+
+    # Run transcription in a separate thread (non-blocking)
+    thread = Thread(target=transcribe_audio, args=(file_bytes, file_id, target_text, round_number))
+    thread.start()
+
+    return {"status": "processing", "file_id": file_id}
+
+@app.get("/transcription/{file_id}")
+def get_transcription(file_id: str):
+    # This endpoint is now primarily for retrieving results, not the raw transcription
+    # It will return the latest result for the file_id if available
+    for round_number, result in game_results.items():
+        if result["status"] == "completed" and result["transcribed_text"] == file_id:
+            return {"status": "done", "text": result["transcribed_text"]}
+    return {"status": "processing"}
+
+@app.get("/game-results")
+def get_game_results():
+    """Get all completed game results"""
+    completed_results = {}
+    for round_number, result in game_results.items():
+        if result["status"] == "completed":
+            completed_results[round_number] = result
+    
+    return {
+        "status": "success",
+        "total_rounds": len(completed_results),
+        "results": completed_results
+    }
+
+@app.post("/clear-game-results")
+def clear_game_results():
+    """Clear all game results for a new game session"""
+    global game_results
+    game_results.clear()
+    return {"status": "success", "message": "Game results cleared"}
+
+@app.get("/round-result/{round_number}")
+def get_round_result(round_number: int):
+    """Get result for a specific round"""
+    if round_number in game_results:
+        return {
+            "status": "success",
+            "result": game_results[round_number]
+        }
+    return {
+        "status": "not_found",
+        "message": f"Result for round {round_number} not found"
+    }
     
 
     

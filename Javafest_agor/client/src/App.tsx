@@ -3,6 +3,7 @@ import Dashboard from './Dashboard';
 import GestureRecognizerComponent from './game/gestureRecognizing/GestureRecognizerComponent';
 import MirrorPostureGame from './game/mirrorPosture/MirrorPostureGame';
 import GazeTracker from './game/gaze/test';
+import RepeatWithMeGame from './game/repeatWithMe/RepeatWithMeGame';
 //import EyeGazeFootball from './game/eyeGazeFootball/EyeGazeFootball';
 // import Game1 from './games/Game1';
 // import Game2 from './games/Game2';
@@ -18,6 +19,7 @@ const App: React.FC = () => {
         <Route path="/gestureGame" element={<GestureRecognizerComponent />} />
         <Route path="/mirrorPosture" element={<MirrorPostureGame />} />
         <Route path="/gazeTracker" element={<GazeTracker />} />
+        <Route path="/repeatWithMe" element={<RepeatWithMeGame />} />
         {/* <Route path="/eyeGazeFootball" element={<EyeGazeFootball />} /> */}
 
       </Routes>

@@ -10,6 +10,7 @@ const games: Game[] = [
     { name: 'Gesture Game', path: '/gestureGame' },
     { name: 'Mirror Posture', path: '/mirrorPosture' },
     { name: 'Gaze Tracker', path: '/gazeTracker' },
+    { name: 'Repeat With Me', path: '/repeatWithMe' },
     // { name: 'Game 5', path: '/game5' },
 ];
 
