@@ -1,0 +1,272 @@
+package com.example.gaze_game;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import lombok.extern.slf4j.Slf4j;
+
+@RestController
+@RequestMapping("/api/gaze-game")
+@CrossOrigin(origins = "*")
+@Slf4j
+public class GazeGameController {
+    
+    @Autowired
+    private GazeGameService gazeGameService;
+    
+    /**
+     * Save a new gaze game session
+     */
+    @PostMapping("/save")
+    public ResponseEntity<?> saveGazeGame(@RequestBody GazeGameRequest request) {
+        try {
+            log.info("Received request to save gaze game session for child ID: {}", request.getChildId());
+            
+            // Validate required fields
+            if (request.getChildId() == null || request.getChildId().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Child ID is required");
+            }
+            
+            if (request.getSessionId() == null || request.getSessionId().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Session ID is required");
+            }
+            
+
+            
+            GazeGame savedGame = gazeGameService.saveGazeGame(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedGame);
+            
+        } catch (Exception e) {
+            log.error("Error saving gaze game session: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to save gaze game session: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Get all games for a specific child
+     */
+    @GetMapping("/child/{childId}")
+    public ResponseEntity<?> getGamesByChildId(@PathVariable String childId) {
+        try {
+            log.info("Retrieving games for child ID: {}", childId);
+            List<GazeGame> games = gazeGameService.getGamesByChildId(childId);
+            return ResponseEntity.ok(games);
+        } catch (Exception e) {
+            log.error("Error retrieving games for child ID {}: {}", childId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve games for child: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Get paginated games for a specific child
+     */
+    @GetMapping("/child/{childId}/paginated")
+    public ResponseEntity<?> getGamesByChildIdPaginated(
+            @PathVariable String childId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            log.info("Retrieving paginated games for child ID: {} (page: {}, size: {})", childId, page, size);
+            Pageable pageable = PageRequest.of(page, size);
+            Page<GazeGame> games = gazeGameService.getGamesByChildIdPaginated(childId, pageable);
+            return ResponseEntity.ok(games);
+        } catch (Exception e) {
+            log.error("Error retrieving paginated games for child ID {}: {}", childId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve paginated games for child: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Get game by ID
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getGameById(@PathVariable Long id) {
+        try {
+            log.info("Retrieving game with ID: {}", id);
+            Optional<GazeGame> game = gazeGameService.getGameById(id);
+            if (game.isPresent()) {
+                return ResponseEntity.ok(game.get());
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            log.error("Error retrieving game with ID {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve game: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Get games by session ID
+     */
+    @GetMapping("/session/{sessionId}")
+    public ResponseEntity<?> getGamesBySessionId(@PathVariable String sessionId) {
+        try {
+            log.info("Retrieving games for session ID: {}", sessionId);
+            List<GazeGame> games = gazeGameService.getGamesBySessionId(sessionId);
+            return ResponseEntity.ok(games);
+        } catch (Exception e) {
+            log.error("Error retrieving games for session ID {}: {}", sessionId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve games for session: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Get recent games for a child
+     */
+    @GetMapping("/child/{childId}/recent")
+    public ResponseEntity<?> getRecentGamesByChildId(@PathVariable String childId) {
+        try {
+            log.info("Retrieving recent games for child ID: {}", childId);
+            List<GazeGame> games = gazeGameService.getRecentGamesByChildId(childId);
+            return ResponseEntity.ok(games);
+        } catch (Exception e) {
+            log.error("Error retrieving recent games for child ID {}: {}", childId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve recent games for child: " + e.getMessage());
+        }
+    }
+    
+
+    
+    /**
+     * Get round averages for a child
+     */
+    @GetMapping("/child/{childId}/round-averages")
+    public ResponseEntity<?> getRoundAveragesByChild(@PathVariable String childId) {
+        try {
+            log.info("Retrieving round averages for child ID: {}", childId);
+            List<Object[]> averages = gazeGameService.getRoundAveragesByChild(childId);
+            return ResponseEntity.ok(averages);
+        } catch (Exception e) {
+            log.error("Error retrieving round averages for child ID {}: {}", childId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve round averages: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Get best performance for a child
+     */
+    @GetMapping("/child/{childId}/best-performance")
+    public ResponseEntity<?> getBestPerformanceByChild(@PathVariable String childId) {
+        try {
+            log.info("Retrieving best performance for child ID: {}", childId);
+            List<Object[]> performance = gazeGameService.getBestPerformanceByChild(childId);
+            return ResponseEntity.ok(performance);
+        } catch (Exception e) {
+            log.error("Error retrieving best performance for child ID {}: {}", childId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve best performance: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Get training data
+     */
+    @GetMapping("/training-data")
+    public ResponseEntity<?> getTrainingData() {
+        try {
+            log.info("Retrieving training data");
+            List<GazeGame> trainingData = gazeGameService.getTrainingData();
+            return ResponseEntity.ok(trainingData);
+        } catch (Exception e) {
+            log.error("Error retrieving training data: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve training data: " + e.getMessage());
+        }
+    }
+    
+
+    
+    /**
+     * Get today's games count
+     */
+    @GetMapping("/stats/today")
+    public ResponseEntity<?> getTodayGamesCount() {
+        try {
+            log.info("Retrieving today's games count");
+            Long count = gazeGameService.getTodayGamesCount();
+            return ResponseEntity.ok(count);
+        } catch (Exception e) {
+            log.error("Error retrieving today's games count: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve today's games count: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Get this week's games count
+     */
+    @GetMapping("/stats/this-week")
+    public ResponseEntity<?> getThisWeekGamesCount() {
+        try {
+            log.info("Retrieving this week's games count");
+            Long count = gazeGameService.getThisWeekGamesCount();
+            return ResponseEntity.ok(count);
+        } catch (Exception e) {
+            log.error("Error retrieving this week's games count: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve this week's games count: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Get this month's games count
+     */
+    @GetMapping("/stats/this-month")
+    public ResponseEntity<?> getThisMonthGamesCount() {
+        try {
+            log.info("Retrieving this month's games count");
+            Long count = gazeGameService.getThisMonthGamesCount();
+            return ResponseEntity.ok(count);
+        } catch (Exception e) {
+            log.error("Error retrieving this month's games count: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve this month's games count: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Count games by child ID
+     */
+    @GetMapping("/child/{childId}/count")
+    public ResponseEntity<?> countGamesByChildId(@PathVariable String childId) {
+        try {
+            log.info("Counting games for child ID: {}", childId);
+            Long count = gazeGameService.countGamesByChildId(childId);
+            return ResponseEntity.ok(count);
+        } catch (Exception e) {
+            log.error("Error counting games for child ID {}: {}", childId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to count games for child: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Health check endpoint
+     */
+    @GetMapping("/health")
+    public ResponseEntity<String> health() {
+        return ResponseEntity.ok("Gaze Game Service is running!");
+    }
+}

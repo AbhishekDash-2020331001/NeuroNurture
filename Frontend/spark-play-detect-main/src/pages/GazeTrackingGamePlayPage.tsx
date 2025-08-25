@@ -98,6 +98,11 @@ const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onS
     const [preGameCountdown, setPreGameCountdown] = useState(3);
     const [isRoundTransition, setIsRoundTransition] = useState(false);
     const [roundTransitionCountdown, setRoundTransitionCountdown] = useState(3);
+    
+    // Session management
+    const [sessionId, setSessionId] = useState<string>('');
+    const [childId, setChildId] = useState<string>('');
+    const [dataSaved, setDataSaved] = useState<boolean>(false);
     const [gazeStatus, setGazeStatus] = useState<string>('Initializing...');
     const [isGazeAvailable, setIsGazeAvailable] = useState(false);
     const [progressValue, setProgressValue] = useState(0);
@@ -117,9 +122,11 @@ const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onS
     const [suspectedASD, setSuspectedASD] = useState(false);
     const [isTrainingAllowed, setIsTrainingAllowed] = useState(false);
 
-    // Load child information from localStorage
+    // Load child information from localStorage and create session
     useEffect(() => {
         const selectedChild = localStorage.getItem('selectedChild');
+        const selectedChildId = localStorage.getItem('selectedChildId');
+        
         if (selectedChild) {
             try {
                 const childData = JSON.parse(selectedChild);
@@ -138,7 +145,67 @@ const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onS
                 console.error('Error parsing child data:', error);
             }
         }
+        
+        if (selectedChildId) {
+            setChildId(selectedChildId);
+            // Create session ID
+            const dateTime = new Date().toISOString().replace(/[:.]/g, '-');
+            const newSessionId = `${selectedChildId}_${dateTime}`;
+            setSessionId(newSessionId);
+        }
     }, []);
+
+    // Save game data when game ends
+    useEffect(() => {
+        if (gameState === 'results' && roundResults.length === totalRounds) {
+            const saveGameData = async () => {
+                try {
+                    console.log('Saving game data to backend...');
+                    console.log('Session ID:', sessionId);
+                    console.log('Child ID:', childId);
+                    console.log('Round results:', roundResults);
+                    
+                    // Extract round counts
+                    const round1Count = roundResults[0]?.balloonsPopped || 0;
+                    const round2Count = roundResults[1]?.balloonsPopped || 0;
+                    const round3Count = roundResults[2]?.balloonsPopped || 0;
+                    
+                    const requestData = {
+                        sessionId: sessionId,
+                        childId: childId,
+                        age: parseInt(childAge) || 8,
+                        round1Count: round1Count,
+                        round2Count: round2Count,
+                        round3Count: round3Count,
+                        isTrainingAllowed: isTrainingAllowed,
+                        suspectedASD: suspectedASD
+                    };
+                    
+                    console.log('Saving game data:', requestData);
+                    
+                    const response = await fetch('http://localhost:8086/api/gaze-game/save', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(requestData)
+                    });
+                    
+                    if (response.ok) {
+                        const savedData = await response.json();
+                        console.log('Game data saved successfully:', savedData);
+                        setDataSaved(true);
+                    } else {
+                        console.error('Failed to save game data:', response.statusText);
+                    }
+                } catch (error) {
+                    console.error('Error saving game data:', error);
+                }
+            };
+            
+            saveGameData();
+        }
+    }, [gameState, roundResults, sessionId, childId, childAge, isTrainingAllowed, suspectedASD, totalRounds]);
 
     // Refs
     const gameTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -148,6 +215,10 @@ const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onS
     const scoreRef = useRef(0);
     const balloonsPoppedRef = useRef(0);
     
+    // Smoothing refs for ultra-smooth movement
+    const positionHistoryRef = useRef<{x: number, y: number, timestamp: number}[]>([]);
+    const lastPositionRef = useRef<{x: number, y: number} | null>(null);
+    
     // Audio refs
     const gameplayAudioRef = useRef<HTMLAudioElement | null>(null);
     const balloonBurstAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -155,10 +226,12 @@ const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onS
     // Initialize Kalman filters
     useEffect(() => {
         if (!kalmanXRef.current) {
-            kalmanXRef.current = new KalmanFilter(1e-3, 1e-1, 1);
+            // Ultra-responsive settings for maximum smoothness
+            kalmanXRef.current = new KalmanFilter(1e-1, 1e-3, 1);
         }
         if (!kalmanYRef.current) {
-            kalmanYRef.current = new KalmanFilter(1e-3, 1e-1, 1);
+            // Ultra-responsive settings for maximum smoothness
+            kalmanYRef.current = new KalmanFilter(1e-1, 1e-3, 1);
         }
     }, []);
 
@@ -219,7 +292,7 @@ const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onS
                  const statusData = await statusResponse.json();
                  console.log('Camera status check:', statusData);
                  
-                 if (!statusData.active) {
+                 if (!statusData.data || !statusData.data.active) {
                      throw new Error('Camera not active after start request');
                  }
              } catch (statusError) {
@@ -230,7 +303,7 @@ const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onS
              if (kalmanXRef.current) kalmanXRef.current.reset();
              if (kalmanYRef.current) kalmanYRef.current.reset();
              
-             // Start gaze tracking with much slower interval to prevent resource exhaustion
+             // Start gaze tracking with slower interval to prevent resource exhaustion
              intervalRef.current = setInterval(async () => {
                  try {
                      const controller = new AbortController();
@@ -263,23 +336,73 @@ const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onS
                          let smoothX = browserX;
                          let smoothY = browserY;
                          
-                         if (kalmanXRef.current && kalmanYRef.current && !isNaN(browserX) && !isNaN(browserY)) {
-                             if (!kalmanXRef.current.isInitialized() && !kalmanYRef.current.isInitialized()) {
-                                 kalmanXRef.current.reset(browserX);
-                                 kalmanYRef.current.reset(browserY);
-                             }
-                             
-                             smoothX = kalmanXRef.current.filter(browserX);
-                             smoothY = kalmanYRef.current.filter(browserY);
-                         }
+                                                   if (kalmanXRef.current && kalmanYRef.current && !isNaN(browserX) && !isNaN(browserY)) {
+                              if (!kalmanXRef.current.isInitialized() && !kalmanYRef.current.isInitialized()) {
+                                  kalmanXRef.current.reset(browserX);
+                                  kalmanYRef.current.reset(browserY);
+                              }
+                              
+                              smoothX = kalmanXRef.current.filter(browserX);
+                              smoothY = kalmanYRef.current.filter(browserY);
+                              
+                              // Add exponential smoothing for ultra-smooth movement
+                              const alpha = 0.8; // High responsiveness
+                              smoothX = smoothX * alpha + browserX * (1 - alpha);
+                              smoothY = smoothY * alpha + browserY * (1 - alpha);
+                              
+                              // Advanced smoothing with position history
+                              const now = Date.now();
+                              positionHistoryRef.current.push({x: browserX, y: browserY, timestamp: now});
+                              
+                              // Keep only recent positions (last 100ms)
+                              positionHistoryRef.current = positionHistoryRef.current.filter(
+                                  pos => now - pos.timestamp < 100
+                              );
+                              
+                              if (positionHistoryRef.current.length > 1) {
+                                  // Calculate weighted average of recent positions
+                                  const weights = positionHistoryRef.current.map((_, index) => 
+                                      Math.exp(-0.1 * (positionHistoryRef.current.length - 1 - index))
+                                  );
+                                  const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+                                  
+                                  const weightedX = positionHistoryRef.current.reduce((sum, pos, index) => 
+                                      sum + pos.x * weights[index], 0) / totalWeight;
+                                  const weightedY = positionHistoryRef.current.reduce((sum, pos, index) => 
+                                      sum + pos.y * weights[index], 0) / totalWeight;
+                                  
+                                  // Blend with Kalman filter output
+                                  smoothX = smoothX * 0.3 + weightedX * 0.7;
+                                  smoothY = smoothY * 0.3 + weightedY * 0.7;
+                              }
+                              
+                              // Velocity-based smoothing for rapid movements
+                              if (lastPositionRef.current) {
+                                  const dx = browserX - lastPositionRef.current.x;
+                                  const dy = browserY - lastPositionRef.current.y;
+                                  const velocity = Math.sqrt(dx * dx + dy * dy);
+                                  
+                                  // If moving fast, increase responsiveness
+                                  if (velocity > 50) {
+                                      const velocityFactor = Math.min(velocity / 100, 0.5);
+                                      smoothX = smoothX * (1 - velocityFactor) + browserX * velocityFactor;
+                                      smoothY = smoothY * (1 - velocityFactor) + browserY * velocityFactor;
+                                  }
+                              }
+                              
+                              lastPositionRef.current = {x: browserX, y: browserY};
+                          }
                          
-                         setGazeData({
-                             x: browserX,
-                             y: browserY,
-                             confidence: data.data.confidence,
-                             smoothX: smoothX,
-                             smoothY: smoothY
-                         });
+                                                   // Use requestAnimationFrame for ultra-smooth visual updates
+                          requestAnimationFrame(() => {
+                              setGazeData({
+                                  x: browserX,
+                                  y: browserY,
+                                  confidence: data.data.confidence,
+                                  smoothX: smoothX,
+                                  smoothY: smoothY
+                              });
+                          });
                          
                          // Only update status if it changed to prevent shaking
                          if (!isGazeAvailable) {
@@ -301,7 +424,13 @@ const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onS
                          if (isGazeAvailable) {
                              setIsGazeAvailable(false);
                          }
-                         if (gazeStatus !== 'No gaze data') {
+                         
+                         // Check if it's a calibration issue
+                         if (data.message && data.message.includes('calibration')) {
+                             setGazeStatus('Needs calibration');
+                         } else if (data.message && data.message.includes('confidence')) {
+                             setGazeStatus('Low confidence');
+                         } else {
                              setGazeStatus('No gaze data');
                          }
                      }
@@ -332,7 +461,7 @@ const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onS
                          }
                      }
                  }
-                           }, 16); // Super fast 60 FPS for responsive weapon movement
+                                                       }, 4); // 240 FPS for maximum smoothness
              
              setGazeStatus('Camera started - tracking gaze');
          } catch (error) {
@@ -1232,6 +1361,18 @@ const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onS
                               You're incredible! Your eye control is amazing! ✨
                           </p>
                           
+                          {/* Data Saved Notification */}
+                          {dataSaved && (
+                              <div className="mb-4 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl">
+                                  <div className="flex items-center justify-center gap-2">
+                                      <div className="text-green-600">✅</div>
+                                      <span className="text-sm font-comic text-green-700">
+                                          Game data saved successfully!
+                                      </span>
+                                  </div>
+                              </div>
+                          )}
+                          
                           {/* Achievement Display */}
                           <div className="mb-4 p-4 bg-gradient-to-r from-fun-yellow/20 via-fun-orange/20 to-fun-red/20 rounded-2xl border-4 border-yellow-300 relative overflow-hidden">
                               <div className="text-5xl mb-2 animate-bounce">{achievementEmoji}</div>
@@ -1521,48 +1662,60 @@ const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onS
                 <>
                                                               {/* Sharp Laser Weapon */}
                       <div 
-                          className="absolute pointer-events-none z-40"
+                          className="absolute pointer-events-none z-40 transition-all duration-5 ease-out"
                           style={{
                               left: `${gazeData ? (gazeData.smoothX || gazeData.x) : window.innerWidth / 2}px`,
                               top: `${gazeData ? (gazeData.smoothY || gazeData.y) : window.innerHeight / 2}px`,
                               transform: 'translate(-50%, -50%)',
+                              willChange: 'transform, left, top',
+                              backfaceVisibility: 'hidden',
+                              perspective: '1000px',
                           }}
                       >
-                          {/* Laser Beam */}
-                          <div className="relative">
-                              {/* Main Laser */}
-                              <div className="w-2 h-20 bg-gradient-to-b from-red-500 via-yellow-400 to-red-600 rounded-full shadow-lg animate-pulse" />
-                              
-                              {/* Laser Tip */}
-                              <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-3 border-r-3 border-b-6 border-transparent border-b-red-500" />
-                              
-                              {/* Energy Core */}
-                              <div className="absolute top-1 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gradient-to-br from-yellow-300 to-orange-500 rounded-full border-2 border-white shadow-lg animate-ping" />
-                              
-                              {/* Energy Rings */}
-                              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-6 h-6 border-2 border-yellow-400 rounded-full animate-ping" />
-                              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-8 h-8 border border-yellow-300 rounded-full animate-pulse" />
-                          </div>
+                                                     {/* Red Crosshair Target */}
+                           <div className="relative">
+                               {/* Outer Ring */}
+                               <div className="w-24 h-24 border-4 border-red-500 rounded-full shadow-lg animate-pulse" />
+                               
+                               {/* Inner Ring */}
+                               <div className="absolute top-3 left-3 w-18 h-18 border-2 border-red-400 rounded-full" />
+                               
+                               {/* Center Dot */}
+                               <div className="absolute top-9 left-9 w-6 h-6 bg-red-600 rounded-full border-2 border-white shadow-lg animate-ping" />
+                               
+                               {/* Crosshair Lines */}
+                               <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-1 h-24 bg-red-500 rounded-full" />
+                               <div className="absolute top-1/2 left-0 transform -translate-y-1/2 w-24 h-1 bg-red-500 rounded-full" />
+                               
+                               {/* Corner Notches */}
+                               <div className="absolute -top-1 -left-1 w-4 h-4 border-l-2 border-t-2 border-red-500 rounded-tl-lg" />
+                               <div className="absolute -top-1 -right-1 w-4 h-4 border-r-2 border-t-2 border-red-500 rounded-tr-lg" />
+                               <div className="absolute -bottom-1 -left-1 w-4 h-4 border-l-2 border-b-2 border-red-500 rounded-bl-lg" />
+                               <div className="absolute -bottom-1 -right-1 w-4 h-4 border-r-2 border-b-2 border-red-500 rounded-br-lg" />
+                           </div>
                           
-                          {/* Glowing Effect */}
-                          <div className="absolute inset-0 w-12 h-12 bg-gradient-to-r from-red-600/40 to-yellow-500/40 rounded-full animate-pulse blur-sm" />
+                                                     {/* Glowing Effect */}
+                           <div className="absolute inset-0 w-32 h-32 bg-gradient-to-r from-red-600/30 to-red-500/30 rounded-full animate-pulse blur-sm" />
+                           
+                           {/* Targeting Dots */}
+                           {[...Array(4)].map((_, i) => (
+                               <div
+                                   key={i}
+                                   className="absolute w-3 h-3 bg-red-400 rounded-full animate-ping"
+                                   style={{
+                                       left: '50%',
+                                       top: '50%',
+                                       transform: `translate(-50%, -50%) translate(${Math.cos(i * Math.PI / 2) * 50}px, ${Math.sin(i * Math.PI / 2) * 50}px)`,
+                                       animationDelay: `${i * 0.15}s`,
+                                   }}
+                               />
+                           ))}
                           
-                          {/* Energy Particles */}
-                          {[...Array(6)].map((_, i) => (
-                              <div
-                                  key={i}
-                                  className="absolute w-2 h-2 bg-yellow-300 rounded-full animate-ping"
-                                  style={{
-                                      left: '50%',
-                                      top: '50%',
-                                      transform: `translate(-50%, -50%) translate(${Math.cos(i * Math.PI / 3) * 25}px, ${Math.sin(i * Math.PI / 3) * 25}px)`,
-                                      animationDelay: `${i * 0.2}s`,
-                                  }}
-                              />
-                          ))}
-                          
-                          {/* Laser Trail */}
-                          <div className="absolute top-20 left-1/2 transform -translate-x-1/2 w-1 h-8 bg-gradient-to-b from-red-500/60 to-transparent rounded-full" />
+                                                     {/* Aiming Lines */}
+                           <div className="absolute top-12 left-1/2 transform -translate-x-1/2 w-0.5 h-8 bg-gradient-to-b from-red-500 to-transparent" />
+                           <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 w-0.5 h-8 bg-gradient-to-t from-red-500 to-transparent" />
+                           <div className="absolute left-12 top-1/2 transform -translate-y-1/2 w-8 h-0.5 bg-gradient-to-r from-red-500 to-transparent" />
+                           <div className="absolute right-12 top-1/2 transform -translate-y-1/2 w-8 h-0.5 bg-gradient-to-l from-red-500 to-transparent" />
                       </div>
                     
                                                               {/* Realistic Balloons */}
