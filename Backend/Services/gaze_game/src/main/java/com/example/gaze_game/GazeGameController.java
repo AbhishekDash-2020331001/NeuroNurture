@@ -9,7 +9,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,7 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/gaze-game")
-@CrossOrigin(origins = "*")
 @Slf4j
 public class GazeGameController {
     
@@ -259,6 +257,74 @@ public class GazeGameController {
             log.error("Error counting games for child ID {}: {}", childId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to count games for child: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Get statistics for a child
+     */
+    @GetMapping("/child/{childId}/statistics")
+    public ResponseEntity<?> getChildStatistics(@PathVariable String childId) {
+        try {
+            log.info("Retrieving statistics for child ID: {}", childId);
+            Object statistics = gazeGameService.getChildStatistics(childId);
+            return ResponseEntity.ok(statistics);
+        } catch (Exception e) {
+            log.error("Error retrieving statistics for child ID {}: {}", childId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve statistics: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Get performance analysis for a child
+     */
+    @GetMapping("/child/{childId}/performance-analysis")
+    public ResponseEntity<?> getPerformanceAnalysis(@PathVariable String childId) {
+        try {
+            log.info("Retrieving performance analysis for child ID: {}", childId);
+            Object analysis = gazeGameService.getPerformanceAnalysis(childId);
+            return ResponseEntity.ok(analysis);
+        } catch (Exception e) {
+            log.error("Error retrieving performance analysis for child ID {}: {}", childId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve performance analysis: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Get performance summary for a child
+     */
+    @GetMapping("/child/{childId}/performance-summary")
+    public ResponseEntity<?> getPerformanceSummary(@PathVariable String childId) {
+        try {
+            log.info("Retrieving performance summary for child ID: {}", childId);
+            Object summary = gazeGameService.getPerformanceSummary(childId);
+            return ResponseEntity.ok(summary);
+        } catch (Exception e) {
+            log.error("Error retrieving performance summary for child ID {}: {}", childId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve performance summary: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Get game history for a child with pagination
+     */
+    @GetMapping("/child/{childId}/history")
+    public ResponseEntity<?> getGameHistory(
+            @PathVariable String childId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            log.info("Retrieving game history for child ID: {} (page: {}, size: {})", childId, page, size);
+            Pageable pageable = PageRequest.of(page, size);
+            Page<GazeGame> history = gazeGameService.getGameHistory(childId, pageable);
+            return ResponseEntity.ok(history);
+        } catch (Exception e) {
+            log.error("Error retrieving game history for child ID {}: {}", childId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve game history: " + e.getMessage());
         }
     }
     

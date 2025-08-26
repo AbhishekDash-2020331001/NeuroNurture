@@ -81,7 +81,7 @@ export default function Dashboard() {
       icon: "👁️",
       color: "from-purple-400 to-blue-500",
       progress: 60,
-      route: "/games/gaze-tracking"
+      route: "/games/gaze-tracking/insights"
     },
     {
       title: "Shape Sorter",

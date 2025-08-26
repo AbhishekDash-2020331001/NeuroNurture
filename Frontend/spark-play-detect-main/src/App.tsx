@@ -13,6 +13,7 @@ import ChildrenProfiles from "./pages/ChildrenProfiles";
 import Dashboard from "./pages/Dashboard";
 import EmailVerificationPage from "./pages/EmailVerification";
 import EmailVerificationRequired from "./pages/EmailVerificationRequired";
+import GazeGameInsights from "./pages/GazeGameInsights";
 import GazeTrackingGamePage from "./pages/GazeTrackingGamePage";
 import GazeTrackingGamePlayPage from "./pages/GazeTrackingGamePlayPage";
 import GestureGame from "./pages/GestureGame";
@@ -106,6 +107,13 @@ const App = () => (
           } />
           <Route path="/games/mirror-posture" element={<MirrorPostureGamePage />} />
           <Route path="/games/gaze-tracking" element={<GazeTrackingGamePage />} />
+          <Route path="/games/gaze-tracking/insights" element={
+            <ProtectedRoute>
+              <EmailVerificationGuard>
+                <GazeGameInsights />
+              </EmailVerificationGuard>
+            </ProtectedRoute>
+          } />
           <Route path="/games/gaze-tracking/play" element={<GazeTrackingGamePlayPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

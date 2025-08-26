@@ -2,6 +2,7 @@ package com.example.gaze_game;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -223,6 +224,205 @@ public class GazeGameService {
         } catch (Exception e) {
             log.error("Error counting games for child ID {}: {}", childId, e.getMessage(), e);
             throw new RuntimeException("Failed to count games for child", e);
+        }
+    }
+    
+    /**
+     * Get statistics for a child
+     */
+    public Object getChildStatistics(String childId) {
+        try {
+            List<GazeGame> games = gazeGameRepository.findByChildId(childId);
+            
+            if (games.isEmpty()) {
+                return Map.of(
+                    "totalGames", 0,
+                    "averageBalloonsPerRound", Map.of("Round 1", 0.0, "Round 2", 0.0, "Round 3", 0.0),
+                    "totalBalloonsPopped", 0,
+                    "daysSinceLastGame", 0
+                );
+            }
+            
+            // Calculate total games
+            int totalGames = games.size();
+            
+            // Calculate total balloons popped
+            int totalBalloonsPopped = games.stream()
+                .mapToInt(game -> game.getRound1Count() + game.getRound2Count() + game.getRound3Count())
+                .sum();
+            
+            // Calculate average balloons per round
+            double avgRound1 = games.stream().mapToInt(GazeGame::getRound1Count).average().orElse(0.0);
+            double avgRound2 = games.stream().mapToInt(GazeGame::getRound2Count).average().orElse(0.0);
+            double avgRound3 = games.stream().mapToInt(GazeGame::getRound3Count).average().orElse(0.0);
+            
+            // Calculate days since last game
+            GazeGame lastGame = games.stream()
+                .max((g1, g2) -> g1.getDateTime().compareTo(g2.getDateTime()))
+                .orElse(null);
+            
+            int daysSinceLastGame = 0;
+            if (lastGame != null) {
+                daysSinceLastGame = (int) java.time.Duration.between(lastGame.getDateTime(), LocalDateTime.now()).toDays();
+            }
+            
+            Map<String, Object> statistics = Map.of(
+                "totalGames", totalGames,
+                "averageBalloonsPerRound", Map.of(
+                    "Round 1", Math.round(avgRound1 * 100.0) / 100.0,
+                    "Round 2", Math.round(avgRound2 * 100.0) / 100.0,
+                    "Round 3", Math.round(avgRound3 * 100.0) / 100.0
+                ),
+                "totalBalloonsPopped", totalBalloonsPopped,
+                "daysSinceLastGame", daysSinceLastGame
+            );
+            
+            log.info("Retrieved statistics for child ID {}: {}", childId, statistics);
+            return statistics;
+            
+        } catch (Exception e) {
+            log.error("Error retrieving statistics for child ID {}: {}", childId, e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve statistics", e);
+        }
+    }
+    
+    /**
+     * Get performance analysis for a child
+     */
+    public Object getPerformanceAnalysis(String childId) {
+        try {
+            List<GazeGame> games = gazeGameRepository.findByChildId(childId);
+            
+            if (games.isEmpty()) {
+                return Map.of(
+                    "bestRound", "Round 1",
+                    "worstRound", "Round 1",
+                    "consistencyScore", 0.0,
+                    "improvementTrend", 0.0
+                );
+            }
+            
+            // Calculate average balloons per round
+            double avgRound1 = games.stream().mapToInt(GazeGame::getRound1Count).average().orElse(0.0);
+            double avgRound2 = games.stream().mapToInt(GazeGame::getRound2Count).average().orElse(0.0);
+            double avgRound3 = games.stream().mapToInt(GazeGame::getRound3Count).average().orElse(0.0);
+            
+            // Determine best and worst rounds
+            String bestRound = "Round 1";
+            String worstRound = "Round 1";
+            double bestScore = avgRound1;
+            double worstScore = avgRound1;
+            
+            if (avgRound2 > bestScore) {
+                bestRound = "Round 2";
+                bestScore = avgRound2;
+            }
+            if (avgRound3 > bestScore) {
+                bestRound = "Round 3";
+                bestScore = avgRound3;
+            }
+            
+            if (avgRound2 < worstScore) {
+                worstRound = "Round 2";
+                worstScore = avgRound2;
+            }
+            if (avgRound3 < worstScore) {
+                worstRound = "Round 3";
+                worstScore = avgRound3;
+            }
+            
+            // Calculate consistency score (standard deviation of round averages)
+            double mean = (avgRound1 + avgRound2 + avgRound3) / 3.0;
+            double variance = Math.pow(avgRound1 - mean, 2) + Math.pow(avgRound2 - mean, 2) + Math.pow(avgRound3 - mean, 2);
+            double stdDev = Math.sqrt(variance / 3.0);
+            double consistencyScore = Math.max(0, 100 - (stdDev * 10)); // Higher score = more consistent
+            
+            // Calculate improvement trend (comparing first half vs second half of games)
+            int midPoint = games.size() / 2;
+            List<GazeGame> firstHalf = games.subList(0, midPoint);
+            List<GazeGame> secondHalf = games.subList(midPoint, games.size());
+            
+            double firstHalfAvg = firstHalf.stream()
+                .mapToInt(game -> game.getRound1Count() + game.getRound2Count() + game.getRound3Count())
+                .average().orElse(0.0);
+            
+            double secondHalfAvg = secondHalf.stream()
+                .mapToInt(game -> game.getRound1Count() + game.getRound2Count() + game.getRound3Count())
+                .average().orElse(0.0);
+            
+            double improvementTrend = firstHalfAvg > 0 ? ((secondHalfAvg - firstHalfAvg) / firstHalfAvg) * 100 : 0;
+            
+            Map<String, Object> analysis = Map.of(
+                "bestRound", bestRound,
+                "worstRound", worstRound,
+                "consistencyScore", Math.round(consistencyScore * 100.0) / 100.0,
+                "improvementTrend", Math.round(improvementTrend * 100.0) / 100.0
+            );
+            
+            log.info("Retrieved performance analysis for child ID {}: {}", childId, analysis);
+            return analysis;
+            
+        } catch (Exception e) {
+            log.error("Error retrieving performance analysis for child ID {}: {}", childId, e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve performance analysis", e);
+        }
+    }
+    
+    /**
+     * Get performance summary for a child
+     */
+    public Object getPerformanceSummary(String childId) {
+        try {
+            List<GazeGame> games = gazeGameRepository.findByChildId(childId);
+            
+            if (games.isEmpty()) {
+                return Map.of(
+                    "bestSession", 0,
+                    "totalBalloons", 0,
+                    "averagePerGame", 0.0
+                );
+            }
+            
+            // Calculate total balloons
+            int totalBalloons = games.stream()
+                .mapToInt(game -> game.getRound1Count() + game.getRound2Count() + game.getRound3Count())
+                .sum();
+            
+            // Calculate average per game
+            double averagePerGame = (double) totalBalloons / games.size();
+            
+            // Find best session (highest total balloons)
+            int bestSession = games.stream()
+                .mapToInt(game -> game.getRound1Count() + game.getRound2Count() + game.getRound3Count())
+                .max()
+                .orElse(0);
+            
+            Map<String, Object> summary = Map.of(
+                "bestSession", bestSession,
+                "totalBalloons", totalBalloons,
+                "averagePerGame", Math.round(averagePerGame * 100.0) / 100.0
+            );
+            
+            log.info("Retrieved performance summary for child ID {}: {}", childId, summary);
+            return summary;
+            
+        } catch (Exception e) {
+            log.error("Error retrieving performance summary for child ID {}: {}", childId, e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve performance summary", e);
+        }
+    }
+    
+    /**
+     * Get game history for a child with pagination
+     */
+    public Page<GazeGame> getGameHistory(String childId, Pageable pageable) {
+        try {
+            Page<GazeGame> history = gazeGameRepository.findByChildIdOrderByDateTimeDesc(childId, pageable);
+            log.info("Retrieved game history for child ID {}: {} records", childId, history.getContent().size());
+            return history;
+        } catch (Exception e) {
+            log.error("Error retrieving game history for child ID {}: {}", childId, e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve game history", e);
         }
     }
 }
