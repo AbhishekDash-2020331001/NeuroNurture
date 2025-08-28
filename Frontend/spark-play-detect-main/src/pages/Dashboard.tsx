@@ -84,6 +84,14 @@ export default function Dashboard() {
       route: "/games/gaze-tracking/insights"
     },
     {
+      title: "Repeat with Me",
+      description: "Listen and repeat Bengali sentences!",
+      icon: "🎤",
+      color: "from-pink-400 to-red-500",
+      progress: 40,
+      route: "/games/repeat-with-me"
+    },
+    {
       title: "Shape Sorter",
       description: "Learn shapes & colors",
       icon: "🔷",

@@ -39,7 +39,7 @@ class KalmanFilter {
     private x: number;
     private initialized: boolean;
     
-    constructor(processNoise = 1e-3, measurementNoise = 1e-1, errorCovariance = 1) {
+    constructor(processNoise = 1e-4, measurementNoise = 1e-2, errorCovariance = 1) {
         this.A = 1;
         this.H = 1;
         this.Q = processNoise;
@@ -226,12 +226,12 @@ const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onS
     // Initialize Kalman filters
     useEffect(() => {
         if (!kalmanXRef.current) {
-            // Ultra-responsive settings for maximum smoothness
-            kalmanXRef.current = new KalmanFilter(1e-1, 1e-3, 1);
+            // Optimized settings for smooth movement without jitter
+            kalmanXRef.current = new KalmanFilter(1e-4, 1e-2, 1);
         }
         if (!kalmanYRef.current) {
-            // Ultra-responsive settings for maximum smoothness
-            kalmanYRef.current = new KalmanFilter(1e-1, 1e-3, 1);
+            // Optimized settings for smooth movement without jitter
+            kalmanYRef.current = new KalmanFilter(1e-4, 1e-2, 1);
         }
     }, []);
 
@@ -345,46 +345,39 @@ const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onS
                               smoothX = kalmanXRef.current.filter(browserX);
                               smoothY = kalmanYRef.current.filter(browserY);
                               
-                              // Add exponential smoothing for ultra-smooth movement
-                              const alpha = 0.8; // High responsiveness
+                              // Simplified smoothing for stable movement
+                              const alpha = 0.6; // Balanced responsiveness
                               smoothX = smoothX * alpha + browserX * (1 - alpha);
                               smoothY = smoothY * alpha + browserY * (1 - alpha);
                               
-                              // Advanced smoothing with position history
+                              // Simple position history for stability
                               const now = Date.now();
                               positionHistoryRef.current.push({x: browserX, y: browserY, timestamp: now});
                               
-                              // Keep only recent positions (last 100ms)
+                              // Keep only recent positions (last 200ms for more stability)
                               positionHistoryRef.current = positionHistoryRef.current.filter(
-                                  pos => now - pos.timestamp < 100
+                                  pos => now - pos.timestamp < 200
                               );
                               
-                              if (positionHistoryRef.current.length > 1) {
-                                  // Calculate weighted average of recent positions
-                                  const weights = positionHistoryRef.current.map((_, index) => 
-                                      Math.exp(-0.1 * (positionHistoryRef.current.length - 1 - index))
-                                  );
-                                  const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+                              if (positionHistoryRef.current.length > 2) {
+                                  // Simple moving average for stability
+                                  const recentX = positionHistoryRef.current.slice(-3).reduce((sum, pos) => sum + pos.x, 0) / 3;
+                                  const recentY = positionHistoryRef.current.slice(-3).reduce((sum, pos) => sum + pos.y, 0) / 3;
                                   
-                                  const weightedX = positionHistoryRef.current.reduce((sum, pos, index) => 
-                                      sum + pos.x * weights[index], 0) / totalWeight;
-                                  const weightedY = positionHistoryRef.current.reduce((sum, pos, index) => 
-                                      sum + pos.y * weights[index], 0) / totalWeight;
-                                  
-                                  // Blend with Kalman filter output
-                                  smoothX = smoothX * 0.3 + weightedX * 0.7;
-                                  smoothY = smoothY * 0.3 + weightedY * 0.7;
+                                  // Blend with Kalman filter output (more Kalman, less history)
+                                  smoothX = smoothX * 0.7 + recentX * 0.3;
+                                  smoothY = smoothY * 0.7 + recentY * 0.3;
                               }
                               
-                              // Velocity-based smoothing for rapid movements
+                              // Gentle velocity-based smoothing
                               if (lastPositionRef.current) {
                                   const dx = browserX - lastPositionRef.current.x;
                                   const dy = browserY - lastPositionRef.current.y;
                                   const velocity = Math.sqrt(dx * dx + dy * dy);
                                   
-                                  // If moving fast, increase responsiveness
-                                  if (velocity > 50) {
-                                      const velocityFactor = Math.min(velocity / 100, 0.5);
+                                  // Only apply velocity smoothing for very fast movements
+                                  if (velocity > 100) {
+                                      const velocityFactor = Math.min(velocity / 200, 0.3);
                                       smoothX = smoothX * (1 - velocityFactor) + browserX * velocityFactor;
                                       smoothY = smoothY * (1 - velocityFactor) + browserY * velocityFactor;
                                   }
@@ -542,7 +535,7 @@ const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onS
                 id: Date.now() + Math.random(),
                 x: newX,
                 y: newY,
-                size: 100,
+                size: 140, // Bigger balloons to be larger than weapon
                 color: balloonColors[Math.floor(Math.random() * balloonColors.length)],
                 createdAt: Date.now()
             };
@@ -556,7 +549,7 @@ const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onS
             return;
         }
 
-        const collisionRadius = 150;
+        const collisionRadius = 200; // Adjusted for bigger balloons
         
         setBalloons(prev => {
             if (prev.length === 0) return prev;
@@ -568,11 +561,19 @@ const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onS
                     return balloon;
                 }
                 
+                // Use the center of the balloon for collision detection
+                const balloonCenterX = balloon.x;
+                const balloonCenterY = balloon.y;
+                
                 const distance = Math.sqrt(
-                    Math.pow(gazeX - balloon.x, 2) + Math.pow(gazeY - balloon.y, 2)
+                    Math.pow(gazeX - balloonCenterX, 2) + Math.pow(gazeY - balloonCenterY, 2)
                 );
                 
+                // Debug logging for collision detection
+                console.log(`Balloon ${balloon.id}: gaze(${gazeX}, ${gazeY}), balloon(${balloonCenterX}, ${balloonCenterY}), distance: ${distance}, collisionRadius: ${collisionRadius}`);
+                
                 if (distance <= collisionRadius) {
+                    console.log(`Popping balloon ${balloon.id} at distance ${distance}`);
                     poppedCount++;
                     
                     const poppingBalloon = {
@@ -1662,7 +1663,7 @@ const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onS
                 <>
                                                               {/* Sharp Laser Weapon */}
                       <div 
-                          className="absolute pointer-events-none z-40 transition-all duration-5 ease-out"
+                          className="absolute pointer-events-none z-40 transition-all duration-75 ease-out"
                           style={{
                               left: `${gazeData ? (gazeData.smoothX || gazeData.x) : window.innerWidth / 2}px`,
                               top: `${gazeData ? (gazeData.smoothY || gazeData.y) : window.innerHeight / 2}px`,
@@ -1672,6 +1673,9 @@ const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onS
                               perspective: '1000px',
                           }}
                       >
+
+                          
+
                                                      {/* Red Crosshair Target */}
                            <div className="relative">
                                {/* Outer Ring */}
@@ -1728,74 +1732,140 @@ const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onS
                           return (
                               <div
                                   key={balloon.id}
-                                  className={`absolute pointer-events-none z-30 ${isPopping ? '' : 'animate-bounce'}`}
+                                  className={`absolute pointer-events-none z-30 ${isPopping ? '' : 'animate-float'}`}
                                   style={{
                                       left: `${balloon.x}px`,
                                       top: `${balloon.y}px`,
                                       transform: `translate(-50%, -50%) scale(${isPopping ? 1 + popProgress * 0.3 : 1})`,
                                       opacity: isPopping ? 1 - popProgress : 1,
                                       transition: isPopping ? 'all 0.2s ease-out' : 'none',
+                                      animationDelay: `${balloon.id % 1000}ms`,
                                   }}
                               >
-                                  {/* Balloon Body - Teardrop Shape */}
+
+                                  
+
+                                  {/* Balloon Body - Simple Circular Shape */}
                                   <div
                                       className="relative"
                                       style={{
                                           width: `${balloon.size}px`,
-                                          height: `${balloon.size * 1.3}px`,
+                                          height: `${balloon.size}px`,
                                       }}
                                   >
+                                      {/* Balloon Glow Effect */}
+                                      <div
+                                          className="absolute inset-0 rounded-full animate-pulse"
+                                          style={{
+                                              background: `radial-gradient(ellipse at 25% 25%, ${balloon.color}40, transparent 70%)`,
+                                              filter: 'blur(8px)',
+                                              transform: 'scale(1.1)',
+                                          }}
+                                      />
                                       {/* Main Balloon */}
                                       <div
                                           className="absolute inset-0 rounded-full"
                                           style={{
                                               background: `radial-gradient(ellipse at 25% 25%, ${balloon.color}ff, ${balloon.color}dd 40%, ${balloon.color}88 70%, ${balloon.color}66)`,
                                               boxShadow: `
-                                                  inset -4px -4px 8px rgba(0,0,0,0.3),
-                                                  inset 4px 4px 8px rgba(255,255,255,0.4),
-                                                  0 4px 12px rgba(0,0,0,0.2),
-                                                  0 0 0 1px ${balloon.color}88
+                                                  inset -6px -6px 12px rgba(0,0,0,0.4),
+                                                  inset 6px 6px 12px rgba(255,255,255,0.5),
+                                                  0 8px 20px rgba(0,0,0,0.3),
+                                                  0 0 0 2px ${balloon.color}88,
+                                                  0 0 20px ${balloon.color}66
                                               `,
-                                              borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%',
+                                              borderRadius: '50%',
                                           }}
                                       />
                                       
-                                      {/* Balloon Neck */}
-                                      <div
-                                          className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3 h-6 bg-gradient-to-b from-transparent to-gray-400 rounded-b-full"
-                                          style={{
-                                              background: `linear-gradient(to bottom, transparent, ${balloon.color}88, ${balloon.color}66)`,
-                                          }}
-                                      />
+
                                       
-                                      {/* Shimmer Highlight */}
+                                      {/* Enhanced Shimmer Highlight */}
                                       <div
-                                          className="absolute rounded-full bg-gradient-to-br from-white/80 via-white/30 to-transparent"
+                                          className="absolute rounded-full bg-gradient-to-br from-white/90 via-white/40 to-transparent"
                                           style={{
                                               width: `${balloon.size * 0.35}px`,
                                               height: `${balloon.size * 0.35}px`,
                                               top: `${balloon.size * 0.15}px`,
-                                              left: `${balloon.size * 0.2}px`,
+                                              left: `${balloon.size * 0.15}px`,
                                               borderRadius: '50%',
+                                              filter: 'blur(0.5px)',
+                                          }}
+                                      />
+                                      
+                                      {/* Secondary Shimmer */}
+                                      <div
+                                          className="absolute rounded-full bg-gradient-to-br from-white/60 via-white/20 to-transparent"
+                                          style={{
+                                              width: `${balloon.size * 0.2}px`,
+                                              height: `${balloon.size * 0.2}px`,
+                                              top: `${balloon.size * 0.25}px`,
+                                              left: `${balloon.size * 0.3}px`,
+                                              borderRadius: '50%',
+                                              filter: 'blur(0.3px)',
                                           }}
                                       />
                                       
                                       {/* Balloon String */}
                                       <div
-                                          className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0.5 h-16 bg-gradient-to-b from-gray-500 to-gray-700"
+                                          className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-16 bg-gradient-to-b from-gray-400 to-gray-600"
                                           style={{
                                               background: `linear-gradient(to bottom, ${balloon.color}88, ${balloon.color}66, #666)`,
+                                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
                                           }}
                                       />
                                       
                                       {/* String Loop */}
                                       <div
-                                          className="absolute bottom-16 left-1/2 transform -translate-x-1/2 w-2 h-2 border-2 border-gray-600 rounded-full"
+                                          className="absolute bottom-16 left-1/2 transform -translate-x-1/2 w-2 h-2 border-2 border-gray-500 rounded-full"
                                           style={{
                                               borderColor: `${balloon.color}88`,
+                                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                          }}
+                                      />
+                                      
+                                      {/* String Decoration */}
+                                      <div
+                                          className="absolute bottom-20 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full animate-pulse"
+                                          style={{
+                                              boxShadow: '0 0 8px rgba(255,193,7,0.6)',
+                                          }}
+                                      />
+                                      
+                                      {/* Additional Balloon Decorations */}
+                                      <div
+                                          className="absolute top-2 right-2 w-3 h-3 bg-gradient-to-br from-pink-400 to-purple-500 rounded-full animate-bounce"
+                                          style={{
+                                              animationDelay: '0.5s',
+                                              boxShadow: '0 0 6px rgba(236,72,153,0.6)',
+                                          }}
+                                      />
+                                      
+                                      <div
+                                          className="absolute top-8 left-4 w-2 h-2 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full animate-ping"
+                                          style={{
+                                              animationDelay: '1s',
+                                              boxShadow: '0 0 4px rgba(34,211,238,0.6)',
                                           }}
                                       />
                                   </div>
+                                  
+                                  {/* Enhanced Pop Animation */}
+                                  
+                                  {/* Floating Particles around balloon */}
+                                  {[...Array(6)].map((_, i) => (
+                                      <div
+                                          key={`particle-${i}`}
+                                          className="absolute w-2 h-2 bg-gradient-to-r from-yellow-300 to-orange-400 rounded-full animate-ping"
+                                          style={{
+                                              left: '50%',
+                                              top: '50%',
+                                              transform: `translate(-50%, -50%) translate(${Math.cos(i * Math.PI / 3) * (balloon.size * 0.8)}px, ${Math.sin(i * Math.PI / 3) * (balloon.size * 0.8)}px)`,
+                                              animationDelay: `${i * 0.1}s`,
+                                              opacity: 0.7,
+                                          }}
+                                      />
+                                  ))}
                                   
                                   {/* Pop Animation */}
                                   {isPopping && (

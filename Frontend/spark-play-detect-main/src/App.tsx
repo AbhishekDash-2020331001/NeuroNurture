@@ -23,6 +23,8 @@ import MirrorPostureGameInsights from "./pages/MirrorPostureGameInsights";
 import MirrorPostureGamePage from "./pages/MirrorPostureGamePage";
 import NotFound from "./pages/NotFound";
 import ParentInfo from "./pages/ParentInfo";
+import RepeatWithMeGameInsights from "./pages/RepeatWithMeGameInsights";
+import RepeatWithMeGamePage from "./pages/RepeatWithMeGamePage";
 import ViewParentInfo from "./pages/ViewParentInfo";
 const queryClient = new QueryClient();
 
@@ -115,6 +117,14 @@ const App = () => (
             </ProtectedRoute>
           } />
           <Route path="/games/gaze-tracking/play" element={<GazeTrackingGamePlayPage />} />
+          <Route path="/games/repeat-with-me" element={<RepeatWithMeGamePage />} />
+          <Route path="/games/repeat-with-me/insights" element={
+            <ProtectedRoute>
+              <EmailVerificationGuard>
+                <RepeatWithMeGameInsights />
+              </EmailVerificationGuard>
+            </ProtectedRoute>
+          } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

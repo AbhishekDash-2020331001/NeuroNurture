@@ -5,3 +5,6 @@ numpy
 mediapipe
 joblib
 eyeware
+groq
+python-Levenshtein
+python-dotenv
