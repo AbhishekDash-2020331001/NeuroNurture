@@ -11,6 +11,7 @@ const games: Game[] = [
     { name: 'Mirror Posture', path: '/mirrorPosture' },
     { name: 'Gaze Tracker', path: '/gazeTracker' },
     { name: 'Repeat With Me', path: '/repeatWithMe' },
+    { name: 'Dance Doodle', path: '/danceDoodle' },
     // { name: 'Game 5', path: '/game5' },
 ];
 
@@ -28,6 +29,11 @@ const Dashboard: React.FC = () => {
                                 <div className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                             )}
                             
+                            {/* Special styling for Dance Doodle */}
+                            {game.name === 'Dance Doodle' && (
+                                <div className="absolute top-2 right-2 w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                            )}
+                            
                             <h2 className="text-xl font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">
                                 {game.name}
                             </h2>
@@ -40,6 +46,13 @@ const Dashboard: React.FC = () => {
                             {game.name === 'Gaze Tracker' && (
                                 <div className="mt-3 text-xs text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
                                     👁️ Eye tracking enabled
+                                </div>
+                            )}
+                            
+                            {/* Hover effect for Dance Doodle */}
+                            {game.name === 'Dance Doodle' && (
+                                <div className="mt-3 text-xs text-purple-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    🕺 AI pose detection
                                 </div>
                             )}
                         </div>

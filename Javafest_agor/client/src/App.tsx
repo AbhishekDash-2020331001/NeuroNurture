@@ -4,12 +4,7 @@ import GestureRecognizerComponent from './game/gestureRecognizing/GestureRecogni
 import MirrorPostureGame from './game/mirrorPosture/MirrorPostureGame';
 import GazeTracker from './game/gaze/test';
 import RepeatWithMeGame from './game/repeatWithMe/RepeatWithMeGame';
-//import EyeGazeFootball from './game/eyeGazeFootball/EyeGazeFootball';
-// import Game1 from './games/Game1';
-// import Game2 from './games/Game2';
-// import Game3 from './games/Game3';
-// import Game4 from './games/Game4';
-// import Game5 from './games/Game5';
+import DanceDoodleGame from './game/dance_doodle';
 
 const App: React.FC = () => {
   return (
@@ -20,7 +15,7 @@ const App: React.FC = () => {
         <Route path="/mirrorPosture" element={<MirrorPostureGame />} />
         <Route path="/gazeTracker" element={<GazeTracker />} />
         <Route path="/repeatWithMe" element={<RepeatWithMeGame />} />
-        {/* <Route path="/eyeGazeFootball" element={<EyeGazeFootball />} /> */}
+        <Route path="/danceDoodle" element={<DanceDoodleGame />} />
 
       </Routes>
     </Router>

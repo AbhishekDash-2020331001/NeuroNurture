@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, Form
 from app.predictor import predict_posture_from_image_bytes, predict_gesture_from_image_bytes
+from app.dance_doodle import predict_dance_pose_from_image_bytes, check_model_status
 from app.gaze import get_gaze
 from fastapi.middleware.cors import CORSMiddleware
 import cv2
@@ -84,45 +85,45 @@ def transcribe_audio(file_bytes, file_id, target_text, round_number):
 
 
 #############################################
-W, H = 1920, 1080
-CONF_MAP = {
-    "high": "HIGH",
-    "med": "MEDIUM",
-    "low": "LOW"
-}
-last_gaze = None
-mp_face_mesh = mp.solutions.face_mesh
-face_mesh = mp_face_mesh.FaceMesh(refine_landmarks=True)
-def gaze_tracker():
-    global last_gaze
-    cap = cv2.VideoCapture(0)  # open webcam
-    while True:
-        ret, frame = cap.read()
-        frame=cv2.flip(frame,1)# horizontal flip
-        if not ret:
-            continue
+# W, H = 1920, 1080
+# CONF_MAP = {
+#     "high": "HIGH",
+#     "med": "MEDIUM",
+#     "low": "LOW"
+# }
+# last_gaze = None
+# mp_face_mesh = mp.solutions.face_mesh
+# face_mesh = mp_face_mesh.FaceMesh(refine_landmarks=True)
+# def gaze_tracker():
+#     global last_gaze
+#     cap = cv2.VideoCapture(0)  # open webcam
+#     while True:
+#         ret, frame = cap.read()
+#         frame=cv2.flip(frame,1)# horizontal flip
+#         if not ret:
+#             continue
 
-        # Convert to RGB for MediaPipe
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = face_mesh.process(rgb_frame)
+#         # Convert to RGB for MediaPipe
+#         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+#         results = face_mesh.process(rgb_frame)
 
-        if results.multi_face_landmarks:
-            landmarks = results.multi_face_landmarks[0].landmark
-            # Use right iris center as approximate gaze point
-            iris = landmarks[468]  
-            x, y = int(iris.x * W), int(iris.y * H)
+#         if results.multi_face_landmarks:
+#             landmarks = results.multi_face_landmarks[0].landmark
+#             # Use right iris center as approximate gaze point
+#             iris = landmarks[468]  
+#             x, y = int(iris.x * W), int(iris.y * H)
 
-            last_gaze = {
-                "x": x,
-                "y": y,
-                "confidence": CONF_MAP["high"],  # we just mark as HIGH
-                "screen_width": W,
-                "screen_height": H
-            }
-        time.sleep(0.01)
+#             last_gaze = {
+#                 "x": x,
+#                 "y": y,
+#                 "confidence": CONF_MAP["high"],  # we just mark as HIGH
+#                 "screen_width": W,
+#                 "screen_height": H
+#             }
+#         time.sleep(0.01)
 
-thread = threading.Thread(target=gaze_tracker, daemon=True)
-thread.start()
+# thread = threading.Thread(target=gaze_tracker, daemon=True)
+# thread.start()
 
 #############################################
 
@@ -141,11 +142,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 #############################################
-@app.get("/current-gaze")
-async def get_current_gaze():
-    if last_gaze:
-        return {"status": "success", "data": last_gaze}
-    return {"error": "No gaze data"}
+# @app.get("/current-gaze")
+# async def get_current_gaze():
+#     if last_gaze:
+#         return {"status": "success", "data": last_gaze}
+#     return {"error": "No gaze data"}
 #############################################
 
 @app.post("/predictPosture")
@@ -160,6 +161,14 @@ async def predict_gesture(file: UploadFile = File(...)):
     contents = await file.read()
     print("Received file:", file.filename)
     result = predict_gesture_from_image_bytes(contents)
+    return result
+
+@app.post("/predictDancePose")
+async def predict_dance_pose(file: UploadFile = File(...)):
+    """Predict dance pose from uploaded image"""
+    contents = await file.read()
+    print("Received dance pose file:", file.filename)
+    result = predict_dance_pose_from_image_bytes(contents)
     return result
 
 @app.get("/getGaze")
@@ -195,6 +204,18 @@ async def get_gaze_status():
                 "screen_resolution": {"width": W, "height": H},
                 "is_active": True
             }
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.get("/dancePoseStatus")
+async def get_dance_pose_status():
+    """Get dance pose model status and available labels"""
+    try:
+        status = check_model_status()
+        return {
+            "status": "success",
+            "data": status
         }
     except Exception as e:
         return {"status": "error", "message": str(e)}
