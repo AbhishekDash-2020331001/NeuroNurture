@@ -92,6 +92,14 @@ export default function Dashboard() {
       route: "/games/repeat-with-me/insights"
     },
     {
+      title: "Dance Doodle",
+      description: "Strike amazing poses!",
+      icon: "🕺",
+      color: "from-purple-400 to-pink-500",
+      progress: 65,
+      route: "/games/dance-doodle"
+    },
+    {
       title: "Shape Sorter",
       description: "Learn shapes & colors",
       icon: "🔷",
@@ -255,7 +263,7 @@ export default function Dashboard() {
             <span className="mr-2">🎯</span>
             Your Learning Games
           </h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {games.map((game, index) => (
               <Card key={index} className="card-playful hover:scale-105 hover:shadow-lg transition-all duration-300 group overflow-hidden p-3 backdrop-blur-sm bg-white/80">
                 <div className="text-center space-y-2">

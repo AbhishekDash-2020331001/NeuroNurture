@@ -26,6 +26,8 @@ import NotFound from "./pages/NotFound";
 import ParentInfo from "./pages/ParentInfo";
 import RepeatWithMeGameInsights from "./pages/RepeatWithMeGameInsights";
 import RepeatWithMeGamePage from "./pages/RepeatWithMeGamePage";
+import DanceDoodleGamePage from "./pages/DanceDoodleGamePage";
+import DanceDoodleGameInsights from "./pages/DanceDoodleGameInsights";
 import ViewParentInfo from "./pages/ViewParentInfo";
 const queryClient = new QueryClient();
 
@@ -124,6 +126,14 @@ const App = () => (
             <ProtectedRoute>
               <EmailVerificationGuard>
                 <RepeatWithMeGameInsights />
+              </EmailVerificationGuard>
+            </ProtectedRoute>
+          } />
+          <Route path="/games/dance-doodle" element={<DanceDoodleGamePage />} />
+          <Route path="/games/dance-doodle/insights" element={
+            <ProtectedRoute>
+              <EmailVerificationGuard>
+                <DanceDoodleGameInsights />
               </EmailVerificationGuard>
             </ProtectedRoute>
           } />
