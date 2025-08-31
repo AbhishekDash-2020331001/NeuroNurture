@@ -37,8 +37,8 @@ const DanceDoodleGameStats: React.FC<DanceDoodleGameStatsProps> = ({ gameSession
     const seenRoundNumbers = new Set<number>();
     
     rounds.forEach(round => {
-      // Skip rounds with missing data
-      if (!round.poseName || !round.poseEmoji || round.roundNumber <= 0) {
+      // Skip rounds with missing data (but allow failed rounds)
+      if (!round.poseName || !round.poseEmoji) {
         console.warn('Skipping invalid round:', round);
         return;
       }
@@ -98,263 +98,333 @@ const DanceDoodleGameStats: React.FC<DanceDoodleGameStatsProps> = ({ gameSession
 
   // Calculate time percentage data for pie chart
   const ROUND_DURATION = 10; // seconds
-  const totalTime = gameSessionWithCleanedData.rounds.reduce((sum, round) => sum + round.timeTaken, 0);
-  const maxPossibleTime = totalRounds * ROUND_DURATION;
-  const timeEfficiency = (totalTime / maxPossibleTime) * 100;
+  const timePercentageData = gameSessionWithCleanedData.rounds.map((round, index) => {
+    const timeTaken = round.completed ? round.timeTaken : ROUND_DURATION;
+    const percentage = (timeTaken / ROUND_DURATION) * 100;
+    return {
+      name: round.poseName,
+      percentage: Math.round(percentage),
+      timeTaken: timeTaken,
+      completed: round.completed,
+      color: round.completed ? '#82ca9d' : '#ff6b6b'
+    };
+  });
 
-  const timeDistributionData = gameSessionWithCleanedData.rounds.map((round, index) => ({
-    name: `Round ${round.roundNumber}`,
-    value: round.timeTaken,
-    color: COLORS[index % COLORS.length]
-  }));
-
-  // Performance summary
-  const getPerformanceLevel = (completionRate: number) => {
-    if (completionRate >= 80) return { level: 'Excellent', color: 'text-green-600', icon: '🌟' };
-    if (completionRate >= 60) return { level: 'Good', color: 'text-blue-600', icon: '👍' };
-    if (completionRate >= 40) return { level: 'Fair', color: 'text-yellow-600', icon: '👌' };
-    return { level: 'Keep Practicing', color: 'text-orange-600', icon: '💪' };
+  // Calculate performance insights
+  const getPerformanceInsight = () => {
+    if (completionRate === 100) return { text: "Perfect performance! 🌟", icon: <Star className="text-yellow-500" /> };
+    if (completionRate >= 80) return { text: "Excellent work! 🎉", icon: <Trophy className="text-yellow-500" /> };
+    if (completionRate >= 60) return { text: "Good job! 👍", icon: <Award className="text-blue-500" /> };
+    return { text: "Keep practicing! 💪", icon: <Target className="text-orange-500" /> };
   };
 
-  const performance = getPerformanceLevel(completionRate);
-
-  // Calculate game duration
-  const gameDuration = gameSessionWithCleanedData.endTime && gameSessionWithCleanedData.startTime
-    ? Math.round((gameSessionWithCleanedData.endTime.getTime() - gameSessionWithCleanedData.startTime.getTime()) / 1000)
-    : 0;
+  const performanceInsight = getPerformanceInsight();
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
+      <div className="bg-white rounded-2xl p-6 max-w-6xl w-full max-h-[90vh] overflow-y-auto relative custom-scrollbar">
         {/* Header */}
-        <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6 rounded-t-2xl">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-playful mb-2 flex items-center gap-2">
-                🕺 Dance Performance Report 💃
-              </h1>
-              <p className="text-lg font-comic opacity-90">
-                {gameSessionWithCleanedData.consentData?.childName}'s Amazing Dance Journey!
-              </p>
-            </div>
-            <button
-              onClick={onClose}
-              className="text-white hover:text-gray-200 text-2xl font-bold"
-            >
-              ✕
-            </button>
+        <div className="text-center mb-6 pb-4 border-b border-gray-200">
+          <h2 className="text-4xl font-playful text-primary mb-2">📊 Dance Pose Performance Report</h2>
+          <p className="text-muted-foreground font-comic">Session ID: {gameSession.sessionId}</p>
+          <div className="flex justify-center items-center gap-4 mt-2">
+            <Badge variant="secondary" className="font-comic">
+              <Clock className="w-4 h-4 mr-1" />
+              {gameSession.endTime ? Math.round((gameSession.endTime.getTime() - gameSession.startTime.getTime()) / 1000) : 0}s
+            </Badge>
+            <Badge variant="secondary" className="font-comic">
+              <Target className="w-4 h-4 mr-1" />
+              Score: {completedRounds.length}/{totalRounds}
+            </Badge>
+            <Badge variant="secondary" className="font-comic">
+              <TrendingUp className="w-4 h-4 mr-1" />
+              {completionRate.toFixed(0)}% Success
+            </Badge>
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
-          {/* Performance Overview */}
-          <Card className="card-playful border-2 border-purple-200">
-            <CardHeader>
-              <CardTitle className="text-2xl font-playful text-purple-600 flex items-center gap-2">
-                <Trophy className="w-8 h-8" />
-                Performance Overview
+        {/* Performance Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-playful text-green-700 flex items-center gap-2">
+                <Trophy className="w-5 h-5" />
+                Overall Performance
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg">
-                  <div className="text-3xl font-bold text-blue-600">{completedRounds.length}/{totalRounds}</div>
-                  <div className="text-sm font-comic text-gray-600">Poses Completed</div>
-                </div>
-                <div className="text-center p-4 bg-gradient-to-br from-green-100 to-blue-100 rounded-lg">
-                  <div className="text-3xl font-bold text-green-600">{Math.round(completionRate)}%</div>
-                  <div className="text-sm font-comic text-gray-600">Success Rate</div>
-                </div>
-                <div className="text-center p-4 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-lg">
-                  <div className="text-3xl font-bold text-orange-600">{avgCompletionTime.toFixed(1)}s</div>
-                  <div className="text-sm font-comic text-gray-600">Avg Time</div>
-                </div>
-                <div className="text-center p-4 bg-gradient-to-br from-pink-100 to-red-100 rounded-lg">
-                  <div className="text-3xl font-bold text-pink-600">{gameDuration}s</div>
-                  <div className="text-sm font-comic text-gray-600">Total Time</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Performance Level */}
-          <Card className="card-playful border-2 border-green-200">
-            <CardContent className="p-6">
               <div className="text-center">
-                <div className="text-6xl mb-4">{performance.icon}</div>
-                <h3 className={`text-2xl font-playful mb-2 ${performance.color}`}>
-                  Performance Level: {performance.level}
-                </h3>
-                <p className="font-comic text-gray-600">
-                  {completionRate >= 80 ? "Outstanding work! You're a natural dancer!" :
-                   completionRate >= 60 ? "Great job! Keep up the excellent dancing!" :
-                   completionRate >= 40 ? "Good effort! Practice makes perfect!" :
-                   "Keep dancing and you'll improve every time!"}
-                </p>
+                <div className="text-3xl font-bold text-green-700 mb-1">{completionRate.toFixed(0)}%</div>
+                <div className="text-sm text-green-600 font-comic">
+                  {completedRounds.length} of {totalRounds} poses completed
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Round-by-Round Performance */}
-            <Card className="card-playful border-2 border-blue-200">
-              <CardHeader>
-                <CardTitle className="text-xl font-playful text-blue-600 flex items-center gap-2">
-                  <Target className="w-6 h-6" />
-                  Round Performance
-                </CardTitle>
-                <CardDescription className="font-comic">
-                  How you did in each dance round
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {gameSessionWithCleanedData.rounds.map((round, index) => (
-                    <div key={index} className={`flex items-center justify-between p-3 rounded-lg ${
-                      round.completed ? 'bg-green-100' : 'bg-red-100'
-                    }`}>
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{round.poseEmoji}</span>
-                        <div>
-                          <div className="font-playful font-bold">{round.poseName}</div>
-                          <div className="text-sm font-comic text-gray-600">Round {round.roundNumber}</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className={`font-bold ${round.completed ? 'text-green-600' : 'text-red-600'}`}>
-                          {round.completed ? '✅ Success' : '❌ Timeout'}
-                        </div>
-                        <div className="text-sm font-comic text-gray-600">
-                          {round.timeTaken.toFixed(1)}s
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Time Analysis */}
-            <Card className="card-playful border-2 border-orange-200">
-              <CardHeader>
-                <CardTitle className="text-xl font-playful text-orange-600 flex items-center gap-2">
-                  <Clock className="w-6 h-6" />
-                  Time Analysis
-                </CardTitle>
-                <CardDescription className="font-comic">
-                  Time taken for each pose
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {barChartData.length > 0 && (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={barChartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" fontSize={12} />
-                      <YAxis fontSize={12} />
-                      <Tooltip 
-                        formatter={(value, name) => [`${value}s`, name === 'time' ? 'Time Taken' : name]}
-                        labelFormatter={(label) => `Pose: ${label}`}
-                      />
-                      <Bar dataKey="time" fill="#8884d8" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
-
-                {/* Performance Insights */}
-                <div className="mt-4 space-y-2">
-                  {fastestPose && (
-                    <div className="flex items-center gap-2 p-2 bg-green-100 rounded">
-                      <TrendingUp className="w-4 h-4 text-green-600" />
-                      <span className="text-sm font-comic">
-                        <strong>Fastest:</strong> {fastestPose.poseName} ({fastestPose.timeTaken.toFixed(1)}s)
-                      </span>
-                    </div>
-                  )}
-                  {slowestPose && (
-                    <div className="flex items-center gap-2 p-2 bg-blue-100 rounded">
-                      <TrendingDown className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm font-comic">
-                        <strong>Slowest:</strong> {slowestPose.poseName} ({slowestPose.timeTaken.toFixed(1)}s)
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Completion Rate Chart */}
-          <Card className="card-playful border-2 border-green-200">
-            <CardHeader>
-              <CardTitle className="text-xl font-playful text-green-600 flex items-center gap-2">
-                <Award className="w-6 h-6" />
-                Success Distribution
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-playful text-blue-700 flex items-center gap-2">
+                <Clock className="w-5 h-5" />
+                Average Time
               </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-700 mb-1">{avgCompletionTime.toFixed(1)}s</div>
+                <div className="text-sm text-blue-600 font-comic">
+                  per completed pose
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-playful text-purple-700 flex items-center gap-2">
+                {performanceInsight.icon}
+                Performance Insight
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center">
+                <div className="text-lg font-bold text-purple-700 mb-1">{performanceInsight.text}</div>
+                <div className="text-sm text-purple-600 font-comic">
+                  Keep up the great work!
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Bar Chart - Time taken per pose */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl font-playful text-primary">⏱️ Time Analysis</CardTitle>
               <CardDescription className="font-comic">
-                Overall completion rate visualization
+                Time taken for each pose (green = completed, red = incomplete)
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {pieChartData.length > 0 && (
-                <div className="flex items-center justify-center">
-                  <ResponsiveContainer width={300} height={300}>
-                    <PieChart>
-                      <Pie
-                        data={pieChartData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={120}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {pieChartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value, name) => [`${value} poses`, name]} />
-                    </PieChart>
-                  </ResponsiveContainer>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={barChartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
+                  <YAxis />
+                  <Tooltip 
+                    formatter={(value, name) => [name === 'time' ? `${value}s` : value, name === 'time' ? 'Time Taken' : 'Status']}
+                    labelFormatter={(label) => `Pose: ${label}`}
+                  />
+                  <Bar 
+                    dataKey="time" 
+                    fill="#8884d8"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Pie Chart - Completion rate */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl font-playful text-primary">🎯 Completion Rate</CardTitle>
+              <CardDescription className="font-comic">
+                Overall success rate breakdown
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={pieChartData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {pieChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value, name) => [value, name]} />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Time Percentage Pie Chart */}
+        <div className="mb-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl font-playful text-primary">⏰ Time Percentage Analysis</CardTitle>
+              <CardDescription className="font-comic">
+                How much time each pose took relative to the full round duration (10 seconds = 100%)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={400}>
+                <PieChart>
+                  <Pie
+                    data={timePercentageData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percentage, completed }) => 
+                      `${name}\n${percentage}% ${completed ? '✅' : '❌'}`
+                    }
+                    outerRadius={120}
+                    fill="#8884d8"
+                    dataKey="percentage"
+                  >
+                    {timePercentageData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value, name) => [`${value}%`, name === 'percentage' ? 'Time Percentage' : name]}
+                    labelFormatter={(label) => `Pose: ${label}`}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="mt-4 text-center">
+                <div className="text-sm text-gray-600 font-comic">
+                  <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                  Green: Completed poses
+                  <span className="inline-block w-3 h-3 bg-red-500 rounded-full ml-4 mr-2"></span>
+                  Red: Incomplete poses
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Performance Highlights */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {/* Fastest Pose */}
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <CardHeader>
+              <CardTitle className="text-lg font-playful text-green-700 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                Fastest Pose
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {fastestPose ? (
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-700 mb-2">{fastestPose.poseName}</div>
+                  <div className="text-4xl font-bold text-green-600 mb-2">{fastestPose.timeTaken}s</div>
+                  <div className="text-6xl mb-2">{fastestPose.poseEmoji}</div>
+                  <div className="text-sm text-green-600 font-comic mt-2">Lightning fast! ⚡</div>
+                </div>
+              ) : (
+                <div className="text-center text-gray-500 font-comic">No completed poses</div>
               )}
             </CardContent>
           </Card>
 
-          {/* Encouragement and Next Steps */}
-          <Card className="card-playful border-2 border-pink-200 bg-gradient-to-br from-pink-50 to-purple-50">
-            <CardContent className="p-6 text-center">
-              <div className="text-4xl mb-4">🎉</div>
-              <h3 className="text-2xl font-playful text-pink-600 mb-4">
-                Great Dancing, {gameSessionWithCleanedData.consentData?.childName}!
-              </h3>
-              <p className="font-comic text-gray-700 mb-6">
-                {completionRate === 100 ? 
-                  "Perfect score! You're an amazing dancer! Every pose was spot on!" :
-                  completionRate >= 80 ? 
-                  "Fantastic dancing! You nailed most of the poses with style!" :
-                  completionRate >= 60 ?
-                  "Great job dancing! Keep practicing those poses - you're getting better!" :
-                  "Nice effort! Dancing takes practice, and you're on the right track!"
-                }
-              </p>
-              
-              <div className="flex justify-center gap-4">
-                <Button
-                  onClick={onClose}
-                  className="btn-fun bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-comic text-lg py-2 px-6"
-                >
-                  🎮 Play Again
-                </Button>
-                <Button
-                  onClick={() => window.location.href = '/dashboard'}
-                  className="btn-fun bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-comic text-lg py-2 px-6"
-                >
-                  🏠 Dashboard
-                </Button>
-              </div>
+          {/* Slowest Pose */}
+          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+            <CardHeader>
+              <CardTitle className="text-lg font-playful text-orange-700 flex items-center gap-2">
+                <TrendingDown className="w-5 h-5" />
+                Most Challenging
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {slowestPose ? (
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-orange-700 mb-2">{slowestPose.poseName}</div>
+                  <div className="text-4xl font-bold text-orange-600 mb-2">{slowestPose.timeTaken}s</div>
+                  <div className="text-6xl mb-2">{slowestPose.poseEmoji}</div>
+                  <div className="text-sm text-orange-600 font-comic mt-2">Needs more practice 💪</div>
+                </div>
+              ) : (
+                <div className="text-center text-gray-500 font-comic">No completed poses</div>
+              )}
             </CardContent>
           </Card>
+        </div>
+
+        {/* Detailed Round Table */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-xl font-playful text-primary">📋 Round-by-Round Details</CardTitle>
+            <CardDescription className="font-comic">
+              Detailed breakdown of each pose attempt
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-gradient-to-r from-primary/10 to-secondary/10">
+                    <th className="border border-primary p-3 text-left font-playful text-primary">Round</th>
+                    <th className="border border-primary p-3 text-left font-playful text-primary">Pose</th>
+                    <th className="border border-primary p-3 text-left font-playful text-primary">Emoji</th>
+                    <th className="border border-primary p-3 text-left font-playful text-primary">Time Taken</th>
+                    <th className="border border-primary p-3 text-left font-playful text-primary">Performance</th>
+                    <th className="border border-primary p-3 text-left font-playful text-primary">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {gameSessionWithCleanedData.rounds.map((round, index) => {
+                    const isFastest = fastestPose && round.completed && round.timeTaken === fastestPose.timeTaken;
+                    const isSlowest = slowestPose && round.completed && round.timeTaken === slowestPose.timeTaken;
+                    
+                    return (
+                      <tr key={index} className="hover:bg-gray-50 transition-colors">
+                        <td className="border border-primary p-3 font-bold text-primary">{round.roundNumber}</td>
+                        <td className="border border-primary p-3 font-comic">{round.poseName}</td>
+                        <td className="border border-primary p-3 text-center">
+                          <div className="text-3xl">{round.poseEmoji}</div>
+                        </td>
+                        <td className="border border-primary p-3 font-comic">
+                          {round.completed ? `${round.timeTaken}s` : 'Not completed'}
+                        </td>
+                        <td className="border border-primary p-3">
+                          {round.completed && (
+                            <div className="flex items-center gap-1">
+                              {isFastest && <Badge className="bg-green-100 text-green-800 text-xs">Fastest</Badge>}
+                              {isSlowest && <Badge className="bg-orange-100 text-orange-800 text-xs">Slowest</Badge>}
+                              {!isFastest && !isSlowest && (
+                                <Badge className="bg-blue-100 text-blue-800 text-xs">Average</Badge>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                        <td className="border border-primary p-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                            round.completed 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {round.completed ? '✅ Completed' : '❌ Failed'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Footer */}
+        <div className="flex justify-center gap-4 sticky bottom-0 bg-white pt-4 border-t border-gray-200">
+          <Button 
+            onClick={onClose}
+            className="btn-fun font-comic text-lg py-2 bg-secondary hover:bg-secondary/80"
+          >
+            Close Report
+          </Button>
         </div>
       </div>
     </div>

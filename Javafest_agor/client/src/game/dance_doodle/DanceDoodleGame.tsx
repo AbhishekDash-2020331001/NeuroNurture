@@ -40,6 +40,11 @@ const DanceDoodleGame: React.FC = () => {
         { name: "Ready Pose", label: "ready_pose", emoji: "🎯" },
         { name: "Silly Boxer", label: "silly_boxer", emoji: "🥊" },
         { name: "Happy Stand Left", label: "happy_stand_left", emoji: "😊" },
+        {name: "Happy Stand Right", label: "happy_stand_right", emoji: "😊"},
+        {name: "Crossy Play", label: "crossy_play", emoji: "🤸"},
+        {name: "Shh Fun", label: "shh_fun", emoji: "🤫"},
+        {name: "Stretch Left", label: "stretch_left", emoji: "🧘"},
+        {name: "Stretch Right", label: "stretch_right", emoji: "🧘"},
     ], []);
 
     const MAX_ROUNDS = 5;
@@ -102,8 +107,8 @@ const DanceDoodleGame: React.FC = () => {
             // Convert base64 to blob
             const response = await fetch(frameData);
             const blob = await response.blob();
-            
-            const formData = new FormData();
+
+        const formData = new FormData();
             formData.append('file', blob, 'webcam_frame.jpg');
 
             const apiResponse = await fetch('http://127.0.0.1:8000/predictDancePose', {
@@ -161,13 +166,13 @@ const DanceDoodleGame: React.FC = () => {
     }, [captureFrame, currentPose, round, timeLeft, isDetecting]);
 
     const startNextRound = useCallback(() => {
-        const nextRound = round + 1;
-        setRound(nextRound);
+                        const nextRound = round + 1;
+                        setRound(nextRound);
         setTimeLeft(10);
         setCurrentPose(gamePoses[nextRound - 1].label);
-        setDetectedPose("");
-        setConfidence(0);
-        setIsCorrect(null);
+                        setDetectedPose("");
+                        setConfidence(0);
+                        setIsCorrect(null);
         setGamePhase('playing');
         setRoundStartTime(Date.now());
         
@@ -196,7 +201,7 @@ const DanceDoodleGame: React.FC = () => {
         setTimeLeft(10);
         setGameResults([]);
         setDetectedPose("");
-        setConfidence(0);
+                setConfidence(0);
         setIsCorrect(null);
         setGamePhase('playing');
         
@@ -321,28 +326,28 @@ const DanceDoodleGame: React.FC = () => {
 
                 {/* Game Stats */}
                 {gamePhase !== 'start' && (
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                        <div className="bg-white rounded-lg p-4 shadow-md text-center">
-                            <div className="text-2xl font-bold text-blue-600">{currentScore}</div>
-                            <div className="text-sm text-gray-600">Score</div>
-                        </div>
-                        <div className="bg-white rounded-lg p-4 shadow-md text-center">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                    <div className="bg-white rounded-lg p-4 shadow-md text-center">
+                        <div className="text-2xl font-bold text-blue-600">{currentScore}</div>
+                        <div className="text-sm text-gray-600">Score</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 shadow-md text-center">
                             <div className="text-2xl font-bold text-green-600">{round}/{MAX_ROUNDS}</div>
-                            <div className="text-sm text-gray-600">Round</div>
-                        </div>
-                        <div className="bg-white rounded-lg p-4 shadow-md text-center">
+                        <div className="text-sm text-gray-600">Round</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 shadow-md text-center">
                             <div className={`text-2xl font-bold ${timeLeft <= 3 ? 'text-red-600' : 'text-orange-600'}`}>
                                 {timeLeft}s
                             </div>
-                            <div className="text-sm text-gray-600">Time Left</div>
-                        </div>
-                        <div className="bg-white rounded-lg p-4 shadow-md text-center">
+                        <div className="text-sm text-gray-600">Time Left</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 shadow-md text-center">
                             <div className="text-2xl font-bold text-purple-600">
                                 {webcamActive ? '📹' : '📷'}
                             </div>
                             <div className="text-sm text-gray-600">Camera</div>
-                        </div>
                     </div>
+                </div>
                 )}
 
                 {/* Game Area */}
@@ -395,10 +400,10 @@ const DanceDoodleGame: React.FC = () => {
 
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                 {/* Webcam Feed */}
-                                <div className="text-center">
+                            <div className="text-center">
                                     <h3 className="text-xl font-bold text-gray-800 mb-4">
                                         Your Performance 📹
-                                    </h3>
+                                </h3>
                                     <div className="relative bg-gray-100 rounded-xl overflow-hidden">
                                         <video
                                             ref={videoRef}
@@ -425,15 +430,15 @@ const DanceDoodleGame: React.FC = () => {
                                             }`}>
                                                 {timeLeft}s
                                             </div>
-                                        </div>
                                     </div>
                                 </div>
+                            </div>
 
                                 {/* Target Pose Display */}
-                                <div className="text-center">
+                            <div className="text-center">
                                     <h3 className="text-xl font-bold text-gray-800 mb-4">
                                         Target Pose 🎯
-                                    </h3>
+                                </h3>
                                     <div className="bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl p-8">
                                         <div className="text-8xl mb-4">{getPoseEmoji(currentPose)}</div>
                                         <div className="text-2xl font-semibold text-gray-800">
@@ -469,18 +474,18 @@ const DanceDoodleGame: React.FC = () => {
                                     </div>
                                 </div>
                             )}
-                        </div>
-                    )}
+                                </div>
+                            )}
 
                     {gamePhase === 'result' && (
-                        <div className="text-center">
+                                <div className="text-center">
                             <div className="text-6xl mb-4">
                                 {isCorrect ? '🎉' : '⏰'}
                             </div>
-                            <h2 className="text-3xl font-bold text-gray-800 mb-4">
+                                    <h2 className="text-3xl font-bold text-gray-800 mb-4">
                                 {isCorrect ? 'Great Job!' : 'Time\'s Up!'}
-                            </h2>
-                            <p className="text-xl text-gray-600 mb-6">
+                                    </h2>
+                                    <p className="text-xl text-gray-600 mb-6">
                                 {isCorrect 
                                     ? `You scored 1 point! Moving to round ${round + 1}...`
                                     : 'Moving to the next round...'
@@ -554,19 +559,19 @@ const DanceDoodleGame: React.FC = () => {
                             </div>
 
                             <div className="text-center">
-                                <button
-                                    onClick={resetGame}
-                                    className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-6 py-3 rounded-full text-lg font-bold hover:from-green-600 hover:to-blue-600 transition-all transform hover:scale-105 shadow-lg mr-4"
-                                >
-                                    Play Again 🔄
-                                </button>
-                                <Link
-                                    to="/"
-                                    className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-full text-lg font-bold transition-all transform hover:scale-105 shadow-lg"
-                                >
-                                    Back to Dashboard 🏠
-                                </Link>
-                            </div>
+                                    <button
+                                        onClick={resetGame}
+                                        className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-6 py-3 rounded-full text-lg font-bold hover:from-green-600 hover:to-blue-600 transition-all transform hover:scale-105 shadow-lg mr-4"
+                                    >
+                                        Play Again 🔄
+                                    </button>
+                                    <Link
+                                        to="/"
+                                        className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-full text-lg font-bold transition-all transform hover:scale-105 shadow-lg"
+                                    >
+                                        Back to Dashboard 🏠
+                                    </Link>
+                                </div>
                         </div>
                     )}
                 </div>

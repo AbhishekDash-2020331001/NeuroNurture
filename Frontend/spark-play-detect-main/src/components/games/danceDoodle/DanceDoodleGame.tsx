@@ -48,6 +48,7 @@ const DanceDoodleGame: React.FC = () => {
     const [isProcessingRound, setIsProcessingRound] = useState(false)
     const [countdown, setCountdown] = useState<number | null>(null)
     const [showCountdown, setShowCountdown] = useState(false)
+    const [usedPoses, setUsedPoses] = useState<string[]>([])
 
     // Consent screen state
     const [childName, setChildName] = useState("")
@@ -60,19 +61,25 @@ const DanceDoodleGame: React.FC = () => {
     const [isRoundCountdownActive, setIsRoundCountdownActive] = useState<boolean>(false)
 
     // Celebration state
+    const [showConfetti, setShowConfetti] = useState<boolean>(false)
     const [showCongratulations, setShowCongratulations] = useState<boolean>(false)
  
-     // Game session and stats state
-     const [gameSession, setGameSession] = useState<DanceGameSession | null>(null)
-     const [showGameStats, setShowGameStats] = useState<boolean>(false)
+    // Game session and stats state
+    const [gameSession, setGameSession] = useState<DanceGameSession | null>(null)
+    const [showGameStats, setShowGameStats] = useState<boolean>(false)
+    const [roundStartTime, setRoundStartTime] = useState<number>(0)
 
     // Refs for cleanup
     const timerRef = useRef<NodeJS.Timeout | null>(null)
+    const resultTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const countdownTimerRef = useRef<NodeJS.Timeout | null>(null)
     const captureIntervalRef = useRef<NodeJS.Timeout | null>(null)
     const currentRoundRef = useRef<number>(0)
     const isProcessingRoundRef = useRef<boolean>(false)
+    const isCorrectRef = useRef<boolean | null>(null)
+    const startNextRoundRef = useRef<(() => void) | null>(null)
     const roundCountdownRef = useRef<NodeJS.Timeout | null>(null)
+    const usedPosesRef = useRef<string[]>([])
     const targetPoseRef = useRef<string>("")
 
     const videoHeight = "480px"
@@ -81,127 +88,214 @@ const DanceDoodleGame: React.FC = () => {
     // API endpoint for pose detection
     const API_ENDPOINT = 'http://127.0.0.1:8000/predictDancePose';
  
-     // Create session ID
-     const createSessionId = useCallback(() => {
-         const childId = localStorage.getItem('selectedChildId') || 'unknown';
-         const dateTime = new Date().toISOString().replace(/[:.]/g, '-');
-         return `${childId}_${dateTime}`;
-     }, []);
+    // Create session ID
+    const createSessionId = useCallback(() => {
+        const childId = localStorage.getItem('selectedChildId') || 'unknown';
+        const dateTime = new Date().toISOString().replace(/[:.]/g, '-');
+        return `${childId}_${dateTime}`;
+    }, []);
 
-    // Available dance poses - exactly 5 poses for 5 rounds
+    // Available dance poses - 9 poses for 9 rounds (one pose each, no repetition)
     const dancePoses = useMemo(() => [
-        { name: "Cool Arms", label: "cool_arms", emoji: "💪" },
-        { name: "Open Wings", label: "open_wings", emoji: "🦅" },
-        { name: "Ready Pose", label: "ready_pose", emoji: "🎯" },
-        { name: "Silly Boxer", label: "silly_boxer", emoji: "🥊" },
-        { name: "Happy Stand Left", label: "happy_stand_left", emoji: "😊" },
+        { name: "Cool Arms", label: "cool_arms", emoji: "💪", description: "Show your strong arms like a superhero!" },
+        { name: "Open Wings", label: "open_wings", emoji: "🦅", description: "Spread your arms like a bird flying!" },
+        { name: "Silly Boxer", label: "silly_boxer", emoji: "🥊", description: "Make boxing moves like a champion!" },
+        { name: "Happy Stand Left", label: "happy_stand_left", emoji: "😊", description: "Stand happily with your left side!" },
+        { name: "Happy Stand Right", label: "happy_stand_right", emoji: "😊", description: "Stand happily with your right side!" },
+        { name: "Crossy Play", label: "crossy_play", emoji: "🤸", description: "Cross your arms and legs like a gymnast!" },
+        { name: "Shh Fun", label: "shh_fun", emoji: "🤫", description: "Put your finger on your lips like a secret keeper!" },
+        { name: "Stretch Left", label: "stretch_left", emoji: "🧘", description: "Stretch your left arm up high!" },
+        { name: "Stretch Right", label: "stretch_right", emoji: "🧘", description: "Stretch your right arm up high!" },
     ], []);
 
-    const totalRounds = dancePoses.length;
+    const totalRounds = 9; // 9 rounds with one pose each (no repetition)
 
-    const getPoseDisplayName = (poseLabel: string) => {
-        const pose = dancePoses.find(p => p.label === poseLabel);
-        return pose ? pose.name : poseLabel;
-    };
-
-    const getPoseEmoji = (poseLabel: string) => {
-        const pose = dancePoses.find(p => p.label === poseLabel);
-        return pose ? pose.emoji : "🎭";
-    };
-
-    // Start webcam
-    const startWebcam = useCallback(async () => {
+    // Save game data locally (no backend for now)
+    const saveGameDataToBackend = useCallback(async (gameSession: DanceGameSession) => {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { 
-                    width: 640, 
-                    height: 480,
-                    facingMode: 'user'
-                } 
+            // Store in localStorage for now
+            const existingData = localStorage.getItem('danceDoodleGameData') || '[]';
+            const gameData = JSON.parse(existingData);
+            gameData.push(gameSession);
+            localStorage.setItem('danceDoodleGameData', JSON.stringify(gameData));
+            console.log('Game data saved locally:', gameSession);
+            toast({
+                title: "Data Saved! 📊",
+                description: "Game statistics have been saved locally.",
             });
-            
+        } catch (error) {
+            console.error('Error saving game data locally:', error);
+            toast({
+                title: "Save Error! ❌",
+                description: "An error occurred while saving game data locally.",
+                variant: "destructive",
+            });
+        }
+    }, []);
+
+    // Test API connection on component mount
+    useEffect(() => {
+        const testConnection = async () => {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 100;
+                canvas.height = 100;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.fillStyle = 'black';
+                    ctx.fillRect(0, 0, 100, 100);
+                }
+                
+                const blob = await new Promise<Blob>((resolve) => {
+                    canvas.toBlob(resolve as BlobCallback, 'image/jpeg', 0.8);
+                });
+
+                if (!blob) return;
+
+                const formData = new FormData();
+                formData.append('file', blob, 'test.jpg');
+
+                console.log('Testing dance pose API connection...');
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    body: formData,
+                });
+                
+                if (response.ok) {
+                    const testResult = await response.json();
+                    console.log('API test response:', testResult);
+                    setIsConnected(true);
+                    console.log('Dance pose API connection successful');
+                } else {
+                    console.log('API test failed with status:', response.status);
+                    setIsConnected(false);
+                }
+            } catch (error) {
+                console.log('Dance pose API not available, will use demo mode:', error);
+                setIsConnected(false);
+            }
+        };
+        
+        testConnection();
+    }, []);
+
+    // Load child information from localStorage
+    useEffect(() => {
+        const selectedChild = localStorage.getItem('selectedChild');
+        if (selectedChild) {
+            try {
+                const childData = JSON.parse(selectedChild);
+                setChildName(childData.name || "");
+                
+                if (childData.dateOfBirth) {
+                    const birthDate = new Date(childData.dateOfBirth);
+                    const today = new Date();
+                    const age = today.getFullYear() - birthDate.getFullYear();
+                    const monthDiff = today.getMonth() - birthDate.getMonth();
+                    const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) ? age - 1 : age;
+                    setChildAge(actualAge.toString());
+                }
+            } catch (error) {
+                console.error('Error parsing child data:', error);
+            }
+        }
+    }, []);
+
+    // Webcam setup
+    const [isCameraOn, setIsCameraOn] = useState(false);
+    const streamRef = useRef<MediaStream | null>(null);
+
+    // Initialize webcam
+    const initializeWebcam = useCallback(async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: { ideal: 640, max: 1280 },
+                    height: { ideal: 480, max: 720 },
+                    facingMode: 'user',
+                    frameRate: { ideal: 30, max: 60 }
+                }
+            });
+
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
+                streamRef.current = stream;
+                setIsCameraOn(true);
                 setWebcamRunning(true);
-                toast({
-                    title: "Camera Ready! 📷",
-                    description: "Your camera is now active for pose detection.",
-                });
+                console.log('Webcam initialized successfully');
             }
         } catch (error) {
             console.error('Error accessing webcam:', error);
-            toast({
-                title: "Camera Error",
-                description: "Could not access webcam. Please ensure camera permissions are granted.",
-                variant: "destructive"
-            });
+            setWebcamRunning(false);
         }
     }, []);
 
     // Stop webcam
     const stopWebcam = useCallback(() => {
-        if (videoRef.current && videoRef.current.srcObject) {
-            const stream = videoRef.current.srcObject as MediaStream;
-            stream.getTracks().forEach(track => track.stop());
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+        }
+        
+        if (videoRef.current) {
+            videoRef.current.pause();
             videoRef.current.srcObject = null;
         }
+        
+        setIsCameraOn(false);
         setWebcamRunning(false);
     }, []);
 
-    // Handle pose detected during game
-    const handlePoseDetected = useCallback((prediction: string, confidence: number) => {
-        setDetectedPose(prediction);
-        setDetectedConfidence(confidence);
+    // Direct function to handle round end
+    const handleRoundEndDirect = useCallback(() => {
+        if (isProcessingRoundRef.current) return;
+        isProcessingRoundRef.current = true;
+        setIsProcessingRound(true);
+ 
+        // This function handles failed rounds (time's up)
+        if (!targetPoseRef.current) {
+            console.error('No target pose set for round', currentRoundRef.current);
+            return;
+        }
         
-        const isTargetPose = prediction === targetPoseRef.current;
-        setIsCorrect(isTargetPose);
-        
-        if (isTargetPose && !isProcessingRoundRef.current) {
-            setIsProcessingRound(true);
-            isProcessingRoundRef.current = true;
-            
-            if (timerRef.current) {
-                clearInterval(timerRef.current);
-                timerRef.current = null;
-            }
-            
-            const timeTaken = 10 - timeLeft;
+        const currentPose = dancePoses.find(p => p.label === targetPoseRef.current);
+        if (currentPose && gameSession) {
             const roundStats: DanceRoundStats = {
-                roundNumber: currentRoundRef.current + 1,
-                poseName: getPoseDisplayName(targetPoseRef.current),
-                poseEmoji: getPoseEmoji(targetPoseRef.current),
-                timeTaken: timeTaken,
-                completed: true
+                roundNumber: currentRoundRef.current,
+                poseName: currentPose.name,
+                poseEmoji: currentPose.emoji,
+                timeTaken: 10,
+                completed: false
             };
             
             setGameSession(prev => {
                 if (!prev) return null;
                 return {
                     ...prev,
-                    rounds: [...prev.rounds, roundStats],
-                    totalScore: prev.totalScore + 1
+                    rounds: [...prev.rounds, roundStats]
                 };
             });
-            
-            setScore(prev => prev + 1);
-            setRoundResult("success");
-            
-            toast({
-                title: "Amazing! 🎉",
-                description: `You nailed the ${getPoseDisplayName(targetPoseRef.current)} pose!`,
-            });
-            
-            setTimeout(() => {
-                if (currentRoundRef.current >= totalRounds - 1) {
-                    endGame();
-                } else {
-                    startNextRound();
-                }
-            }, 2000);
         }
-    }, [timeLeft, totalRounds, getPoseDisplayName, getPoseEmoji]);
+        
+        setRoundResult("Time's up! ⏰");
+        setIsCorrect(false);
+        isCorrectRef.current = false;
+        
+        // Show result for 2 seconds
+        resultTimeoutRef.current = setTimeout(() => {
+            setRoundResult("");
+            setIsProcessingRound(false);
+            isProcessingRoundRef.current = false;
+            
+            if (currentRoundRef.current >= totalRounds) {
+                endGame();
+            } else {
+                startNextRound();
+            }
+        }, 2000);
+    }, [dancePoses, gameSession, totalRounds]);
 
-    // Declare the functions before using them
+    // End game function
     const endGame = useCallback(() => {
         setGameEnded(true);
         setGameStarted(false);
@@ -231,23 +325,45 @@ const DanceDoodleGame: React.FC = () => {
         }, 3000);
     }, []);
 
+    // Start next round
     const startNextRound = useCallback(() => {
         setIsProcessingRound(false);
         isProcessingRoundRef.current = false;
         setIsCorrect(null);
+        isCorrectRef.current = null;
         setDetectedPose("");
         setDetectedConfidence(0);
         setRoundResult("");
         
         const nextRound = currentRoundRef.current + 1;
+        
+        // Check if game should end (after 9 rounds)
+        if (nextRound > totalRounds) {
+            endGame();
+            return;
+        }
+        
         setCurrentRound(nextRound);
         currentRoundRef.current = nextRound;
         
-        const nextPose = dancePoses[nextRound];
+        // Get available poses (not used yet) - no repetition allowed
+        const availablePoses = dancePoses.filter(pose => !usedPosesRef.current.includes(pose.label));
+        
+        // If no poses available, end the game
+        if (availablePoses.length === 0) {
+            endGame();
+            return;
+        }
+        
+        const nextPose = availablePoses[Math.floor(Math.random() * availablePoses.length)];
+        
         setTargetPose(nextPose.label);
         targetPoseRef.current = nextPose.label;
+        setUsedPoses(prev => [...prev, nextPose.label]);
+        usedPosesRef.current = [...usedPosesRef.current, nextPose.label];
         
         setTimeLeft(10);
+        setRoundStartTime(Date.now());
         
         setIsRoundCountdownActive(true);
         setRoundCountdown(2);
@@ -262,38 +378,7 @@ const DanceDoodleGame: React.FC = () => {
                         setTimeLeft(prevTime => {
                             if (prevTime <= 1) {
                                 clearInterval(gameTimer);
-                                
-                                if (!isProcessingRoundRef.current) {
-                                    const roundStats: DanceRoundStats = {
-                                        roundNumber: currentRoundRef.current + 1,
-                                        poseName: getPoseDisplayName(targetPoseRef.current),
-                                        poseEmoji: getPoseEmoji(targetPoseRef.current),
-                                        timeTaken: 10,
-                                        completed: false
-                                    };
-                                    
-                                    setGameSession(prev => {
-                                        if (!prev) return null;
-                                        return {
-                                            ...prev,
-                                            rounds: [...prev.rounds, roundStats]
-                                        };
-                                    });
-                                    
-                                    setRoundResult("timeout");
-                                    toast({
-                                        title: "Time's up! ⏰",
-                                        description: "Don't worry, let's try the next pose!",
-                                    });
-                                    
-                                    setTimeout(() => {
-                                        if (currentRoundRef.current >= totalRounds - 1) {
-                                            endGame();
-                                        } else {
-                                            startNextRound();
-                                        }
-                                    }, 2000);
-                                }
+                                handleRoundEndDirect();
                                 return 0;
                             }
                             return prevTime - 1;
@@ -308,74 +393,69 @@ const DanceDoodleGame: React.FC = () => {
         }, 1000);
         
         roundCountdownRef.current = countdownInterval;
-    }, [dancePoses, getPoseDisplayName, getPoseEmoji, totalRounds, endGame]);
+    }, [dancePoses, handleRoundEndDirect, endGame]);
 
-    // Start game
-    const startGame = useCallback(async () => {
-        setGameStarted(false);
-        setGameEnded(false);
-        setCurrentRound(0);
-        currentRoundRef.current = 0;
-        setScore(0);
-        setTargetPose("");
-        targetPoseRef.current = "";
-        setDetectedPose("");
-        setDetectedConfidence(0);
-        setIsCorrect(null);
-        setRoundResult("");
-        setIsProcessingRound(false);
-        isProcessingRoundRef.current = false;
+    // Handle pose detected
+    const handlePoseDetected = useCallback((prediction: string, confidence: number) => {
+        setDetectedPose(prediction);
+        setDetectedConfidence(confidence);
         
-        const sessionId = createSessionId();
-        const newSession: DanceGameSession = {
-            sessionId,
-            childId: localStorage.getItem('selectedChildId') || 'unknown',
-            startTime: new Date(),
-            rounds: [],
-            totalScore: 0,
-            consentData: {
-                childName,
-                childAge,
-                suspectedASD,
-                isTrainingAllowed
+        const isTargetPose = prediction === targetPoseRef.current;
+        setIsCorrect(isTargetPose);
+        isCorrectRef.current = isTargetPose;
+        
+        if (isTargetPose && !isProcessingRoundRef.current) {
+            setIsProcessingRound(true);
+            isProcessingRoundRef.current = true;
+            
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
             }
-        };
-        setGameSession(newSession);
-        
-        await startWebcam();
-        
-        setShowCountdown(true);
-        setCountdown(3);
-        
-        const countdownInterval = setInterval(() => {
-            setCountdown(prev => {
-                if (prev === null || prev <= 1) {
-                    clearInterval(countdownInterval);
-                    setShowCountdown(false);
-                    setCountdown(null);
-                    
-                    setGameStarted(true);
-                    setCurrentRound(0);
-                    currentRoundRef.current = 0;
-                    
-                    const firstPose = dancePoses[0];
-                    setTargetPose(firstPose.label);
-                    targetPoseRef.current = firstPose.label;
-                    
-                    startNextRound();
-                    
-                    return null;
-                }
-                return prev - 1;
+            
+            setScore(prev => prev + 1);
+            setRoundResult("Amazing! 🎉");
+            
+            // Save successful round data
+            const currentPose = dancePoses.find(p => p.label === targetPoseRef.current);
+            if (currentPose && gameSession) {
+                const roundStats: DanceRoundStats = {
+                    roundNumber: currentRoundRef.current,
+                    poseName: currentPose.name,
+                    poseEmoji: currentPose.emoji,
+                    timeTaken: 10 - timeLeft,
+                    completed: true
+                };
+                
+                setGameSession(prev => {
+                    if (!prev) return null;
+                    return {
+                        ...prev,
+                        rounds: [...prev.rounds, roundStats],
+                        totalScore: prev.totalScore + 1
+                    };
+                });
+            }
+            
+            toast({
+                title: "Perfect! 🎉",
+                description: `You nailed the ${currentPose?.name} pose!`,
             });
-        }, 1000);
-        
-        countdownTimerRef.current = countdownInterval;
-    }, [createSessionId, childName, childAge, suspectedASD, isTrainingAllowed, startWebcam, dancePoses, startNextRound]);
+            
+            // Wait 2 seconds then proceed to next round
+            setTimeout(() => {
+                if (currentRoundRef.current >= totalRounds) {
+                    endGame();
+                } else {
+                    startNextRound();
+                }
+            }, 2000);
+        }
+    }, [timeLeft, dancePoses, gameSession, totalRounds, endGame, startNextRound]);
 
     // Predict pose from webcam
     const predictWebcam = useCallback(async () => {
-        if (!videoRef.current || !canvasRef.current || !webcamRunning || gameEnded) return;
+        if (!videoRef.current || !canvasRef.current || !isCameraOn || gameEnded) return;
 
         const video = videoRef.current;
         const canvas = canvasRef.current;
@@ -425,9 +505,9 @@ const DanceDoodleGame: React.FC = () => {
             } catch (error) {
                 setIsConnected(false);
                 
-                // Mock detection for testing when API is not available
-                if (Math.random() < 0.05) { // 5% chance per frame for testing
-                    const poses = ['cool_arms', 'open_wings', 'ready_pose', 'silly_boxer', 'happy_stand_left'];
+                // Mock detection for testing
+                if (Math.random() < 0.05) {
+                    const poses = ['cool_arms', 'open_wings', 'silly_boxer', 'happy_stand_left', 'happy_stand_right', 'crossy_play', 'shh_fun', 'stretch_left', 'stretch_right'];
                     const randomPose = poses[Math.floor(Math.random() * poses.length)];
                     if (gameStarted && !gameEnded && !isProcessingRoundRef.current) {
                         handlePoseDetected(randomPose, 0.8);
@@ -444,15 +524,15 @@ const DanceDoodleGame: React.FC = () => {
         if (!gameEnded) {
             sendFrame();
         }
-    }, [webcamRunning, handlePoseDetected, isProcessing, gameStarted, gameEnded])
+    }, [isCameraOn, handlePoseDetected, isProcessing, gameStarted, gameEnded]);
 
     const isActive = useMemo(() => {
         return currentScreen === 'game' && gameStarted && !gameEnded;
     }, [currentScreen, gameStarted, gameEnded]);
 
     useEffect(() => {
-        if (isActive && webcamRunning) {
-            captureIntervalRef.current = setInterval(predictWebcam, 100); // 10 FPS
+        if (isActive && isCameraOn) {
+            captureIntervalRef.current = setInterval(predictWebcam, 100);
         } else {
             if (captureIntervalRef.current) {
                 clearInterval(captureIntervalRef.current);
@@ -465,25 +545,165 @@ const DanceDoodleGame: React.FC = () => {
                 clearInterval(captureIntervalRef.current);
             }
         };
-    }, [isActive, webcamRunning, predictWebcam]);
+    }, [isActive, isCameraOn, predictWebcam]);
 
+    // Stop camera when game ends
     useEffect(() => {
-        if (gameEnded && webcamRunning) {
+        if (gameEnded && isCameraOn) {
             stopWebcam();
         }
-    }, [gameEnded, webcamRunning, stopWebcam]);
+    }, [gameEnded, isCameraOn, stopWebcam]);
 
+    // Cleanup when game ends
+    useEffect(() => {
+        if (gameEnded) {
+            if (captureIntervalRef.current) {
+                clearInterval(captureIntervalRef.current);
+                captureIntervalRef.current = null;
+            }
+            
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
+            
+            if (resultTimeoutRef.current) {
+                clearTimeout(resultTimeoutRef.current);
+                resultTimeoutRef.current = null;
+            }
+            
+            if (countdownTimerRef.current) {
+                clearInterval(countdownTimerRef.current);
+                countdownTimerRef.current = null;
+            }
+            
+            if (roundCountdownRef.current) {
+                clearInterval(roundCountdownRef.current);
+                roundCountdownRef.current = null;
+            }
+            
+            if (isCameraOn) {
+                stopWebcam();
+            }
+            
+            setIsProcessing(false);
+            setIsProcessingRound(false);
+            isProcessingRoundRef.current = false;
+        }
+    }, [gameEnded, isCameraOn, stopWebcam]);
+
+    // Cleanup on component unmount
     useEffect(() => {
         return () => {
             stopWebcam();
+            
             if (timerRef.current) clearInterval(timerRef.current);
+            if (resultTimeoutRef.current) clearTimeout(resultTimeoutRef.current);
             if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
             if (captureIntervalRef.current) clearInterval(captureIntervalRef.current);
             if (roundCountdownRef.current) clearInterval(roundCountdownRef.current);
         }
     }, [stopWebcam]);
 
-    // Render loading screen
+    // Start game function
+    const startGame = useCallback(async () => {
+        setGameStarted(false);
+        setGameEnded(false);
+        setCurrentRound(0);
+        currentRoundRef.current = 0;
+        setScore(0);
+        setTargetPose("");
+        targetPoseRef.current = "";
+        setDetectedPose("");
+        setDetectedConfidence(0);
+        setIsCorrect(null);
+        isCorrectRef.current = null;
+        setRoundResult("");
+        setIsProcessingRound(false);
+        isProcessingRoundRef.current = false;
+        setUsedPoses([]);
+        usedPosesRef.current = [];
+        
+        const sessionId = createSessionId();
+        const newSession: DanceGameSession = {
+            sessionId,
+            childId: localStorage.getItem('selectedChildId') || 'unknown',
+            startTime: new Date(),
+            rounds: [],
+            totalScore: 0,
+            consentData: {
+                childName,
+                childAge,
+                suspectedASD,
+                dataConsent: isTrainingAllowed
+            }
+        };
+        setGameSession(newSession);
+        
+        await initializeWebcam();
+        
+        setShowCountdown(true);
+        setCountdown(3);
+        
+        const countdownInterval = setInterval(() => {
+            setCountdown(prev => {
+                if (prev === null || prev <= 1) {
+                    clearInterval(countdownInterval);
+                    setShowCountdown(false);
+                    setCountdown(null);
+                    
+                    setGameStarted(true);
+                    setCurrentRound(1);
+                    currentRoundRef.current = 1;
+                    
+                    const firstPose = dancePoses[0];
+                    setTargetPose(firstPose.label);
+                    targetPoseRef.current = firstPose.label;
+                    setUsedPoses([firstPose.label]);
+                    usedPosesRef.current = [firstPose.label];
+                    
+                    // Start the first round directly without calling startNextRound
+                    setTimeLeft(10);
+                    setRoundStartTime(Date.now());
+                    
+                    setIsRoundCountdownActive(true);
+                    setRoundCountdown(2);
+                    
+                    const firstRoundCountdown = setInterval(() => {
+                        setRoundCountdown(prev => {
+                            if (prev <= 1) {
+                                clearInterval(firstRoundCountdown);
+                                setIsRoundCountdownActive(false);
+                                
+                                const gameTimer = setInterval(() => {
+                                    setTimeLeft(prevTime => {
+                                        if (prevTime <= 1) {
+                                            clearInterval(gameTimer);
+                                            handleRoundEndDirect();
+                                            return 0;
+                                        }
+                                        return prevTime - 1;
+                                    });
+                                }, 1000);
+                                
+                                timerRef.current = gameTimer;
+                                return 0;
+                            }
+                            return prev - 1;
+                        });
+                    }, 1000);
+                    
+                    roundCountdownRef.current = firstRoundCountdown;
+                    
+                    return null;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        
+        countdownTimerRef.current = countdownInterval;
+    }, [createSessionId, childName, childAge, suspectedASD, isTrainingAllowed, initializeWebcam, dancePoses, startNextRound]);
+
     if (isLoading) {
         return (
             <div className="h-full flex items-center justify-center">
@@ -496,83 +716,78 @@ const DanceDoodleGame: React.FC = () => {
         )
     }
 
-    // Render instructions screen
     if (currentScreen === 'instructions') {
         return (
             <div className="h-full flex flex-col">
                 <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                     <div className="max-w-4xl mx-auto">
                         <div className="text-center mb-8">
-                            <div className="text-8xl mb-4 animate-bounce">🕺💃</div>
+                            <div className="text-8xl mb-4 animate-bounce">🕺</div>
                             <h1 className="text-5xl font-playful bg-gradient-to-r from-purple-600 via-pink-500 to-blue-600 bg-clip-text text-transparent mb-4">
-                                Dance Doodle Adventure!
+                                Dance Pose Adventure!
                             </h1>
                             <p className="text-2xl font-comic text-muted-foreground">
-                                Strike amazing poses and become a dance superstar! ✨
+                                Show your amazing dance moves and become a pose superstar! 🌟
                             </p>
                         </div>
-
-                        <div className="card-playful border-4 border-primary mb-8 p-6">
-                            <h2 className="text-3xl font-playful text-primary mb-6 flex items-center gap-2">
-                                🎯 How to Play
+                        <div className="card-playful border-4 border-primary bg-gradient-to-r from-primary/10 to-secondary/10 p-8 mb-8">
+                            <h2 className="text-4xl font-playful text-primary mb-6 text-center">
+                                🎯 What's This Game About?
                             </h2>
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <div className="space-y-4">
-                                    <div className="flex items-start gap-4 p-4 bg-white/50 rounded-lg">
-                                        <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold">1</div>
-                                        <div>
-                                            <h3 className="font-playful text-lg text-primary">Get Ready</h3>
-                                            <p className="font-comic text-muted-foreground">Position yourself in front of your camera!</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-start gap-4 p-4 bg-white/50 rounded-lg">
-                                        <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold">2</div>
-                                        <div>
-                                            <h3 className="font-playful text-lg text-primary">Watch & Learn</h3>
-                                            <p className="font-comic text-muted-foreground">Look at the target pose shown on screen!</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="space-y-4">
-                                    <div className="flex items-start gap-4 p-4 bg-white/50 rounded-lg">
-                                        <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold">3</div>
-                                        <div>
-                                            <h3 className="font-playful text-lg text-primary">Strike the Pose!</h3>
-                                            <p className="font-comic text-muted-foreground">Copy the pose - you have 10 seconds!</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-start gap-4 p-4 bg-white/50 rounded-lg">
-                                        <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold">4</div>
-                                        <div>
-                                            <h3 className="font-playful text-lg text-primary">Score Points!</h3>
-                                            <p className="font-comic text-muted-foreground">Get 1 point for each correct pose!</p>
-                                        </div>
-                                    </div>
-                                </div>
+                            <p className="text-xl text-muted-foreground leading-relaxed font-comic text-center">
+                                Dance Pose Adventure helps you practice making different dance poses! 
+                                You'll see a big picture showing how to make a pose, and then you copy it with your body. 
+                                It's like playing copycat with your whole body! ✨
+                            </p>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-6 mb-8">
+                            <div className="card-playful border-2 border-fun-purple/20 p-6 text-center hover:scale-105 transition-all duration-300">
+                                <div className="text-6xl mb-4 animate-bounce">1️⃣</div>
+                                <h4 className="text-2xl font-playful text-primary mb-3">Look at the Pose</h4>
+                                <p className="text-lg text-muted-foreground font-comic">
+                                    We'll show you a big, colorful picture of how to make a dance pose
+                                </p>
+                            </div>
+                            <div className="card-playful border-2 border-fun-orange/20 p-6 text-center hover:scale-105 transition-all duration-300">
+                                <div className="text-6xl mb-4 animate-bounce">2️⃣</div>
+                                <h4 className="text-2xl font-playful text-primary mb-3">Copy the Pose</h4>
+                                <p className="text-lg text-muted-foreground font-comic">
+                                    Look in the camera and make the same dance pose!
+                                </p>
+                            </div>
+                            <div className="card-playful border-2 border-fun-green/20 p-6 text-center hover:scale-105 transition-all duration-300">
+                                <div className="text-6xl mb-4 animate-bounce">3️⃣</div>
+                                <h4 className="text-2xl font-playful text-primary mb-3">Get Points!</h4>
+                                <p className="text-lg text-muted-foreground font-comic">
+                                    When you make the right pose, you get a point and hear a happy sound!
+                                </p>
+                            </div>
+                            <div className="card-playful border-2 border-fun-yellow/20 p-6 text-center hover:scale-105 transition-all duration-300">
+                                <div className="text-6xl mb-4 animate-bounce">4️⃣</div>
+                                                                 <h4 className="text-2xl font-playful text-primary mb-3">Play 9 Rounds</h4>
+                                <p className="text-lg text-muted-foreground font-comic">
+                                    Try to copy 9 different poses. You have 10 seconds for each one!
+                                </p>
                             </div>
                         </div>
-
-                        <div className="card-playful border-4 border-secondary mb-8 p-6">
-                            <h2 className="text-3xl font-playful text-secondary mb-6 flex items-center gap-2">
-                                💃 The 5 Dance Poses
-                            </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                        <div className="card-playful border-4 border-primary bg-gradient-to-r from-primary/10 to-secondary/10 p-8 mb-8">
+                            <h3 className="text-3xl font-playful text-primary mb-6 text-center">Available Poses:</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                 {dancePoses.map((pose, index) => (
-                                    <div key={pose.label} className="text-center p-4 bg-white/50 rounded-lg border-2 border-secondary/20">
-                                        <div className="text-6xl mb-2">{pose.emoji}</div>
-                                        <h3 className="font-playful text-lg text-secondary mb-1">{pose.name}</h3>
-                                        <p className="font-comic text-sm text-muted-foreground">Round {index + 1}</p>
+                                    <div key={index} className="card-playful border-2 border-fun-purple/20 p-4 text-center hover:scale-105 transition-all duration-300 group">
+                                        <div className="text-4xl mb-3 group-hover:animate-bounce">{pose.emoji}</div>
+                                        <div className="text-lg font-playful text-primary mb-2">{pose.name}</div>
+                                        <div className="text-sm text-muted-foreground font-comic">{pose.description}</div>
                                     </div>
                                 ))}
                             </div>
                         </div>
-
-                        <div className="flex justify-center">
+                        <div className="text-center">
                             <button
                                 onClick={() => setCurrentScreen('consent')}
-                                className="btn-fun font-comic text-2xl py-4 px-8 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-4 border-purple-300 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                                className="btn-fun font-comic text-2xl py-4 px-8 bg-gradient-to-r from-purple-600 via-pink-500 to-blue-600 text-white border-4 border-purple-300 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110"
                             >
-                                🚀 Let's Dance! →
+                                🚀 Start the Adventure! 🚀
                             </button>
                         </div>
                     </div>
@@ -581,29 +796,68 @@ const DanceDoodleGame: React.FC = () => {
         )
     }
 
-    // Render consent screen
     if (currentScreen === 'consent') {
         return (
             <div className="h-full flex flex-col">
                 <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                     <div className="max-w-4xl mx-auto">
+                        {/* Header */}
                         <div className="text-center mb-8">
-                            <div className="text-6xl mb-4">🛡️</div>
-                            <h1 className="text-4xl font-playful text-primary mb-4">
-                                Child Information & Consent
+                            <div className="text-8xl mb-4 animate-bounce">🛡️</div>
+                            <h1 className="text-5xl font-playful bg-gradient-to-r from-blue-600 via-purple-500 to-pink-600 bg-clip-text text-transparent mb-4">
+                                Parental Consent
                             </h1>
-                            <p className="text-xl font-comic text-muted-foreground">
-                                Please provide some basic information before we begin!
+                            <p className="text-2xl font-comic text-muted-foreground">
+                                We need your permission to help improve our games! ✨
                             </p>
                         </div>
 
+                        {/* Information Card */}
+                        <div className="mb-8 border-4 border-primary bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
+                            <div className="mb-4">
+                                <h2 className="text-3xl font-playful text-primary flex items-center gap-2 mb-2">
+                                    ℹ️ Why We Need Your Consent
+                                </h2>
+                                <p className="text-lg font-comic text-muted-foreground">
+                                    We're working to make our games better for all children, including those with special needs.
+                                </p>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div className="flex items-start gap-3 p-4 bg-white/50 rounded-lg">
+                                        <div className="w-6 h-6 text-blue-600 mt-1">🛡️</div>
+                                        <div>
+                                            <h4 className="font-playful text-lg text-primary mb-1">Data Protection</h4>
+                                            <p className="text-sm text-muted-foreground font-comic">
+                                                All data is anonymized and stored securely. We never share personal information.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-3 p-4 bg-white/50 rounded-lg">
+                                        <div className="w-6 h-6 text-purple-600 mt-1">👥</div>
+                                        <div>
+                                            <h4 className="font-playful text-lg text-primary mb-1">Research Purpose</h4>
+                                            <p className="text-sm text-muted-foreground font-comic">
+                                                Data helps us improve games for children with different abilities and needs.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Consent Form */}
                         <div className="mb-8 border-4 border-primary rounded-lg p-6">
                             <div className="mb-4">
                                 <h2 className="text-3xl font-playful text-primary flex items-center gap-2 mb-2">
                                     👤 Child Information
                                 </h2>
+                                <p className="text-lg font-comic text-muted-foreground">
+                                    Please provide some basic information about your child
+                                </p>
                             </div>
                             <div className="space-y-6">
+                                {/* Child Name */}
                                 <div className="space-y-2">
                                     <label className="block text-lg font-playful text-primary">
                                         Child's Name *
@@ -617,6 +871,7 @@ const DanceDoodleGame: React.FC = () => {
                                     />
                                 </div>
 
+                                {/* Child Age */}
                                 <div className="space-y-2">
                                     <label className="block text-lg font-playful text-primary">
                                         Child's Age *
@@ -632,6 +887,7 @@ const DanceDoodleGame: React.FC = () => {
                                     />
                                 </div>
 
+                                {/* ASD Question */}
                                 <div className="space-y-4">
                                     <label className="block text-lg font-playful text-primary">
                                         Do you suspect your child might have Autism Spectrum Disorder (ASD)?
@@ -660,6 +916,7 @@ const DanceDoodleGame: React.FC = () => {
                                     </div>
                                 </div>
 
+                                {/* Data Consent Options */}
                                 <div className="space-y-4">
                                     <label className="block text-lg font-playful text-primary">
                                         Would you like to help improve our games by sharing anonymous data? *
@@ -676,7 +933,8 @@ const DanceDoodleGame: React.FC = () => {
                                             <div className="space-y-1">
                                                 <span className="font-comic text-lg text-primary">Yes, I agree to share data for training</span>
                                                 <p className="text-sm text-muted-foreground font-comic">
-                                                    Your child's game data will be used anonymously to improve our games.
+                                                    Your child's game data will be used anonymously to improve our games for all children, 
+                                                    including those with special needs. No personal information will be shared.
                                                 </p>
                                             </div>
                                         </label>
@@ -692,7 +950,8 @@ const DanceDoodleGame: React.FC = () => {
                                             <div className="space-y-1">
                                                 <span className="font-comic text-lg text-primary">No, I prefer not to share data</span>
                                                 <p className="text-sm text-muted-foreground font-comic">
-                                                    Your child can still play the game normally.
+                                                    Your child can still play the game, but no data will be collected for training purposes. 
+                                                    The game experience remains the same.
                                                 </p>
                                             </div>
                                         </label>
@@ -701,6 +960,7 @@ const DanceDoodleGame: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* Action Buttons */}
                         <div className="flex justify-center gap-4">
                             <button
                                 onClick={() => setCurrentScreen('instructions')}
@@ -716,13 +976,23 @@ const DanceDoodleGame: React.FC = () => {
                                 {isTrainingAllowed ? '✅ I Consent - Start Game' : '🎮 Start Game'}
                             </button>
                         </div>
+
+                        {/* Privacy Notice */}
+                        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-start gap-2">
+                                <div className="w-4 h-4 text-blue-600 mt-0.5">🛡️</div>
+                                <p className="font-comic text-sm text-blue-800">
+                                    <strong>Privacy Notice:</strong> All data is anonymized and used only for improving our games. 
+                                    We never share personal information with third parties. You can withdraw consent at any time.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         )
     }
 
-    // Render game screen
     if (currentScreen === 'game') {
         return (
             <div className="h-full flex flex-col relative">
@@ -734,12 +1004,12 @@ const DanceDoodleGame: React.FC = () => {
                                 {countdown}
                             </div>
                             <div className="text-4xl font-playful text-white mb-4 animate-pulse">
-                                {countdown === 3 ? "Get Ready!" : countdown === 2 ? "Almost There!" : "Let's Dance!"}
+                                {countdown === 3 ? "Get Ready!" : countdown === 2 ? "Almost There!" : "Go!"}
                             </div>
                             <div className="text-2xl font-comic text-white/90">
-                                {countdown === 3 ? "🎮 Camera is setting up..." : 
-                                 countdown === 2 ? "🕺 Prepare to pose!" : 
-                                 "💃 Here we go!"}
+                                {countdown === 3 ? "🕺 Camera is setting up..." : 
+                                 countdown === 2 ? "💃 Prepare your body!" : 
+                                 "🚀 Let's dance!"}
                             </div>
                             {/* Animated background elements */}
                             <div className="absolute top-1/4 left-1/4 text-6xl animate-spin text-white/20">🕺</div>
@@ -752,73 +1022,81 @@ const DanceDoodleGame: React.FC = () => {
 
                 <div className="flex-1 flex items-center justify-center pt-8">
                     <div className="flex gap-8 lg:gap-20 items-center justify-center flex-wrap lg:flex-nowrap">
-                        {/* Webcam Video Section */}
                         <div className="relative w-[500px] h-[400px]">
                             {!gameEnded ? (
                                 <>
-                                    <video
-                                        ref={videoRef}
-                                        width={videoWidth}
-                                        height={videoHeight}
-                                        autoPlay
-                                        playsInline
-                                        muted
-                                        className="w-full h-full object-cover border-4 border-primary rounded-lg shadow-lg bg-gray-200"
-                                        style={{ transform: 'scaleX(-1)' }}
-                                    />
-                                    <canvas
-                                        ref={canvasRef}
-                                        width={videoWidth}
-                                        height={videoHeight}
-                                        className="hidden"
-                                    />
+                                                                         <video 
+                                         ref={videoRef}
+                                         autoPlay
+                                         playsInline
+                                         muted
+                                         className="w-full h-full object-cover rounded-2xl shadow-2xl border-4 border-primary transform -scale-x-100"
+                                         style={{ 
+                                             transform: 'scaleX(-1)',
+                                             willChange: 'transform',
+                                             backfaceVisibility: 'hidden'
+                                         }}
+                                     />
+                                                                         <canvas 
+                                         ref={canvasRef} 
+                                         className="absolute top-0 left-0 w-full h-full rounded-2xl"
+                                         style={{ 
+                                             willChange: 'transform',
+                                             backfaceVisibility: 'hidden'
+                                         }}
+                                     />
 
-                                    {/* Camera status overlay */}
-                                    {!webcamRunning && (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-gray-200 border-4 border-primary rounded-lg">
-                                            <div className="text-center">
-                                                <div className="text-6xl mb-4">📷</div>
-                                                <p className="text-xl font-comic text-gray-600">Starting Camera...</p>
-                                            </div>
-                                        </div>
-                                    )}
+                                                                         {!isCameraOn && (
+                                         <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl">
+                                             <div className="text-center">
+                                                 <div className="text-6xl mb-4 animate-bounce">📹</div>
+                                                 <p className="text-2xl font-playful text-primary">Camera not active</p>
+                                             </div>
+                                         </div>
+                                     )}
 
-                                    {/* API connection status */}
-                                    <div className="absolute top-4 right-4">
-                                        <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                                    </div>
+                                                                         {detectedPose && gameStarted && !gameEnded && (
+                                         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 card-playful border-2 border-secondary p-2 text-center bg-white/80 backdrop-blur-sm">
+                                             <div className="text-sm font-playful text-primary">
+                                                 Detected: {detectedPose} ({(detectedConfidence * 100).toFixed(1)}%)
+                                             </div>
+                                         </div>
+                                     )}
 
                                     {/* Round countdown overlay */}
                                     {isRoundCountdownActive && (
                                         <div className="absolute inset-0 flex items-center justify-center bg-black/70 rounded-lg">
                                             <div className="text-center">
-                                                <div className="text-8xl font-bold text-white mb-4 animate-bounce">
-                                                    {roundCountdown}
+                                                <div className="relative w-32 h-32 mx-auto mb-4">
+                                                    <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
+                                                        <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="8" fill="none" className="text-gray-200" />
+                                                        <circle
+                                                            cx="50"
+                                                            cy="50"
+                                                            r="40"
+                                                            stroke="currentColor"
+                                                            strokeWidth="8"
+                                                            fill="none"
+                                                            strokeLinecap="round"
+                                                            className="text-blue-500 transition-all duration-1000 ease-linear"
+                                                            style={{
+                                                                strokeDasharray: `${2 * Math.PI * 40}`,
+                                                                strokeDashoffset: `${2 * Math.PI * 40 * (1 - roundCountdown / 2)}`
+                                                            }}
+                                                        />
+                                                    </svg>
+                                                    <div className="absolute inset-0 flex items-center justify-center">
+                                                        <div className="text-center">
+                                                            <div className="text-3xl font-bold text-blue-600">
+                                                                {roundCountdown}s
+                                                            </div>
+                                                            <div className="text-sm text-muted-foreground font-comic">Next Round</div>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <p className="text-2xl font-comic text-white">
-                                                    {roundCountdown === 2 ? "Get ready..." : "Go!"}
+                                                <p className="text-lg text-white font-comic">
+                                                    Prepare for the next pose!
                                                 </p>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Timer overlay */}
-                                    {gameStarted && !isRoundCountdownActive && (
-                                        <div className="absolute top-4 left-4">
-                                            <div className={`px-3 py-2 rounded-full text-white font-bold text-lg ${
-                                                timeLeft <= 3 ? 'bg-red-500 animate-pulse' : 
-                                                timeLeft <= 5 ? 'bg-orange-500' : 'bg-green-500'
-                                            }`}>
-                                                ⏰ {timeLeft}s
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Round info overlay */}
-                                    {gameStarted && (
-                                        <div className="absolute bottom-4 left-4">
-                                            <div className="px-3 py-2 bg-blue-500 text-white rounded-full font-bold">
-                                                Round {currentRound + 1}/{totalRounds}
                                             </div>
                                         </div>
                                     )}
@@ -827,16 +1105,16 @@ const DanceDoodleGame: React.FC = () => {
                                     {roundResult && (
                                         <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
                                             <div className={`text-center p-6 rounded-lg ${
-                                                roundResult === 'success' ? 'bg-green-500' : 'bg-red-500'
+                                                roundResult === 'Amazing! 🎉' ? 'bg-green-500' : 'bg-red-500'
                                             }`}>
                                                 <div className="text-6xl mb-2">
-                                                    {roundResult === 'success' ? '🎉' : '⏰'}
+                                                    {roundResult === 'Amazing! 🎉' ? '🎉' : '⏰'}
                                                 </div>
                                                 <div className="text-2xl font-bold text-white mb-2">
-                                                    {roundResult === 'success' ? 'Amazing!' : 'Time\'s Up!'}
+                                                    {roundResult === 'Amazing! 🎉' ? 'Amazing!' : 'Time\'s Up!'}
                                                 </div>
                                                 <div className="text-lg font-comic text-white">
-                                                    {roundResult === 'success' ? 'Perfect pose!' : 'Don\'t worry, try the next one!'}
+                                                    {roundResult === 'Amazing! 🎉' ? 'Perfect pose!' : 'Don\'t worry, try the next one!'}
                                                 </div>
                                             </div>
                                         </div>
@@ -851,93 +1129,232 @@ const DanceDoodleGame: React.FC = () => {
                                     </div>
                                 </div>
                             )}
-                        </div>
-
-                        {/* Right Panel - Game Info */}
-                        <div className="flex flex-col items-center gap-6 min-w-[300px]">
-                            {gameStarted && !gameEnded && (
-                                <>
-                                    {/* Target Pose */}
-                                    <div className="text-center card-playful border-4 border-secondary p-6 w-full">
-                                        <h3 className="text-2xl font-playful text-secondary mb-4">Target Pose</h3>
-                                        <div className="text-8xl mb-4 animate-bounce">{getPoseEmoji(targetPose)}</div>
-                                        <h4 className="text-xl font-bold text-primary">{getPoseDisplayName(targetPose)}</h4>
-                                        <p className="text-lg font-comic text-muted-foreground mt-2">
-                                            Copy this pose with your body!
-                                        </p>
-                                    </div>
-
-                                    {/* Detection Status */}
-                                    <div className="text-center card-playful border-4 border-accent p-6 w-full">
-                                        <h3 className="text-2xl font-playful text-accent mb-4">Your Pose</h3>
-                                        {detectedPose ? (
-                                            <>
-                                                <div className="text-6xl mb-3">{getPoseEmoji(detectedPose)}</div>
-                                                <h4 className="text-lg font-bold text-primary">{getPoseDisplayName(detectedPose)}</h4>
-                                                <p className="text-sm font-comic text-muted-foreground mt-1">
-                                                    Confidence: {detectedConfidence}%
-                                                </p>
-                                                <div className={`mt-3 p-2 rounded-lg font-bold ${
-                                                    isCorrect === true ? 'bg-green-100 text-green-600' :
-                                                    isCorrect === false ? 'bg-yellow-100 text-yellow-600' :
-                                                    'bg-gray-100 text-gray-600'
-                                                }`}>
-                                                    {isCorrect === true ? '✅ Correct!' :
-                                                     isCorrect === false ? '🔄 Keep trying!' :
-                                                     '👀 Watching...'}
                                                 </div>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <div className="text-6xl mb-3">👀</div>
-                                                <p className="text-lg font-comic text-muted-foreground">
-                                                    Strike a pose to get detected!
-                                                </p>
-                                            </>
-                                        )}
-                                    </div>
 
-                                    {/* Score Display */}
-                                    <div className="text-center card-playful border-4 border-primary p-4 w-full">
-                                        <h3 className="text-xl font-playful text-primary mb-2">Score</h3>
-                                        <div className="text-4xl font-bold text-primary">{score}/{totalRounds}</div>
+                        {gameStarted && !gameEnded && (
+                            <div className="flex flex-col items-center justify-center order-first lg:order-none mb-4 lg:mb-0">
+                                <div className="relative w-24 h-24">
+                                    <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                                        <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="8" fill="none" className="text-gray-200" />
+                                        <circle
+                                            cx="50"
+                                            cy="50"
+                                            r="40"
+                                            stroke="currentColor"
+                                            strokeWidth="8"
+                                            fill="none"
+                                            strokeLinecap="round"
+                                            className={`${timeLeft <= 3 ? "text-red-500" : "text-green-500"} transition-all duration-1000 ease-linear`}
+                                            style={{
+                                                strokeDasharray: `${2 * Math.PI * 40}`,
+                                                strokeDashoffset: `${2 * Math.PI * 40 * (1 - timeLeft / 10)}`
+                                            }}
+                                        />
+                                    </svg>
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="text-center">
+                                            <div className={`text-lg font-bold ${timeLeft <= 3 ? "text-red-500" : "text-primary"}`}>
+                                                {timeLeft}s
+                                            </div>
+                                            <div className="text-xs text-muted-foreground font-comic">Time</div>
+                                        </div>
                                     </div>
-                                </>
-                            )}
-
-                            {!gameStarted && !gameEnded && (
-                                <div className="text-center card-playful border-4 border-primary p-6 w-full">
-                                    <div className="text-6xl mb-4">🎬</div>
-                                    <h3 className="text-2xl font-playful text-primary mb-4">Ready to Dance?</h3>
-                                    <button
-                                        onClick={startGame}
-                                        className="btn-fun font-comic text-xl py-3 px-6 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-2 border-purple-300 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-                                    >
-                                        🚀 Start Dancing!
-                                    </button>
                                 </div>
-                            )}
+                            </div>
+                        )}
+                        
+                        <div className="w-[500px] h-[400px]">
+                                                         {!gameStarted && !gameEnded && (
+                                 <div className="card-playful border-4 border-primary bg-gradient-to-r from-primary/10 to-secondary/10 p-6 text-center w-full h-full flex flex-col justify-center">
+                                     <h2 className="text-3xl font-playful text-primary mb-4">
+                                         🎯 Ready to Play?
+                                     </h2>
+                                     <p className="text-lg text-muted-foreground mb-6 leading-relaxed font-comic">
+                                         Test your reflexes! You'll have 9 rounds to perform the correct pose within 10 seconds each.
+                                     </p>
+                                     <div className="flex flex-col gap-4">
+                                         <button
+                                             onClick={startGame}
+                                             className="btn-fun font-comic text-xl py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-2 border-purple-300 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                                         >
+                                             🎮 Start Game
+                                         </button>
+                                         <button
+                                             onClick={() => setCurrentScreen('instructions')}
+                                             className="btn-fun font-comic text-lg py-2 bg-secondary hover:bg-secondary/80"
+                                         >
+                                             📖 Show Instructions Again
+                                         </button>
+                                     </div>
+                                 </div>
+                             )}
+
+                                                         {gameStarted && !gameEnded && targetPose && (
+                                 <div className="card-playful border-4 border-primary bg-gradient-to-r from-primary/20 to-secondary/20 p-6 text-center w-full h-full flex flex-col justify-center">
+                                     {isRoundCountdownActive ? (
+                                         // Show round countdown
+                                         <div className="text-center">
+                                             <h3 className="text-2xl font-playful text-primary mb-4">Get Ready!</h3>
+                                             <div className="relative w-32 h-32 mx-auto mb-4">
+                                                 <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
+                                                     <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="8" fill="none" className="text-gray-200" />
+                                                     <circle
+                                                         cx="50"
+                                                         cy="50"
+                                                         r="40"
+                                                         stroke="currentColor"
+                                                         strokeWidth="8"
+                                                         fill="none"
+                                                         strokeLinecap="round"
+                                                         className="text-blue-500 transition-all duration-1000 ease-linear"
+                                                         style={{
+                                                             strokeDasharray: `${2 * Math.PI * 40}`,
+                                                             strokeDashoffset: `${2 * Math.PI * 40 * (1 - roundCountdown / 2)}`
+                                                         }}
+                                                     />
+                                                 </svg>
+                                                 <div className="absolute inset-0 flex items-center justify-center">
+                                                     <div className="text-center">
+                                                         <div className="text-3xl font-bold text-blue-600">
+                                                             {roundCountdown}s
+                                                         </div>
+                                                         <div className="text-sm text-muted-foreground font-comic">Next Round</div>
+                                                     </div>
+                                                 </div>
+                                             </div>
+                                             <p className="text-lg text-muted-foreground font-comic">
+                                                 Prepare for the next pose!
+                                             </p>
+                                         </div>
+                                     ) : (
+                                         // Show pose instruction
+                                         <>
+                                             <h3 className="text-2xl font-playful text-primary mb-4">Make this pose:</h3>
+                                             <div className="text-6xl mb-4 animate-pulse">
+                                                 {dancePoses.find(p => p.label === targetPose)?.emoji}
+                                             </div>
+                                             <div className="text-2xl font-playful text-primary mb-3">
+                                                 {dancePoses.find(p => p.label === targetPose)?.name}
+                                             </div>
+                                             <div className="text-lg text-muted-foreground font-comic">
+                                                 {dancePoses.find(p => p.label === targetPose)?.description}
+                                             </div>
+                                         </>
+                                     )}
+                                     <div className="mt-6 flex justify-center gap-4">
+                                         <div className="card-playful border-2 border-fun-orange/20 p-3 text-center">
+                                             <span className="text-sm text-muted-foreground font-comic mb-1 block">Round</span>
+                                             <span className="text-xl font-bold text-primary">{currentRound}/9</span>
+                                         </div>
+                                         <div className="card-playful border-2 border-fun-purple/20 p-3 text-center">
+                                             <span className="text-sm text-muted-foreground font-comic mb-1 block">Score</span>
+                                             <span className="text-xl font-bold text-primary">{score}/{currentRound}</span>
+                                         </div>
+                                     </div>
+                                 </div>
+                             )}
+
+                             {gameEnded && (
+                                 <div className="card-playful border-4 border-primary bg-gradient-to-br from-primary/5 via-secondary/10 to-purple-500/5 p-8 text-center w-full min-h-full flex flex-col justify-center relative overflow-hidden">
+                                     {/* Animated background elements */}
+                                     <div className="absolute inset-0 pointer-events-none">
+                                         <div className="absolute top-4 left-4 w-16 h-16 bg-yellow-400/20 rounded-full animate-pulse"></div>
+                                         <div className="absolute top-8 right-8 w-12 h-12 bg-blue-400/20 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
+                                         <div className="absolute bottom-6 left-8 w-10 h-10 bg-green-400/20 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+                                         <div className="absolute bottom-8 right-4 w-14 h-14 bg-pink-400/20 rounded-full animate-bounce" style={{animationDelay: '1.5s'}}></div>
+                                     </div>
+                                     
+                                     {/* Main content - Buttons only */}
+                                     <div className="relative z-10">
+                                         <h2 className="text-4xl font-playful text-primary mb-8 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                                             🎮 What's Next?
+                                         </h2>
+                                         
+                                         {/* Button container with improved layout */}
+                                         <div className="flex flex-col gap-4 max-w-sm mx-auto">
+                                             <button
+                                                 onClick={() => setShowGameStats(true)}
+                                                 className="btn-fun font-comic text-lg py-4 bg-gradient-to-r from-purple-500 via-blue-500 to-purple-600 hover:from-purple-600 hover:via-blue-600 hover:to-purple-700 text-white border-2 border-purple-300 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 transform hover:-translate-y-1"
+                                             >
+                                                 📊 View Detailed Stats
+                                             </button>
+                                             <button
+                                                 onClick={() => {
+                                                     setGameEnded(false);
+                                                     setGameStarted(false);
+                                                     setCurrentRound(0);
+                                                     setScore(0);
+                                                     setShowGameStats(false);
+                                                 }}
+                                                 className="btn-fun font-comic text-lg py-4 bg-gradient-to-r from-orange-500 via-pink-500 to-orange-600 hover:from-orange-600 hover:via-pink-600 hover:to-orange-700 text-white border-2 border-orange-300 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 transform hover:-translate-y-1"
+                                             >
+                                                 🔄 Play Again
+                                             </button>
+                                             <button
+                                                 onClick={() => {
+                                                     setGameEnded(false);
+                                                     setGameStarted(false);
+                                                     setCurrentRound(0);
+                                                     setScore(0);
+                                                     setShowGameStats(false);
+                                                     setCurrentScreen('instructions');
+                                                 }}
+                                                 className="btn-fun font-comic text-base py-3 bg-gradient-to-r from-secondary to-secondary/80 hover:from-secondary/90 hover:to-secondary text-white border-2 border-secondary/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 transform hover:-translate-y-1"
+                                             >
+                                                 📖 Back to Instructions
+                                             </button>
+                                         </div>
+                                     </div>
+                                 </div>
+                             )}
                         </div>
                     </div>
                 </div>
 
-                {/* Congratulations Message */}
-                {showCongratulations && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                        <div className="card-playful border-4 border-yellow-400 bg-gradient-to-r from-yellow-100 to-orange-100 p-8 text-center max-w-md mx-4 animate-bounce">
-                            <div className="text-6xl mb-4">🎉</div>
-                            <h2 className="text-3xl font-playful text-yellow-600 mb-2">
-                                Congratulations!
-                            </h2>
-                            <p className="text-lg font-comic text-yellow-700">
-                                You've completed all {totalRounds} dance poses! 🏆
-                            </p>
-                            <div className="text-2xl font-playful text-yellow-600 mt-2">
-                                Final Score: {score}/{totalRounds}
-                            </div>
+                {roundResult && (
+                    <div className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 card-playful border-4 p-6 text-center ${
+                        isCorrect ? "border-green-500 bg-green-50" : "border-red-500 bg-red-50"
+                    }`}>
+                        <div className={`text-3xl font-playful ${isCorrect ? "text-green-600" : "text-red-600"}`}>
+                            {roundResult}
                         </div>
                     </div>
                 )}
+                
+                {/* Confetti Overlay */}
+                {showConfetti && (
+                    <div className="fixed inset-0 z-50 pointer-events-none">
+                        {/* Confetti pieces */}
+                        {[...Array(50)].map((_, i) => (
+                            <div
+                                key={i}
+                                className={`absolute w-2 h-2 animate-bounce ${
+                                    ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500'][i % 6]
+                                }`}
+                                style={{
+                                    left: `${Math.random() * 100}%`,
+                                    top: `${Math.random() * 100}%`,
+                                    animationDelay: `${Math.random() * 2}s`,
+                                    animationDuration: `${1 + Math.random() * 2}s`
+                                }}
+                            />
+                        ))}
+                        {/* Sparkles */}
+                        {[...Array(30)].map((_, i) => (
+                            <div
+                                key={`sparkle-${i}`}
+                                className="absolute w-1 h-1 bg-yellow-300 animate-pulse"
+                                style={{
+                                    left: `${Math.random() * 100}%`,
+                                    top: `${Math.random() * 100}%`,
+                                    animationDelay: `${Math.random() * 2}s`,
+                                    animationDuration: `${1 + Math.random() * 2}s`
+                                }}
+                            />
+                        ))}
+                    </div>
+                )}
+
                 
                 {/* Game Stats Modal */}
                 {showGameStats && gameSession && (
@@ -950,7 +1367,15 @@ const DanceDoodleGame: React.FC = () => {
         )
     }
 
-    return null;
+    return (
+        <div className="h-full flex items-center justify-center">
+            <div className="text-center">
+                <div className="text-6xl mb-6 animate-bounce">🕺</div>
+                <h2 className="text-3xl font-playful mb-4 text-primary">Dance Doodle Game</h2>
+                <p className="text-lg text-muted-foreground font-comic">Implementation in progress...</p>
+            </div>
+        </div>
+    );
 }
 
 export default DanceDoodleGame

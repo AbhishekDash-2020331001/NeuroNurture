@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, Form
 from app.predictor import *
+from app.dance_doodle import *
 from fastapi.middleware.cors import CORSMiddleware
 from app.gaze import get_gaze
 import cv2
@@ -428,3 +429,28 @@ def get_round_result(round_number: int):
         "status": "not_found",
         "message": f"Result for round {round_number} not found"
     }
+
+
+## ============================================================================
+# DANCE DOODLE GAME ENDPOINTS
+## ============================================================================
+@app.post("/predictDancePose")
+async def predict_dance_pose(file: UploadFile = File(...)):
+    """Predict dance pose from uploaded image"""
+    contents = await file.read()
+    print("Received dance pose file:", file.filename)
+    result = predict_dance_pose_from_image_bytes(contents)
+    return result
+
+@app.get("/dancePoseStatus")
+async def get_dance_pose_status():
+    """Get dance pose model status and available labels"""
+    try:
+        status = check_model_status()
+        return {
+            "status": "success",
+            "data": status
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+    

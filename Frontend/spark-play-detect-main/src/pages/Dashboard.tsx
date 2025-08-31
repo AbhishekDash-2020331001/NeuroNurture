@@ -97,7 +97,7 @@ export default function Dashboard() {
       icon: "🕺",
       color: "from-purple-400 to-pink-500",
       progress: 65,
-      route: "/games/dance-doodle"
+      route: "/games/dance-doodle/insights"
     },
     {
       title: "Shape Sorter",

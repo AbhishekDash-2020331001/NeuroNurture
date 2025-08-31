@@ -57,13 +57,13 @@ const DanceDoodleGamePage = () => {
           </Button>
           
           <div className="flex items-center space-x-1">
-            <div className="flex items-center space-x-1 bg-gradient-to-r from-purple-400 to-pink-400 px-2 py-1 rounded-full shadow-lg">
-              <Zap className="w-3 h-3 text-white" />
+            <div className="flex items-center space-x-1 bg-gradient-to-r from-yellow-400 to-orange-400 px-2 py-1 rounded-full shadow-lg">
+              <Trophy className="w-3 h-3 text-white" />
               <span className="text-white font-comic font-bold text-xs">Dance Master</span>
             </div>
-            <div className="flex items-center space-x-1 bg-gradient-to-r from-pink-400 to-purple-400 px-2 py-1 rounded-full shadow-lg">
+            <div className="flex items-center space-x-1 bg-gradient-to-r from-blue-400 to-purple-400 px-2 py-1 rounded-full shadow-lg">
               <Star className="w-3 h-3 text-white" />
-              <span className="text-white font-comic font-bold text-xs">Pose Expert</span>
+              <span className="text-white font-comic font-bold text-xs">Learning Fun</span>
             </div>
           </div>
         </div>
@@ -72,16 +72,16 @@ const DanceDoodleGamePage = () => {
       {/* Game Title - Compact */}
       <div className="text-center mb-2">
         <h1 className="text-xl font-playful bg-gradient-to-r from-purple-600 via-pink-500 to-blue-600 bg-clip-text text-transparent">
-          🕺 Dance Doodle Magic! 💃
+          ✨ Dance Pose Adventure! ✨
         </h1>
         <p className="text-xs font-comic text-gray-600">
-          Strike amazing poses and become a dance superstar! ✨
+          Show your amazing dance moves! 🌟
         </p>
       </div>
 
       {/* Game Component - Standard Size */}
       <div className="flex-1 flex items-center justify-center px-4 overflow-hidden">
-        <div className="w-full max-w-6xl h-full">
+        <div className="w-full max-w-4xl h-full">
           <DanceDoodleGame />
         </div>
       </div>
@@ -90,7 +90,7 @@ const DanceDoodleGamePage = () => {
       <div className="text-center mb-2">
         <div className="flex items-center justify-center space-x-2">
           <div className="flex items-center space-x-1 bg-gradient-to-r from-green-400 to-blue-400 px-2 py-1 rounded-full shadow-lg">
-            <Trophy className="w-3 h-3 text-white" />
+            <Zap className="w-3 h-3 text-white" />
             <span className="text-white font-comic font-bold text-xs">You're Amazing! 🎉</span>
           </div>
         </div>
