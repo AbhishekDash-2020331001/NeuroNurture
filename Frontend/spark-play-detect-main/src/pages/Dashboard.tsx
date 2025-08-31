@@ -89,7 +89,7 @@ export default function Dashboard() {
       icon: "🎤",
       color: "from-pink-400 to-red-500",
       progress: 40,
-      route: "/games/repeat-with-me"
+      route: "/games/repeat-with-me/insights"
     },
     {
       title: "Shape Sorter",

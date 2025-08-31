@@ -7,6 +7,7 @@ import { stopAllCameraStreams } from "@/utils/cameraUtils";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import RepeatWithMeGameplay from "./components/games/repeatWithMe/RepeatWithMeGameplay";
 import AddChild from "./pages/AddChild";
 import Auth from "./pages/Auth";
 import ChildrenProfiles from "./pages/ChildrenProfiles";
@@ -118,6 +119,7 @@ const App = () => (
           } />
           <Route path="/games/gaze-tracking/play" element={<GazeTrackingGamePlayPage />} />
           <Route path="/games/repeat-with-me" element={<RepeatWithMeGamePage />} />
+          <Route path="/games/repeat-with-me/gameplay" element={<RepeatWithMeGameplay />} />
           <Route path="/games/repeat-with-me/insights" element={
             <ProtectedRoute>
               <EmailVerificationGuard>
