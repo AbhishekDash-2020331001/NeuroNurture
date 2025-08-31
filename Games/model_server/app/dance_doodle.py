@@ -185,9 +185,9 @@ def predict_dance_pose_from_image_path(image_path):
 def check_model_status():
     """Check if all models are loaded and ready"""
     return {
-        "decision_tree_model": dt_model is not None,
+        "random_forest_model": rf_model is not None,
         "label_encoder": encoder is not None,
         "pose_detector": detector is not None,
-        "expected_features": dt_model.n_features_in_ if dt_model else None,
+        "expected_features": rf_model.n_features_in_ if rf_model else None,
         "available_labels": list(encoder.classes_) if encoder else None
     }

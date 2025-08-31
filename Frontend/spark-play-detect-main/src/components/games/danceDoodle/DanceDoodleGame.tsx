@@ -110,24 +110,119 @@ const DanceDoodleGame: React.FC = () => {
 
     const totalRounds = 9; // 9 rounds with one pose each (no repetition)
 
-    // Save game data locally (no backend for now)
+    // Save game data to backend
     const saveGameDataToBackend = useCallback(async (gameSession: DanceGameSession) => {
         try {
-            // Store in localStorage for now
-            const existingData = localStorage.getItem('danceDoodleGameData') || '[]';
-            const gameData = JSON.parse(existingData);
-            gameData.push(gameSession);
-            localStorage.setItem('danceDoodleGameData', JSON.stringify(gameData));
-            console.log('Game data saved locally:', gameSession);
-            toast({
-                title: "Data Saved! 📊",
-                description: "Game statistics have been saved locally.",
+            // Get child data from localStorage
+            const childData = JSON.parse(localStorage.getItem('selectedChild') || '{}');
+            
+            // Calculate age from date of birth
+            const calculateAge = (dateOfBirth: string) => {
+                const today = new Date();
+                const birthDate = new Date(dateOfBirth);
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const monthDiff = today.getMonth() - birthDate.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                    age--;
+                }
+                return age;
+            };
+
+            // Prepare pose completion times
+            const poseTimes = {
+                cool_arms: null,
+                open_wings: null,
+                silly_boxer: null,
+                happy_stand_left: null,
+                happy_stand_right: null,
+                crossy_play: null,
+                shh_fun: null,
+                stretch_left: null,
+                stretch_right: null
+            };
+
+            // Map pose names to completion times
+            console.log('=== DEBUGGING POSE MAPPING ===');
+            console.log('Total rounds:', gameSession.rounds.length);
+            gameSession.rounds.forEach((round, index) => {
+                console.log(`Round ${index + 1}:`, {
+                    poseName: round.poseName,
+                    completed: round.completed,
+                    timeTaken: round.timeTaken
+                });
+                
+                const poseName = round.poseName.toLowerCase().replace(/\s+/g, '_');
+                console.log('Mapping pose:', round.poseName, 'to lowercase:', poseName);
+                
+                if (poseName === 'cool_arms') {
+                    poseTimes.cool_arms = round.completed ? round.timeTaken : null;
+                } else if (poseName === 'open_wings') {
+                    poseTimes.open_wings = round.completed ? round.timeTaken : null;
+                } else if (poseName === 'silly_boxer') {
+                    poseTimes.silly_boxer = round.completed ? round.timeTaken : null;
+                } else if (poseName === 'happy_stand_left') {
+                    poseTimes.happy_stand_left = round.completed ? round.timeTaken : null;
+                } else if (poseName === 'happy_stand_right') {
+                    poseTimes.happy_stand_right = round.completed ? round.timeTaken : null;
+                } else if (poseName === 'crossy_play') {
+                    poseTimes.crossy_play = round.completed ? round.timeTaken : null;
+                } else if (poseName === 'shh_fun') {
+                    poseTimes.shh_fun = round.completed ? round.timeTaken : null;
+                } else if (poseName === 'stretch_left') {
+                    poseTimes.stretch_left = round.completed ? round.timeTaken : null;
+                } else if (poseName === 'stretch_right') {
+                    poseTimes.stretch_right = round.completed ? round.timeTaken : null;
+                } else {
+                    console.log('No mapping found for:', round.poseName);
+                }
             });
+            console.log('Final poseTimes object:', poseTimes);
+            console.log('=== END DEBUGGING ===');
+
+            const requestData = {
+                sessionId: gameSession.sessionId,
+                dateTime: gameSession.startTime,
+                childId: childData?.id?.toString() || '1',
+                age: gameSession.consentData?.childAge ? parseInt(gameSession.consentData.childAge) : (childData?.dateOfBirth ? calculateAge(childData.dateOfBirth) : 8),
+                ...poseTimes,
+                videoURL: "https://example.com/dummy-video.mp4", // Dummy URL for now
+                isTrainingAllowed: gameSession.consentData?.dataConsent === true,
+                suspectedASD: gameSession.consentData?.suspectedASD || false,
+                isASD: null // Will be populated by ML model later
+            };
+
+            console.log('Consent data:', gameSession.consentData);
+            console.log('Data consent value:', gameSession.consentData?.dataConsent);
+            console.log('Saving game data to backend:', requestData);
+
+            const response = await fetch('http://localhost:8087/api/dance-doodle/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            if (response.ok) {
+                const savedData = await response.json();
+                console.log('Game data saved successfully:', savedData);
+                toast({
+                    title: "Data Saved! 📊",
+                    description: "Game statistics have been saved to the database.",
+                });
+            } else {
+                console.error('Failed to save game data:', response.statusText);
+                toast({
+                    title: "Save Failed! ❌",
+                    description: "Failed to save game data to database.",
+                    variant: "destructive",
+                });
+            }
         } catch (error) {
-            console.error('Error saving game data locally:', error);
+            console.error('Error saving game data:', error);
             toast({
                 title: "Save Error! ❌",
-                description: "An error occurred while saving game data locally.",
+                description: "An error occurred while saving game data.",
                 variant: "destructive",
             });
         }
@@ -311,10 +406,15 @@ const DanceDoodleGame: React.FC = () => {
         
         setGameSession(prev => {
             if (!prev) return null;
-            return {
+            const updatedSession = {
                 ...prev,
                 endTime: new Date()
             };
+            
+            // Save game data to backend
+            saveGameDataToBackend(updatedSession);
+            
+            return updatedSession;
         });
         
         setShowCongratulations(true);
@@ -323,7 +423,7 @@ const DanceDoodleGame: React.FC = () => {
             setShowCongratulations(false);
             setShowGameStats(true);
         }, 3000);
-    }, []);
+    }, [saveGameDataToBackend]);
 
     // Start next round
     const startNextRound = useCallback(() => {
