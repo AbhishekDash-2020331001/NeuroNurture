@@ -279,7 +279,11 @@ export default function GestureGameInsights() {
     };
     
     const field = gestureMap[gestureName];
-    return field ? (record[field] as number) || null : null;
+    if (!field) return null;
+    
+    const value = record[field] as number;
+    // Return the value if it's a number (including 0), otherwise return null
+    return typeof value === 'number' ? value : null;
   };
 
   const getAverageTime = (gestureName: string): number => {
@@ -350,11 +354,11 @@ export default function GestureGameInsights() {
   const sessionImprovementData = gameHistory.map((record, index) => {
     const totalTime = GESTURE_NAMES.reduce((sum, gesture) => {
       const time = getGestureTime(record, gesture);
-      return sum + (time || 0);
+      return sum + (time !== null && time !== undefined ? time : 0);
     }, 0);
     const completedGestures = GESTURE_NAMES.filter(gesture => {
       const time = getGestureTime(record, gesture);
-      return time && time > 0;
+      return time !== null && time !== undefined;
     }).length;
     const averageTime = completedGestures > 0 ? totalTime / completedGestures : 0;
     
@@ -367,7 +371,7 @@ export default function GestureGameInsights() {
   }).reverse();
 
   // Find smallest and highest average times
-  const validAverageTimes = averageTimesData.filter(d => d.averageTime > 0);
+  const validAverageTimes = averageTimesData.filter(d => d.averageTime >= 0);
   const smallestAvgTime = validAverageTimes.length > 0 ? 
     validAverageTimes.reduce((min, current) => current.averageTime < min.averageTime ? current : min) : null;
   const highestAvgTime = validAverageTimes.length > 0 ? 
@@ -1043,9 +1047,9 @@ export default function GestureGameInsights() {
                               const averageTime = getAverageTime(gesture);
                               
                               // Show all gestures, even if not completed in last session
-                              if (averageTime === 0) return null;
+                              // Note: We include averageTime === 0 as it represents valid completion in 0 seconds
                              
-                                                           const isCompleted = lastSessionTime && lastSessionTime > 0;
+                                                           const isCompleted = lastSessionTime !== null && lastSessionTime !== undefined;
                               const difference = isCompleted ? (lastSessionTime - averageTime) : 0;
                               const differenceAbs = Math.abs(difference);
                               const isImproving = isCompleted && difference < 0;
@@ -1166,11 +1170,11 @@ export default function GestureGameInsights() {
                        {gameHistory.slice(currentPage * 5, (currentPage + 1) * 5).map((record, index) => {
                          const totalTime = GESTURE_NAMES.reduce((sum, gesture) => {
                            const time = getGestureTime(record, gesture);
-                           return sum + (time || 0);
+                           return sum + (time !== null && time !== undefined ? time : 0);
                          }, 0);
                          const completedGestures = GESTURE_NAMES.filter(gesture => {
                            const time = getGestureTime(record, gesture);
-                           return time && time > 0;
+                           return time !== null && time !== undefined;
                          }).length;
                          const averageTime = completedGestures > 0 ? totalTime / completedGestures : 0;
                          const completionRate = (completedGestures / GESTURE_NAMES.length) * 100;
@@ -1220,7 +1224,7 @@ export default function GestureGameInsights() {
                                <div className="grid grid-cols-2 gap-2">
                                  {GESTURE_NAMES.map((gesture) => {
                                    const time = getGestureTime(record, gesture);
-                                   const isCompleted = time && time > 0;
+                                   const isCompleted = time !== null && time !== undefined;
                                    
                                    // Extract emoji and name properly
                                    const emoji = gesture.split(' ').pop(); // Get the emoji

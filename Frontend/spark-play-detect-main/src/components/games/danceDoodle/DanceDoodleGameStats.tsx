@@ -64,8 +64,8 @@ const DanceDoodleGameStats: React.FC<DanceDoodleGameStatsProps> = ({ gameSession
         console.warn('Skipping invalid round:', round);
         return;
       }
-      
-      // Skip duplicate round numbers
+
+            
       if (seenRoundNumbers.has(round.roundNumber)) {
         console.warn('Skipping duplicate round number:', round.roundNumber);
         return;
