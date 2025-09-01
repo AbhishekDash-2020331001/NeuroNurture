@@ -96,6 +96,8 @@ const ConsentScreen: React.FC<ConsentScreenProps> = ({ onConsentSubmit, onBack }
 
   const handleSubmit = () => {
     if (validateForm()) {
+      // Save consent data to localStorage (like gesture game)
+      localStorage.setItem('repeatWithMeConsentData', JSON.stringify(formData));
       onConsentSubmit(formData);
     }
   };

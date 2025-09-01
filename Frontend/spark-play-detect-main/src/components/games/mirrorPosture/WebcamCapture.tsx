@@ -136,7 +136,7 @@ const WebcamCapture: React.FC<WebcamCaptureProps> = ({
         console.log('API Response:', result);
         
         // Check if prediction exists and confidence is high enough
-        if (result.prediction && result.confidence > 0.5) { // Lowered from 0.7 to 0.5
+        if (result.prediction && result.confidence > (result.prediction==="showing_teeth" ? 0.9 : 0.8)) { // Lowered from 0.7 to 0.5
           // Map API prediction to game expression
           const expressionMap: { [key: string]: string } = {
             'left': 'looking_left',

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { getCurrentChild, getCurrentChildId } from '../../../utils/childUtils';
 import Navbar from '../../Navbar';
 import { Button } from '../../ui/button';
 import { toast } from '../../ui/use-toast';
@@ -354,20 +355,6 @@ const RepeatWithMeGameplay: React.FC = () => {
     }, 30000);
   }, [round]);
 
-  const finishGame = useCallback(async () => {
-    setGameState('finished');
-    setShowCompletionAnimation(true);
-    
-    // Wait a moment for all transcriptions to complete, then get results (like Javafest_agor)
-    setTimeout(async () => {
-      await getGameResults();
-    }, 3000);
-    
-    setTimeout(() => {
-      setShowConfetti(true);
-    }, 1000);
-  }, []);
-
   // Get all game results from backend (like Javafest_agor)
   const getGameResults = useCallback(async () => {
     try {
@@ -377,11 +364,13 @@ const RepeatWithMeGameplay: React.FC = () => {
         console.log("All game results:", data);
         if (data.status === "success") {
           setGameResults(data.results);
+          return data.results; // Return the results
         }
       }
     } catch (err) {
       console.error("Error getting game results:", err);
     }
+    return null;
   }, []);
 
   // Clear game results from backend (like Javafest_agor)
@@ -404,6 +393,126 @@ const RepeatWithMeGameplay: React.FC = () => {
     if (scores.length === 0) return 0;
     return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
   }, [gameResults]);
+
+  // Create session ID (like gesture game)
+  const createSessionId = useCallback(() => {
+    const childId = getCurrentChildId()?.toString() || 'unknown';
+    const dateTime = new Date().toISOString().replace(/[:.]/g, '-');
+    return `${childId}_${dateTime}`;
+  }, []);
+
+  // Save game results to backend
+  const saveGameResults = useCallback(async (results?: { [key: number]: GameResult }) => {
+    try {
+      const sessionId = createSessionId();
+      const resultsToUse = results || gameResults;
+      const averageScore = resultsToUse ? Math.round(Object.values(resultsToUse).map(r => r.similarity_score).reduce((a, b) => a + b, 0) / Object.values(resultsToUse).length) : 0;
+      const completedRounds = resultsToUse ? Object.keys(resultsToUse).length : 0;
+      
+      // Extract child data using utility function (like other games)
+      const childData = getCurrentChild();
+      
+      // Calculate age from date of birth (like gesture game)
+      const calculateAge = (dateOfBirth: string) => {
+        const birthDate = new Date(dateOfBirth);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        return age;
+      };
+
+      // Get consent data from localStorage (like gesture game)
+      const consentDataStr = localStorage.getItem('repeatWithMeConsentData');
+      const consentData = consentDataStr ? JSON.parse(consentDataStr) : null;
+      
+             const gameData = {
+         sessionId: sessionId,
+         childId: childData?.id?.toString() || 'unknown',
+         age: consentData?.childAge ? parseInt(consentData.childAge) : (childData?.dateOfBirth ? calculateAge(childData.dateOfBirth) : 8),
+         // All 12 rounds
+         round1Score: resultsToUse[0]?.similarity_score || null,
+         round2Score: resultsToUse[1]?.similarity_score || null,
+         round3Score: resultsToUse[2]?.similarity_score || null,
+         round4Score: resultsToUse[3]?.similarity_score || null,
+         round5Score: resultsToUse[4]?.similarity_score || null,
+         round6Score: resultsToUse[5]?.similarity_score || null,
+         round7Score: resultsToUse[6]?.similarity_score || null,
+         round8Score: resultsToUse[7]?.similarity_score || null,
+         round9Score: resultsToUse[8]?.similarity_score || null,
+         round10Score: resultsToUse[9]?.similarity_score || null,
+         round11Score: resultsToUse[10]?.similarity_score || null,
+         round12Score: resultsToUse[11]?.similarity_score || null,
+         round1TargetText: resultsToUse[0]?.target_text || null,
+         round1TranscribedText: resultsToUse[0]?.transcribed_text || null,
+         round2TargetText: resultsToUse[1]?.target_text || null,
+         round2TranscribedText: resultsToUse[1]?.transcribed_text || null,
+         round3TargetText: resultsToUse[2]?.target_text || null,
+         round3TranscribedText: resultsToUse[2]?.transcribed_text || null,
+         round4TargetText: resultsToUse[3]?.target_text || null,
+         round4TranscribedText: resultsToUse[3]?.transcribed_text || null,
+         round5TargetText: resultsToUse[4]?.target_text || null,
+         round5TranscribedText: resultsToUse[4]?.transcribed_text || null,
+         round6TargetText: resultsToUse[5]?.target_text || null,
+         round6TranscribedText: resultsToUse[5]?.transcribed_text || null,
+         round7TargetText: resultsToUse[6]?.target_text || null,
+         round7TranscribedText: resultsToUse[6]?.transcribed_text || null,
+         round8TargetText: resultsToUse[7]?.target_text || null,
+         round8TranscribedText: resultsToUse[7]?.transcribed_text || null,
+         round9TargetText: resultsToUse[8]?.target_text || null,
+         round9TranscribedText: resultsToUse[8]?.transcribed_text || null,
+         round10TargetText: resultsToUse[9]?.target_text || null,
+         round10TranscribedText: resultsToUse[9]?.transcribed_text || null,
+         round11TargetText: resultsToUse[10]?.target_text || null,
+         round11TranscribedText: resultsToUse[10]?.transcribed_text || null,
+         round12TargetText: resultsToUse[11]?.target_text || null,
+         round12TranscribedText: resultsToUse[11]?.transcribed_text || null,
+         averageScore: averageScore,
+         completedRounds: completedRounds,
+         isTrainingAllowed: consentData?.dataConsent === true,
+         suspectedASD: consentData?.suspectedASD || false
+       };
+
+      console.log('Saving game data to backend:', gameData);
+
+      const response = await fetch('http://localhost:8089/api/repeat-with-me-game/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(gameData)
+      });
+
+      if (response.ok) {
+        const savedData = await response.json();
+        console.log('Game results saved successfully:', savedData);
+      } else {
+        console.error('Failed to save game results:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error saving game results:', error);
+    }
+  }, [gameResults, createSessionId]);
+
+  const finishGame = useCallback(async () => {
+    setGameState('finished');
+    setShowCompletionAnimation(true);
+    
+    // Wait a moment for all transcriptions to complete, then get results (like Javafest_agor)
+    setTimeout(async () => {
+      const results = await getGameResults();
+      // Save results to backend immediately with the retrieved results
+      if (results) {
+        await saveGameResults(results);
+      }
+    }, 3000);
+    
+    setTimeout(() => {
+      setShowConfetti(true);
+    }, 1000);
+  }, [getGameResults, saveGameResults]);
 
   const resetGame = () => {
     setGameState('idle');
