@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 interface DanceRoundStats {
   roundNumber: number;
   poseName: string;
-  poseEmoji: string;
+  poseImage: string;
+  poseEmoji?: string;
   timeTaken: number;
   completed: boolean;
 }
@@ -31,14 +32,35 @@ interface DanceDoodleGameStatsProps {
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#ff0000'];
 
 const DanceDoodleGameStats: React.FC<DanceDoodleGameStatsProps> = ({ gameSession, onClose }) => {
+  // Safety check for gameSession
+  if (!gameSession || !gameSession.rounds) {
+    console.error('Invalid game session data:', gameSession);
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
+        <div className="bg-white rounded-2xl p-6 max-w-md w-full text-center">
+          <h2 className="text-2xl font-playful text-red-600 mb-4">⚠️ Error</h2>
+          <p className="text-gray-600 mb-4">Invalid game session data</p>
+          <Button onClick={onClose} className="btn-fun font-comic">
+            Close
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // Validate and clean game session data
   const validateAndCleanRounds = (rounds: DanceRoundStats[]): DanceRoundStats[] => {
     const cleanedRounds: DanceRoundStats[] = [];
     const seenRoundNumbers = new Set<number>();
     
+    if (!Array.isArray(rounds)) {
+      console.warn('Invalid rounds data:', rounds);
+      return [];
+    }
+    
     rounds.forEach(round => {
       // Skip rounds with missing data (but allow failed rounds)
-      if (!round.poseName || !round.poseEmoji) {
+      if (!round || !round.poseName || !round.poseImage) {
         console.warn('Skipping invalid round:', round);
         return;
       }
@@ -320,7 +342,7 @@ const DanceDoodleGameStats: React.FC<DanceDoodleGameStatsProps> = ({ gameSession
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-700 mb-2">{fastestPose.poseName}</div>
                   <div className="text-4xl font-bold text-green-600 mb-2">{fastestPose.timeTaken}s</div>
-                  <div className="text-6xl mb-2">{fastestPose.poseEmoji}</div>
+                  <div className="text-6xl mb-2">{fastestPose.poseEmoji || '💃'}</div>
                   <div className="text-sm text-green-600 font-comic mt-2">Lightning fast! ⚡</div>
                 </div>
               ) : (
@@ -342,7 +364,7 @@ const DanceDoodleGameStats: React.FC<DanceDoodleGameStatsProps> = ({ gameSession
                 <div className="text-center">
                   <div className="text-2xl font-bold text-orange-700 mb-2">{slowestPose.poseName}</div>
                   <div className="text-4xl font-bold text-orange-600 mb-2">{slowestPose.timeTaken}s</div>
-                  <div className="text-6xl mb-2">{slowestPose.poseEmoji}</div>
+                  <div className="text-6xl mb-2">{slowestPose.poseEmoji || '💃'}</div>
                   <div className="text-sm text-orange-600 font-comic mt-2">Needs more practice 💪</div>
                 </div>
               ) : (
@@ -383,7 +405,7 @@ const DanceDoodleGameStats: React.FC<DanceDoodleGameStatsProps> = ({ gameSession
                         <td className="border border-primary p-3 font-bold text-primary">{round.roundNumber}</td>
                         <td className="border border-primary p-3 font-comic">{round.poseName}</td>
                         <td className="border border-primary p-3 text-center">
-                          <div className="text-3xl">{round.poseEmoji}</div>
+                          <div className="text-3xl">{round.poseEmoji || '💃'}</div>
                         </td>
                         <td className="border border-primary p-3 font-comic">
                           {round.completed ? `${round.timeTaken}s` : 'Not completed'}

@@ -10,7 +10,7 @@ type GameScreen = 'instructions' | 'consent' | 'game' | 'loading'
 interface DanceRoundStats {
   roundNumber: number;
   poseName: string;
-  poseEmoji: string;
+  poseImage: string;
   timeTaken: number;
   completed: boolean;
 }
@@ -97,15 +97,15 @@ const DanceDoodleGame: React.FC = () => {
 
     // Available dance poses - 9 poses for 9 rounds (one pose each, no repetition)
     const dancePoses = useMemo(() => [
-        { name: "Cool Arms", label: "cool_arms", emoji: "💪", description: "Show your strong arms like a superhero!" },
-        { name: "Open Wings", label: "open_wings", emoji: "🦅", description: "Spread your arms like a bird flying!" },
-        { name: "Silly Boxer", label: "silly_boxer", emoji: "🥊", description: "Make boxing moves like a champion!" },
-        { name: "Happy Stand Left", label: "happy_stand_left", emoji: "😊", description: "Stand happily with your left side!" },
-        { name: "Happy Stand Right", label: "happy_stand_right", emoji: "😊", description: "Stand happily with your right side!" },
-        { name: "Crossy Play", label: "crossy_play", emoji: "🤸", description: "Cross your arms and legs like a gymnast!" },
-        { name: "Shh Fun", label: "shh_fun", emoji: "🤫", description: "Put your finger on your lips like a secret keeper!" },
-        { name: "Stretch Left", label: "stretch_left", emoji: "🧘", description: "Stretch your left arm up high!" },
-        { name: "Stretch Right", label: "stretch_right", emoji: "🧘", description: "Stretch your right arm up high!" },
+        { name: "Cool Arms", label: "cool_arms", image: "/dance_doodle_images/cool_arms.jpg", description: "Show your strong arms like a superhero!" },
+        { name: "Open Wings", label: "open_wings", image: "/dance_doodle_images/open_wings.jpg", description: "Spread your arms like a bird flying!" },
+        { name: "Silly Boxer", label: "silly_boxer", image: "/dance_doodle_images/silly_boxer.jpg", description: "Make boxing moves like a champion!" },
+        { name: "Happy Stand Left", label: "happy_stand_left", image: "/dance_doodle_images/happy_stand_left.jpg", description: "Stand happily with your left side!" },
+        { name: "Happy Stand Right", label: "happy_stand_right", image: "/dance_doodle_images/happy_stand_right.jpg", description: "Stand happily with your right side!" },
+        { name: "Crossy Play", label: "crossy_play", image: "/dance_doodle_images/crossy_play.jpg", description: "Cross your arms and legs like a gymnast!" },
+        { name: "Shh Fun", label: "shh_fun", image: "/dance_doodle_images/shh_fun.jpg", description: "Put your finger on your lips like a secret keeper!" },
+        { name: "Stretch Left", label: "stretch_left", image: "/dance_doodle_images/stretch_left.jpg", description: "Stretch your left arm up high!" },
+        { name: "Stretch Right", label: "stretch_right", image: "/dance_doodle_images/stretch_right.jpg", description: "Stretch your right arm up high!" },
     ], []);
 
     const totalRounds = 9; // 9 rounds with one pose each (no repetition)
@@ -358,7 +358,7 @@ const DanceDoodleGame: React.FC = () => {
             const roundStats: DanceRoundStats = {
                 roundNumber: currentRoundRef.current,
                 poseName: currentPose.name,
-                poseEmoji: currentPose.emoji,
+                poseImage: currentPose.image,
                 timeTaken: 10,
                 completed: false
             };
@@ -522,7 +522,7 @@ const DanceDoodleGame: React.FC = () => {
                 const roundStats: DanceRoundStats = {
                     roundNumber: currentRoundRef.current,
                     poseName: currentPose.name,
-                    poseEmoji: currentPose.emoji,
+                    poseImage: currentPose.image,
                     timeTaken: 10 - timeLeft,
                     completed: true
                 };
@@ -875,7 +875,11 @@ const DanceDoodleGame: React.FC = () => {
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                 {dancePoses.map((pose, index) => (
                                     <div key={index} className="card-playful border-2 border-fun-purple/20 p-4 text-center hover:scale-105 transition-all duration-300 group">
-                                        <div className="text-4xl mb-3 group-hover:animate-bounce">{pose.emoji}</div>
+                                        <img 
+                                            src={pose.image} 
+                                            alt={pose.name}
+                                            className="w-16 h-16 mx-auto mb-3 rounded-lg border-2 border-primary shadow-lg group-hover:animate-bounce"
+                                        />
                                         <div className="text-lg font-playful text-primary mb-2">{pose.name}</div>
                                         <div className="text-sm text-muted-foreground font-comic">{pose.description}</div>
                                     </div>
@@ -1290,66 +1294,70 @@ const DanceDoodleGame: React.FC = () => {
                              )}
 
                                                          {gameStarted && !gameEnded && targetPose && (
-                                 <div className="card-playful border-4 border-primary bg-gradient-to-r from-primary/20 to-secondary/20 p-6 text-center w-full h-full flex flex-col justify-center">
-                                     {isRoundCountdownActive ? (
-                                         // Show round countdown
-                                         <div className="text-center">
-                                             <h3 className="text-2xl font-playful text-primary mb-4">Get Ready!</h3>
-                                             <div className="relative w-32 h-32 mx-auto mb-4">
-                                                 <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
-                                                     <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="8" fill="none" className="text-gray-200" />
-                                                     <circle
-                                                         cx="50"
-                                                         cy="50"
-                                                         r="40"
-                                                         stroke="currentColor"
-                                                         strokeWidth="8"
-                                                         fill="none"
-                                                         strokeLinecap="round"
-                                                         className="text-blue-500 transition-all duration-1000 ease-linear"
-                                                         style={{
-                                                             strokeDasharray: `${2 * Math.PI * 40}`,
-                                                             strokeDashoffset: `${2 * Math.PI * 40 * (1 - roundCountdown / 2)}`
-                                                         }}
-                                                     />
-                                                 </svg>
-                                                 <div className="absolute inset-0 flex items-center justify-center">
-                                                     <div className="text-center">
-                                                         <div className="text-3xl font-bold text-blue-600">
-                                                             {roundCountdown}s
+                                 <div className="card-playful border-4 border-primary bg-gradient-to-r from-primary/20 to-secondary/20 p-2 text-center w-full h-full relative">
+                                     {/* Top corners for round and score */}
+                                     <div className="absolute top-2 left-2 z-10">
+                                         <div className="card-playful border border-fun-purple/20 px-1 py-0.5 text-center bg-white/80 backdrop-blur-sm">
+                                             <span className="text-xs text-muted-foreground font-comic block">Score</span>
+                                             <span className="text-sm font-bold text-primary">{score}/{currentRound}</span>
+                                         </div>
+                                     </div>
+                                     <div className="absolute top-2 right-2 z-10">
+                                         <div className="card-playful border border-fun-orange/20 px-1 py-0.5 text-center bg-white/80 backdrop-blur-sm">
+                                             <span className="text-xs text-muted-foreground font-comic block">Round</span>
+                                             <span className="text-sm font-bold text-primary">{currentRound}/9</span>
+                                         </div>
+                                     </div>
+                                     
+                                     {/* Main content area */}
+                                     <div className="w-full h-full flex flex-col justify-center">
+                                         {isRoundCountdownActive ? (
+                                             // Show round countdown
+                                             <div className="text-center">
+                                                 <h3 className="text-2xl font-playful text-primary mb-4">Get Ready!</h3>
+                                                 <div className="relative w-32 h-32 mx-auto mb-4">
+                                                     <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
+                                                         <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="8" fill="none" className="text-gray-200" />
+                                                         <circle
+                                                             cx="50"
+                                                             cy="50"
+                                                             r="40"
+                                                             stroke="currentColor"
+                                                             strokeWidth="8"
+                                                             fill="none"
+                                                             strokeLinecap="round"
+                                                             className="text-blue-500 transition-all duration-1000 ease-linear"
+                                                             style={{
+                                                                 strokeDasharray: `${2 * Math.PI * 40}`,
+                                                                 strokeDashoffset: `${2 * Math.PI * 40 * (1 - roundCountdown / 2)}`
+                                                             }}
+                                                         />
+                                                     </svg>
+                                                     <div className="absolute inset-0 flex items-center justify-center">
+                                                         <div className="text-center">
+                                                             <div className="text-3xl font-bold text-blue-600">
+                                                                 {roundCountdown}s
+                                                             </div>
+                                                             <div className="text-sm text-muted-foreground font-comic">Next Round</div>
                                                          </div>
-                                                         <div className="text-sm text-muted-foreground font-comic">Next Round</div>
                                                      </div>
                                                  </div>
+                                                 <p className="text-lg text-muted-foreground font-comic">
+                                                     Prepare for the next pose!
+                                                 </p>
                                              </div>
-                                             <p className="text-lg text-muted-foreground font-comic">
-                                                 Prepare for the next pose!
-                                             </p>
-                                         </div>
-                                     ) : (
-                                         // Show pose instruction
-                                         <>
-                                             <h3 className="text-2xl font-playful text-primary mb-4">Make this pose:</h3>
-                                             <div className="text-6xl mb-4 animate-pulse">
-                                                 {dancePoses.find(p => p.label === targetPose)?.emoji}
-                                             </div>
-                                             <div className="text-2xl font-playful text-primary mb-3">
-                                                 {dancePoses.find(p => p.label === targetPose)?.name}
-                                             </div>
-                                             <div className="text-lg text-muted-foreground font-comic">
-                                                 {dancePoses.find(p => p.label === targetPose)?.description}
-                                             </div>
-                                         </>
-                                     )}
-                                     <div className="mt-6 flex justify-center gap-4">
-                                         <div className="card-playful border-2 border-fun-orange/20 p-3 text-center">
-                                             <span className="text-sm text-muted-foreground font-comic mb-1 block">Round</span>
-                                             <span className="text-xl font-bold text-primary">{currentRound}/9</span>
-                                         </div>
-                                         <div className="card-playful border-2 border-fun-purple/20 p-3 text-center">
-                                             <span className="text-sm text-muted-foreground font-comic mb-1 block">Score</span>
-                                             <span className="text-xl font-bold text-primary">{score}/{currentRound}</span>
-                                         </div>
+                                         ) : (
+                                             // Show pose instruction - maximized image
+                                             <>
+                                                 <div className="flex justify-center items-center w-full h-full">
+                                                     <img 
+                                                         src={dancePoses.find(p => p.label === targetPose)?.image} 
+                                                         alt={dancePoses.find(p => p.label === targetPose)?.name}
+                                                         className="w-full h-full object-contain rounded-lg shadow-lg border-4 border-primary/20 animate-pulse"
+                                                     />
+                                                 </div>
+                                             </>
+                                         )}
                                      </div>
                                  </div>
                              )}

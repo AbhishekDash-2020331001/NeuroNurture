@@ -4,24 +4,17 @@ import { toast } from './hooks/use-toast';
 import './mirrorPosture.css';
 import { Button } from './ui/button';
 
-// Import facial expression images
-import kissImg from './assets/kiss.png';
-import lookingLeftImg from './assets/looking_left.png';
-import lookingRightImg from './assets/looking_right.png';
-import mouthOpenImg from './assets/mouth_open.png';
-import showingTeethImg from './assets/showing_teeth.png';
-
 import ConsentScreen from './ConsentScreen';
 import EnhancedGameStats from './EnhancedGameStats';
 import InstructionsModal from './InstructionsModal';
 import WebcamCapture from './WebcamCapture';
 
 const FACIAL_EXPRESSIONS = [
-  { id: 'mouth_open', name: 'Open Your Mouth!', image: mouthOpenImg, emoji: '😮', description: 'Open your mouth wide like you\'re surprised!' },
-  { id: 'showing_teeth', name: 'Show Your Teeth!', image: showingTeethImg, emoji: '😁', description: 'Show your beautiful teeth with a big smile!' },
-  { id: 'kiss', name: 'Make a Kiss!', image: kissImg, emoji: '😘', description: 'Pucker your lips like you\'re giving a kiss!' },
-  { id: 'looking_left', name: 'Look Left!', image: lookingLeftImg, emoji: '👈', description: 'Turn your head and look to the left!' },
-  { id: 'looking_right', name: 'Look Right!', image: lookingRightImg, emoji: '👉', description: 'Turn your head and look to the right!' },
+  { id: 'mouth_open', name: 'Open Your Mouth!', image: '/mirror_posture_images/mouth_open.jpg', emoji: '😮', description: 'Open your mouth wide like you\'re surprised!' },
+  { id: 'showing_teeth', name: 'Show Your Teeth!', image: '/mirror_posture_images/showing_teeth.jpg', emoji: '😁', description: 'Show your beautiful teeth with a big smile!' },
+  { id: 'kiss', name: 'Make a Kiss!', image: '/mirror_posture_images/kiss.jpg', emoji: '😘', description: 'Pucker your lips like you\'re giving a kiss!' },
+  { id: 'looking_left', name: 'Look Left!', image: '/mirror_posture_images/looking_left.jpg', emoji: '👈', description: 'Turn your head and look to the left!' },
+  { id: 'looking_right', name: 'Look Right!', image: '/mirror_posture_images/looking_right.jpg', emoji: '👉', description: 'Turn your head and look to the right!' },
 ];
 
 const ROUND_DURATION = 15; // seconds
@@ -903,13 +896,38 @@ const MirrorPostureGame: React.FC = () => {
     )
   }
 
-                       // Game Screen
-     return (
-       <div className="h-full flex flex-col relative">
-                                       {/* Main Content - Centered with Top Padding */}
-          <div className="flex-1 flex items-center justify-center pt-8">
-            <div className="flex gap-20 items-start">
-              {/* Camera Box */}
+                                               // Game Screen
+      return (
+        <div className="h-full flex flex-col relative">
+          {/* Round Information - Top */}
+          {gameState === 'playing' && (
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
+              <div className="bg-white/90 backdrop-blur-sm rounded-full px-6 py-2 shadow-lg border-2 border-primary">
+                <span className="text-lg font-playful text-primary">
+                  Round {gameStats.currentRound + 1} of 5
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Timer - Top Right */}
+          {gameState === 'playing' && (
+            <div className="absolute top-4 right-4 z-10">
+              <div className="bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg border-2 border-primary">
+                <div className="text-center">
+                  <div className={`text-lg font-bold ${gameStats.timeLeft <= 3 ? "text-red-500" : "text-primary"}`}>
+                    {gameStats.timeLeft}s
+                  </div>
+                  <div className="text-xs text-muted-foreground font-comic">Time</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Main Content - Centered */}
+          <div className="flex-1 flex items-center justify-center">
+            <div className="flex gap-8 items-center">
+              {/* Camera */}
               <div className="relative w-[30rem] h-[26rem]">
                 {gameState !== 'finished' ? (
                   <>
@@ -930,9 +948,9 @@ const MirrorPostureGame: React.FC = () => {
                       )}
                     </div>
                     
-                    {/* Detected Expression Display - Single Row */}
+                    {/* Detected Expression Display */}
                     {gameStats.detectedExpression && gameState === 'playing' && (
-                      <div className="card-playful border-2 border-secondary p-2 text-center">
+                      <div className="bg-white/90 backdrop-blur-sm rounded-lg p-2 text-center shadow-lg border border-secondary">
                         <div className="text-sm font-playful text-primary">
                           Detected: {gameStats.detectedExpression === 'looking_left' && 'Looking Left 👈'}
                           {gameStats.detectedExpression === 'looking_right' && 'Looking Right 👉'}
@@ -944,122 +962,78 @@ const MirrorPostureGame: React.FC = () => {
                     )}
                   </>
                 ) : (
-                                     // Game completion screen in camera box
-                   <div className="w-full h-full bg-gradient-to-br from-orange-600 via-pink-500 to-purple-600 rounded-2xl shadow-2xl border-4 border-primary relative overflow-hidden">
-                     {/* Animated background elements */}
-                     <div className="absolute inset-0 pointer-events-none">
-                       <div className="absolute top-4 left-4 w-16 h-16 bg-yellow-300/30 rounded-full animate-pulse"></div>
-                       <div className="absolute top-8 right-6 w-12 h-12 bg-blue-300/30 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
-                       <div className="absolute bottom-6 left-6 w-10 h-10 bg-green-300/30 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
-                       <div className="absolute bottom-8 right-4 w-14 h-14 bg-pink-300/30 rounded-full animate-bounce" style={{animationDelay: '1.5s'}}></div>
-                       <div className="absolute top-1/2 left-1/3 w-8 h-8 bg-orange-300/30 rounded-full animate-spin" style={{animationDuration: '3s'}}></div>
-                       <div className="absolute top-1/4 right-1/4 w-6 h-6 bg-cyan-300/30 rounded-full animate-pulse" style={{animationDelay: '0.8s'}}></div>
-                     </div>
-                     
-                     {/* Main content */}
-                     <div className="relative z-10 w-full h-full flex flex-col items-center justify-center text-white p-4">
-                       <h2 className="text-3xl font-playful mb-3 text-center drop-shadow-2xl">
-                         🏆 Game Finished!
-                       </h2>
-                       
-                       <div className="text-6xl mb-3 animate-bounce drop-shadow-2xl">🎉</div>
-                       
-                       <div className="text-2xl font-playful mb-2 text-center drop-shadow-lg">
-                         Final Score: {gameStats.score}/5
-                       </div>
-                       
-                       <div className="text-lg font-comic mb-2 text-center drop-shadow-md">
-                         {gameStats.score === 5 ? "Perfect! You're an expression master! 🌟" : 
-                          gameStats.score >= 3 ? "Great job! You're getting better! 👍" : 
-                          "Keep practicing! You'll improve! 💪"}
-                       </div>
-                       
-                       <div className="text-xs font-comic text-center opacity-90 drop-shadow-sm mb-3">
-                         {gameStats.score === 5 ? "Incredible performance! You've mastered all expressions!" :
-                          gameStats.score >= 3 ? "Excellent work! You're on your way to becoming an expression expert!" :
-                          "Good effort! Every practice session makes you stronger!"}
-                       </div>
-                       
-                       {/* Achievement badges */}
-                       <div className="flex gap-2 flex-wrap justify-center">
-                         {gameStats.score === 5 && (
-                           <div className="bg-yellow-400/80 text-yellow-900 px-2 py-1 rounded-full text-xs font-bold animate-pulse">
-                             🏅 Perfect
-                           </div>
-                         )}
-                         {gameStats.score >= 3 && (
-                           <div className="bg-blue-400/80 text-blue-900 px-2 py-1 rounded-full text-xs font-bold">
-                             ⭐ Great
-                           </div>
-                         )}
-                         {gameStats.score >= 2 && (
-                           <div className="bg-green-400/80 text-green-900 px-2 py-1 rounded-full text-xs font-bold">
-                             🎯 Good
-                           </div>
-                         )}
-                       </div>
-                     </div>
-                   </div>
-                )}
-              </div>
-
-              {/* Circular Timer - Between Boxes */}
-              {gameState === 'playing' && (
-                <div className="flex flex-col items-center justify-center">
-                  <div className="relative w-24 h-24">
-                    {/* Background Circle */}
-                    <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="40"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                        fill="none"
-                        className="text-gray-200"
-                      />
-                      {/* Progress Circle */}
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="40"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                        fill="none"
-                        strokeLinecap="round"
-                        className={`${gameStats.timeLeft <= 3 ? "text-red-500" : "text-green-500"} transition-all duration-1000 ease-linear`}
-                        style={{
-                          strokeDasharray: `${2 * Math.PI * 40}`,
-                          strokeDashoffset: `${2 * Math.PI * 40 * (1 - gameStats.timeLeft / ROUND_DURATION)}`
-                        }}
-                      />
-                    </svg>
-                    {/* Timer Text */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center">
-                        <div className={`text-lg font-bold ${gameStats.timeLeft <= 3 ? "text-red-500" : "text-primary"}`}>
-                          {gameStats.timeLeft}s
-                        </div>
-                        <div className="text-xs text-muted-foreground font-comic">Time</div>
+                  // Game completion screen
+                  <div className="w-full h-full bg-gradient-to-br from-orange-600 via-pink-500 to-purple-600 rounded-2xl shadow-2xl border-4 border-primary relative overflow-hidden">
+                    {/* Animated background elements */}
+                    <div className="absolute inset-0 pointer-events-none">
+                      <div className="absolute top-4 left-4 w-16 h-16 bg-yellow-300/30 rounded-full animate-pulse"></div>
+                      <div className="absolute top-8 right-6 w-12 h-12 bg-blue-300/30 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
+                      <div className="absolute bottom-6 left-6 w-10 h-10 bg-green-300/30 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+                      <div className="absolute bottom-8 right-4 w-14 h-14 bg-pink-300/30 rounded-full animate-bounce" style={{animationDelay: '1.5s'}}></div>
+                      <div className="absolute top-1/2 left-1/3 w-8 h-8 bg-orange-300/30 rounded-full animate-spin" style={{animationDuration: '3s'}}></div>
+                      <div className="absolute top-1/4 right-1/4 w-6 h-6 bg-cyan-300/30 rounded-full animate-pulse" style={{animationDelay: '0.8s'}}></div>
+                    </div>
+                    
+                    {/* Main content */}
+                    <div className="relative z-10 w-full h-full flex flex-col items-center justify-center text-white p-4">
+                      <h2 className="text-3xl font-playful mb-3 text-center drop-shadow-2xl">
+                        🏆 Game Finished!
+                      </h2>
+                      
+                      <div className="text-6xl mb-3 animate-bounce drop-shadow-2xl">🎉</div>
+                      
+                      <div className="text-2xl font-playful mb-2 text-center drop-shadow-lg">
+                        Final Score: {gameStats.score}/5
+                      </div>
+                      
+                      <div className="text-lg font-comic mb-2 text-center drop-shadow-md">
+                        {gameStats.score === 5 ? "Perfect! You're an expression master! 🌟" : 
+                         gameStats.score >= 3 ? "Great job! You're getting better! 👍" : 
+                         "Keep practicing! You'll improve! 💪"}
+                      </div>
+                      
+                      <div className="text-xs font-comic text-center opacity-90 drop-shadow-sm mb-3">
+                        {gameStats.score === 5 ? "Incredible performance! You've mastered all expressions!" :
+                         gameStats.score >= 3 ? "Excellent work! You're on your way to becoming an expression expert!" :
+                         "Good effort! Every practice session makes you stronger!"}
+                      </div>
+                      
+                      {/* Achievement badges */}
+                      <div className="flex gap-2 flex-wrap justify-center">
+                        {gameStats.score === 5 && (
+                          <div className="bg-yellow-400/80 text-yellow-900 px-2 py-1 rounded-full text-xs font-bold animate-pulse">
+                            🏅 Perfect
+                          </div>
+                        )}
+                        {gameStats.score >= 3 && (
+                          <div className="bg-blue-400/80 text-blue-900 px-2 py-1 rounded-full text-xs font-bold">
+                            ⭐ Great
+                          </div>
+                        )}
+                        {gameStats.score >= 2 && (
+                          <div className="bg-green-400/80 text-green-900 px-2 py-1 rounded-full text-xs font-bold">
+                            🎯 Good
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
-              {/* Reference Image Box */}
+              {/* Reference Image */}
               <div className="w-[30rem] h-[26rem]">
-               {gameState === 'idle' && (
-                 <div className="card-playful border-4 border-primary bg-gradient-to-r from-primary/10 to-secondary/10 p-6 text-center w-full h-full flex flex-col justify-center">
-                   <h2 className="text-3xl font-playful text-primary mb-4">
-                     🎯 Ready to Play?
-                   </h2>
-                   <p className="text-lg text-muted-foreground mb-6 leading-relaxed font-comic">
-                     Copy the facial expressions shown on the screen! You'll have 5 rounds to make the correct face within 15 seconds each.
-                   </p>
+                {gameState === 'idle' && (
+                  <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-2xl p-8 text-center w-full h-full flex flex-col justify-center border-2 border-primary">
+                    <h2 className="text-3xl font-playful text-primary mb-4">
+                      🎯 Ready to Play?
+                    </h2>
+                    <p className="text-lg text-muted-foreground mb-6 leading-relaxed font-comic">
+                      Copy the facial expressions shown on the screen! You'll have 5 rounds to make the correct face within 15 seconds each.
+                    </p>
 
-                   <div className="flex flex-col gap-4">
-                                           <Button 
+                    <div className="flex flex-col gap-4">
+                      <Button 
                         onClick={() => startGame()} 
                         className="btn-fun font-comic text-xl py-3 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white border-2 border-orange-300 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                       >
@@ -1067,88 +1041,81 @@ const MirrorPostureGame: React.FC = () => {
                         Start Game
                       </Button>
                     
-                     <Button
-                       onClick={() => setCurrentScreen('instructions')}
-                       className="btn-fun font-comic text-lg py-2 bg-secondary hover:bg-secondary/80"
-                     >
-                       <HelpCircle className="w-5 h-5 mr-2" />
-                       Show Instructions Again
-                     </Button>
-                   </div>
-                 </div>
-               )}
+                      <Button
+                        onClick={() => setCurrentScreen('instructions')}
+                        className="btn-fun font-comic text-lg py-2 bg-secondary hover:bg-secondary/80"
+                      >
+                        <HelpCircle className="w-5 h-5 mr-2" />
+                        Show Instructions Again
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
-                               {gameState === 'playing' && currentExpression && (
-                   <div className="card-playful border-4 border-primary bg-gradient-to-r from-primary/20 to-secondary/20 p-6 text-center w-full h-full flex flex-col justify-center">
-                     {isRoundCountdownActive ? (
-                       <>
-                         <h3 className="text-2xl font-playful text-primary mb-4">Get Ready!</h3>
-                         <div className="text-6xl mb-4 animate-bounce">🎯</div>
-                         <p className="text-lg text-muted-foreground font-comic mb-6">
-                           Next expression coming in {roundCountdown} seconds...
-                         </p>
-                         
-                         {/* Countdown Circle inside the reference box */}
-                         <div className="flex justify-center">
-                           <div className="relative w-32 h-32">
-                             {/* Background Circle */}
-                             <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
-                               <circle
-                                 cx="50"
-                                 cy="50"
-                                 r="40"
-                                 stroke="currentColor"
-                                 strokeWidth="8"
-                                 fill="none"
-                                 className="text-gray-200"
-                               />
-                               {/* Progress Circle */}
-                               <circle
-                                 cx="50"
-                                 cy="50"
-                                 r="40"
-                                 stroke="currentColor"
-                                 strokeWidth="8"
-                                 fill="none"
-                                 strokeLinecap="round"
-                                 className="text-orange-500 transition-all duration-1000 ease-linear"
-                                 style={{
-                                   strokeDasharray: `${2 * Math.PI * 40}`,
-                                   strokeDashoffset: `${2 * Math.PI * 40 * (1 - roundCountdown / 2)}`
-                                 }}
-                               />
-                             </svg>
-                             {/* Countdown Text */}
-                             <div className="absolute inset-0 flex items-center justify-center">
-                               <div className="text-center">
-                                 <div className="text-2xl font-bold text-orange-500">
-                                   {roundCountdown}s
-                                 </div>
-                                 <div className="text-xs text-muted-foreground font-comic">Next Round</div>
-                               </div>
-                             </div>
-                           </div>
-                         </div>
-                       </>
-                     ) : (
-                       <>
-                         <h3 className="text-2xl font-playful text-primary mb-4">Make this expression:</h3>
-                         <div className="text-2xl font-playful text-primary mb-3">{currentExpression.name}</div>
-                         <img 
-                           src={currentExpression.image} 
-                           alt={currentExpression.name}
-                           className="w-52 h-52 mx-auto rounded-xl border-4 border-primary shadow-2xl mb-4"
-                         />
-                         <div className="text-lg text-muted-foreground font-comic">
-                           {currentExpression.description}
-                         </div>
-                       </>
-                     )}
-                   </div>
-                 )}
+                {gameState === 'playing' && currentExpression && (
+                  <div className="relative w-full h-full">
+                    {isRoundCountdownActive ? (
+                      <div className="bg-gradient-to-r from-primary/20 to-secondary/20 rounded-2xl p-6 text-center w-full h-full flex flex-col justify-center border-2 border-primary">
+                        <h3 className="text-2xl font-playful text-primary mb-4">Get Ready!</h3>
+                        <div className="text-6xl mb-4 animate-bounce">🎯</div>
+                        <p className="text-lg text-muted-foreground font-comic mb-6">
+                          Next expression coming in {roundCountdown} seconds...
+                        </p>
+                        
+                        {/* Countdown Circle */}
+                        <div className="flex justify-center">
+                          <div className="relative w-32 h-32">
+                            {/* Background Circle */}
+                            <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
+                              <circle
+                                cx="50"
+                                cy="50"
+                                r="40"
+                                stroke="currentColor"
+                                strokeWidth="8"
+                                fill="none"
+                                className="text-gray-200"
+                              />
+                              {/* Progress Circle */}
+                              <circle
+                                cx="50"
+                                cy="50"
+                                r="40"
+                                stroke="currentColor"
+                                strokeWidth="8"
+                                fill="none"
+                                strokeLinecap="round"
+                                className="text-orange-500 transition-all duration-1000 ease-linear"
+                                style={{
+                                  strokeDasharray: `${2 * Math.PI * 40}`,
+                                  strokeDashoffset: `${2 * Math.PI * 40 * (1 - roundCountdown / 2)}`
+                                }}
+                              />
+                            </svg>
+                            {/* Countdown Text */}
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="text-center">
+                                <div className="text-2xl font-bold text-orange-500">
+                                  {roundCountdown}s
+                                </div>
+                                <div className="text-xs text-muted-foreground font-comic">Next Round</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <img 
+                        src={currentExpression.image} 
+                        alt={currentExpression.name}
+                        className="w-full h-full object-contain rounded-2xl border-2 border-primary shadow-2xl"
+                      />
+                    )}
+                  </div>
+                )}
 
-                               {gameState === 'finished' && (
-                  <div className="card-playful border-4 border-primary bg-gradient-to-br from-primary/5 via-secondary/10 to-purple-500/5 p-8 text-center w-full min-h-full flex flex-col justify-center relative overflow-hidden">
+                {gameState === 'finished' && (
+                  <div className="bg-gradient-to-br from-primary/5 via-secondary/10 to-purple-500/5 rounded-2xl p-8 text-center w-full h-full flex flex-col justify-center relative overflow-hidden border-2 border-primary">
                     {/* Animated background elements */}
                     <div className="absolute inset-0 pointer-events-none">
                       <div className="absolute top-4 left-4 w-16 h-16 bg-yellow-400/20 rounded-full animate-pulse"></div>
@@ -1192,9 +1159,9 @@ const MirrorPostureGame: React.FC = () => {
                     </div>
                   </div>
                 )}
-             </div>
-           </div>
-         </div>
+              </div>
+            </div>
+          </div>
 
              <InstructionsModal 
          open={showInstructions} 

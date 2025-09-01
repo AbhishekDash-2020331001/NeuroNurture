@@ -309,17 +309,17 @@ const GestureRecognizerComponent: React.FC = () => {
     // Memoized gestures array
     const gestures = useMemo(
         () => [
-            { name: "Closed Fist", label: "closed_fist", emoji: "✊", description: "Make a strong fist like a superhero!" },
-            { name: "Open Palm", label: "open_palm", emoji: "✋", description: "Show your palm like saying hello!" },
-            { name: "Pointing Up", label: "pointing_up", emoji: "☝️", description: "Point your finger up to the sky!" },
-            { name: "Thumbs Down", label: "thumbs_down", emoji: "👎", description: "Show thumbs down like a judge!" },
-            { name: "Thumbs Up", label: "thumbs_up", emoji: "👍", description: "Give a thumbs up for good job!" },
-            { name: "Victory", label: "victory", emoji: "✌️", description: "Make a peace sign with your fingers!" },
-            { name: "I Love You", label: "iloveyou", emoji: "🤟", description: "Show the love sign with your hand!" },
-            { name: "Butterfly", label: "butterfly", emoji: "🦋", description: "Flap your hands like a beautiful butterfly!" },
-            { name: "Dua", label: "dua", emoji: "🤲", description: "Hold your hands together in prayer position!" },
-            { name: "Heart", label: "heart", emoji: "❤️", description: "Make a heart shape with your hands!" },
-            { name: "Spectacle", label: "spectacle", emoji: "🕶️", description: "Make circles with your fingers like glasses!" },
+            { name: "Closed Fist", label: "closed_fist", emoji: "✊", image: "/gesture_images/closed_fist.jpg", description: "Make a strong fist like a superhero!" },
+            { name: "Open Palm", label: "open_palm", emoji: "✋", image: "/gesture_images/open_palm.jpg", description: "Show your palm like saying hello!" },
+            { name: "Pointing Up", label: "pointing_up", emoji: "☝️", image: "/gesture_images/pointing_up.jpg", description: "Point your finger up to the sky!" },
+            { name: "Thumbs Down", label: "thumbs_down", emoji: "👎", image: "/gesture_images/thumbs_down.jpg", description: "Show thumbs down like a judge!" },
+            { name: "Thumbs Up", label: "thumbs_up", emoji: "👍", image: "/gesture_images/thumbs_up.jpg", description: "Give a thumbs up for good job!" },
+            { name: "Victory", label: "victory", emoji: "✌️", image: "/gesture_images/victory.jpg", description: "Make a peace sign with your fingers!" },
+            { name: "I Love You", label: "iloveyou", emoji: "🤟", image: "/gesture_images/iloveyou.jpg", description: "Show the love sign with your hand!" },
+            { name: "Butterfly", label: "butterfly", emoji: "🦋", image: "/gesture_images/butterfly.jpg", description: "Flap your hands like a beautiful butterfly!" },
+            { name: "Dua", label: "dua", emoji: "🤲", image: "/gesture_images/dua.jpg", description: "Hold your hands together in prayer position!" },
+            { name: "Heart", label: "heart", emoji: "❤️", image: "/gesture_images/heart.jpg", description: "Make a heart shape with your hands!" },
+            { name: "Spectacle", label: "spectacle", emoji: "🕶️", image: "/gesture_images/spectacle.jpg", description: "Make circles with your fingers like glasses!" },
         ],
         [],
     )
@@ -1552,66 +1552,79 @@ const GestureRecognizerComponent: React.FC = () => {
                             )}
 
                             {gameStarted && !gameEnded && targetGesture && (
-                                <div className="card-playful border-4 border-primary bg-gradient-to-r from-primary/20 to-secondary/20 p-6 text-center w-full h-full flex flex-col justify-center">
-                                    {isRoundCountdownActive ? (
-                                        // Show round countdown
-                                        <div className="text-center">
-                                            <h3 className="text-2xl font-playful text-primary mb-4">Get Ready!</h3>
-                                            <div className="relative w-32 h-32 mx-auto mb-4">
-                                                <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
-                                                    <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="8" fill="none" className="text-gray-200" />
-                                                    <circle
-                                                        cx="50"
-                                                        cy="50"
-                                                        r="40"
-                                                        stroke="currentColor"
-                                                        strokeWidth="8"
-                                                        fill="none"
-                                                        strokeLinecap="round"
-                                                        className="text-blue-500 transition-all duration-1000 ease-linear"
-                                                        style={{
-                                                            strokeDasharray: `${2 * Math.PI * 40}`,
-                                                            strokeDashoffset: `${2 * Math.PI * 40 * (1 - roundCountdown / 2)}`
-                                                        }}
-                                                    />
-                                                </svg>
-                                                <div className="absolute inset-0 flex items-center justify-center">
-                                                    <div className="text-center">
-                                                        <div className="text-3xl font-bold text-blue-600">
-                                                            {roundCountdown}s
+                                <div className="card-playful border-4 border-primary bg-gradient-to-r from-primary/20 to-secondary/20 p-2 text-center w-full h-full relative">
+                                    {/* Top corners for round and score */}
+                                    <div className="absolute top-2 left-2 z-10">
+                                        <div className="card-playful border border-fun-purple/20 px-1 py-0.5 text-center bg-white/80 backdrop-blur-sm">
+                                            <span className="text-xs text-muted-foreground font-comic block">Score</span>
+                                            <span className="text-sm font-bold text-primary">{score}</span>
+                                        </div>
+                                    </div>
+                                    <div className="absolute top-2 right-2 z-10">
+                                        <div className="card-playful border border-fun-orange/20 px-1 py-0.5 text-center bg-white/80 backdrop-blur-sm">
+                                            <span className="text-xs text-muted-foreground font-comic block">Round</span>
+                                            <span className="text-sm font-bold text-primary">{currentRound}/11</span>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Main content area */}
+                                    <div className="w-full h-full flex flex-col justify-center">
+                                        {isRoundCountdownActive ? (
+                                            // Show round countdown
+                                            <div className="text-center">
+                                                <h3 className="text-2xl font-playful text-primary mb-4">Get Ready!</h3>
+                                                <div className="relative w-32 h-32 mx-auto mb-4">
+                                                    <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
+                                                        <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="8" fill="none" className="text-gray-200" />
+                                                        <circle
+                                                            cx="50"
+                                                            cy="50"
+                                                            r="40"
+                                                            stroke="currentColor"
+                                                            strokeWidth="8"
+                                                            fill="none"
+                                                            strokeLinecap="round"
+                                                            className="text-blue-500 transition-all duration-1000 ease-linear"
+                                                            style={{
+                                                                strokeDasharray: `${2 * Math.PI * 40}`,
+                                                                strokeDashoffset: `${2 * Math.PI * 40 * (1 - roundCountdown / 2)}`
+                                                            }}
+                                                        />
+                                                    </svg>
+                                                    <div className="absolute inset-0 flex items-center justify-center">
+                                                        <div className="text-center">
+                                                            <div className="text-3xl font-bold text-blue-600">
+                                                                {roundCountdown}s
+                                                            </div>
+                                                            <div className="text-sm text-muted-foreground font-comic">Next Round</div>
                                                         </div>
-                                                        <div className="text-sm text-muted-foreground font-comic">Next Round</div>
                                                     </div>
                                                 </div>
+                                                <p className="text-lg text-muted-foreground font-comic">
+                                                    Prepare for the next gesture!
+                                                </p>
                                             </div>
-                                            <p className="text-lg text-muted-foreground font-comic">
-                                                Prepare for the next gesture!
-                                            </p>
-                                        </div>
-                                    ) : (
-                                        // Show gesture instruction
-                                        <>
-                                            <h3 className="text-2xl font-playful text-primary mb-4">Make this gesture:</h3>
-                                            <div className="text-6xl mb-4 animate-pulse">
-                                                {gestures.find(g => g.label === targetGesture)?.emoji}
-                                            </div>
-                                            <div className="text-2xl font-playful text-primary mb-3">
-                                                {gestures.find(g => g.label === targetGesture)?.name}
-                                            </div>
-                                            <div className="text-lg text-muted-foreground font-comic">
-                                                {gestures.find(g => g.label === targetGesture)?.description}
-                                            </div>
-                                        </>
-                                    )}
-                                    <div className="mt-6 flex justify-center gap-4">
-                                        <div className="card-playful border-2 border-fun-orange/20 p-3 text-center">
-                                            <span className="text-sm text-muted-foreground font-comic mb-1 block">Round</span>
-                                            <span className="text-xl font-bold text-primary">{currentRound}/11</span>
-                                        </div>
-                                        <div className="card-playful border-2 border-fun-purple/20 p-3 text-center">
-                                            <span className="text-sm text-muted-foreground font-comic mb-1 block">Score</span>
-                                            <span className="text-xl font-bold text-primary">{score}</span>
-                                        </div>
+                                        ) : (
+                                            // Show gesture instruction - maximized image
+                                            <>
+                                                <div className="flex justify-center items-center w-full h-full">
+                                                    <img 
+                                                        src={gestures.find(g => g.label === targetGesture)?.image} 
+                                                        alt={gestures.find(g => g.label === targetGesture)?.name}
+                                                        className="w-full h-full object-contain rounded-lg shadow-lg border-4 border-primary/20 animate-pulse"
+                                                        onError={(e) => {
+                                                            // Fallback to emoji if image fails to load
+                                                            const target = e.target as HTMLImageElement;
+                                                            target.style.display = 'none';
+                                                            const emojiDiv = document.createElement('div');
+                                                            emojiDiv.className = 'text-9xl animate-pulse';
+                                                            emojiDiv.textContent = gestures.find(g => g.label === targetGesture)?.emoji || '';
+                                                            target.parentNode?.appendChild(emojiDiv);
+                                                        }}
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             )}
