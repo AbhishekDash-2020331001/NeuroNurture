@@ -31,7 +31,7 @@ const RepeatWithMeGameplay: React.FC = () => {
   const [gameResults, setGameResults] = useState<{ [key: number]: GameResult }>({});
   const [isAudioPlaying, setIsAudioPlaying] = useState<boolean>(false);
   const [isRecording, setIsRecording] = useState<boolean>(false);
-  const [recordingTimer, setRecordingTimer] = useState<number>(5);
+  const [recordingTimer, setRecordingTimer] = useState<number>(10);
   const [totfiles, setTotfiles] = useState<number>(12); // We have 12 audio files
   const [usedAudioIndices, setUsedAudioIndices] = useState<Set<number>>(new Set()); // Track used audio files
 
@@ -216,7 +216,7 @@ const RepeatWithMeGameplay: React.FC = () => {
   const startSpeakingPhase = useCallback(async () => {
     setGameState('speaking');
     setIsRecording(true);
-    setRecordingTimer(5);
+          setRecordingTimer(10);
     
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -291,9 +291,9 @@ const RepeatWithMeGameplay: React.FC = () => {
 
       mediaRecorderRef.current.start();
       
-      // Countdown timer for recording (exactly 5 seconds like Javafest_agor)
+      // Countdown timer for recording (exactly 10 seconds)
       const recordingStartTime = Date.now();
-      const recordingDuration = 5000; // 5 seconds in milliseconds
+      const recordingDuration = 10000; // 10 seconds in milliseconds
       
       const recordingTimer = setInterval(() => {
         const elapsed = Date.now() - recordingStartTime;
@@ -304,9 +304,9 @@ const RepeatWithMeGameplay: React.FC = () => {
           setRecordingTimer(0);
           console.log('Recording time complete, stopping recorder');
           
-          // Stop recording after exactly 5 seconds
+          // Stop recording after exactly 10 seconds
           if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-            console.log('Stopping recording after 5 seconds');
+            console.log('Stopping recording after 10 seconds');
             mediaRecorderRef.current.stop();
           }
           setIsRecording(false);
@@ -324,6 +324,16 @@ const RepeatWithMeGameplay: React.FC = () => {
       });
     }
   }, [currentSentence, round, totfiles]);
+
+  // Function to handle early recording completion
+  const handleEarlyRecordingComplete = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      console.log('User completed recording early');
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      setRecordingTimer(0);
+    }
+  }, []);
 
   // Wait for final round transcription result before finishing (like Javafest_agor)
   const waitForFinalRoundResult = useCallback(() => {
@@ -698,12 +708,20 @@ const RepeatWithMeGameplay: React.FC = () => {
             </div>
             
             {/* Recording progress bar */}
-            <div className="w-80 mx-auto bg-gray-200 rounded-full h-4 overflow-hidden shadow-inner">
+            <div className="w-80 mx-auto bg-gray-200 rounded-full h-4 overflow-hidden shadow-inner mb-6">
               <div 
                 className="h-full bg-gradient-to-r from-red-500 to-pink-500 rounded-full transition-all duration-1000 ease-out shadow-lg"
-                style={{ width: `${((5 - recordingTimer) / 5) * 100}%` }}
+                style={{ width: `${((10 - recordingTimer) / 10) * 100}%` }}
               ></div>
             </div>
+
+            {/* Done Button - Allow early completion */}
+            <Button
+              onClick={handleEarlyRecordingComplete}
+              className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3 px-8 rounded-full text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-2 border-green-400"
+            >
+              ✅ Done Recording
+            </Button>
           </div>
         )}
 
@@ -734,7 +752,7 @@ const RepeatWithMeGameplay: React.FC = () => {
 
         {/* Game Finished - Enhanced Visual Design */}
         {gameState === 'finished' && (
-          <div className="text-center max-w-5xl w-full overflow-y-auto max-h-full">
+          <div className="text-center max-w-5xl w-full">
             {/* Enhanced completion animation */}
             <div className="relative mb-6">
               {showCompletionAnimation && (

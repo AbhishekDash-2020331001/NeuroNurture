@@ -239,12 +239,12 @@ const RepeatWithMeGamePlayPage: React.FC = () => {
 
       mediaRecorderRef.current.start();
       
-      // Stop recording after 5 seconds
+      // Stop recording after 10 seconds
       setTimeout(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
           mediaRecorderRef.current.stop();
         }
-      }, 5000);
+      }, 10000);
     } catch (error) {
       console.error('Error starting recording:', error);
       setGameState('playing');
