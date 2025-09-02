@@ -3,8 +3,8 @@ import os
 import time
 
 DATASET_PATH = "dataset"
-LABEL = "butterfly"
-LABEL_DISPLAY = "Butterfly 🦋"
+LABEL = "none"
+LABEL_DISPLAY = "None ❌"
 CAPTURE_INTERVAL = 1  # seconds
 
 # Create the folder if it doesn't exist

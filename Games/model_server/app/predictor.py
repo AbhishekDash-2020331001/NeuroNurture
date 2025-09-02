@@ -9,7 +9,7 @@ import mediapipe as mp
 
 # Load model and label encoder
 posture_model = joblib.load("app/models/mirror_posture/svm_posture_model_acc_99.0.pkl")
-gesture_model = joblib.load("app/models/gesture/gesture_model.pkl")
+gesture_model = joblib.load("app/models/gesture/gesture_model_multihand_with_none.pkl")
 
 
 le = joblib.load("app/models/mirror_posture/label_encoder.pkl")
