@@ -6,20 +6,18 @@ import { getCurrentChild } from '@/utils/childUtils';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Line,
-  LineChart,
-  PolarAngleAxis,
-  PolarGrid,
-  PolarRadiusAxis,
-  Radar,
-  RadarChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis
+    CartesianGrid,
+    Line,
+    LineChart,
+    PolarAngleAxis,
+    PolarGrid,
+    PolarRadiusAxis,
+    Radar,
+    RadarChart,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis
 } from 'recharts';
 
 interface DanceDoodleGameRecord {
@@ -278,8 +276,8 @@ export default function DanceDoodleGameInsights() {
     if (!field) return null;
     
     const value = record[field] as number;
-    // Return the value if it's a number (including 0), otherwise return null
-    return typeof value === 'number' ? value : null;
+    // Return the value if it's a number AND not null/undefined, otherwise return null
+    return (typeof value === 'number' && value !== null && value !== undefined) ? value : null;
   };
 
   const getAverageTime = (poseName: string): number => {
@@ -326,14 +324,9 @@ export default function DanceDoodleGameInsights() {
 
   // Session improvement curve data
   const sessionImprovementData = gameHistory.map((record, index) => {
-    const totalTime = DANCE_POSES.reduce((sum, pose) => {
-      const time = getPoseTime(record, pose);
-      return sum + (time !== null && time !== undefined ? time : 0);
-    }, 0);
-    const completedPoses = DANCE_POSES.filter(pose => {
-      const time = getPoseTime(record, pose);
-      return time !== null && time !== undefined;
-    }).length;
+    const completedTimes = DANCE_POSES.map(pose => getPoseTime(record, pose)).filter(time => time !== null) as number[];
+    const totalTime = completedTimes.reduce((sum, time) => sum + time, 0);
+    const completedPoses = completedTimes.length;
     const averageTime = completedPoses > 0 ? totalTime / completedPoses : 0;
     
     return {
@@ -356,10 +349,8 @@ export default function DanceDoodleGameInsights() {
 
   // Prepare session data for performance curve - ONLY REAL DATA
   const sessionData = gameHistory.map((record, index) => {
-    const totalTime = DANCE_POSES.reduce((sum, pose) => {
-      const time = getPoseTime(record, pose);
-      return sum + (time || 0);
-    }, 0);
+    const completedTimes = DANCE_POSES.map(pose => getPoseTime(record, pose)).filter(time => time !== null) as number[];
+    const totalTime = completedTimes.reduce((sum, time) => sum + time, 0);
     
     return {
       session: `Session ${gameHistory.length - index}`,
@@ -601,11 +592,25 @@ export default function DanceDoodleGameInsights() {
                               );
                             }
                             
-                            const bestPose = avgTimes.reduce((min, current) => current[1] < min[1] ? current : min);
+                            const validAvgTimes = avgTimes.filter(([_, time]) => time > 0);
+                            if (validAvgTimes.length === 0) {
+                              return (
+                                <>
+                                  <div className="text-3xl font-bold text-emerald-600 mb-2">--</div>
+                                  <div className="text-sm font-comic text-emerald-700 font-semibold">
+                                    Best Pose
+                                  </div>
+                                  <div className="text-xs text-emerald-600 mt-1">
+                                    No completed poses yet
+                                  </div>
+                                </>
+                              );
+                            }
+                            const bestPose = validAvgTimes.reduce((min, current) => current[1] < min[1] ? current : min);
                             return (
                               <>
                                 <div className="text-3xl font-bold text-emerald-600 mb-2">
-                                  {(Number(bestPose[1]) || 0).toFixed(1)}s
+                                  {bestPose[1].toFixed(1)}s
                                 </div>
                                 <div className="text-sm font-comic text-emerald-700 font-semibold">
                                   Best Pose
@@ -656,13 +661,30 @@ export default function DanceDoodleGameInsights() {
                               );
                             }
                             
-                            const bestPose = avgTimes.reduce((min, current) => (Number(current[1]) || 0) < (Number(min[1]) || 0) ? current : min);
+                            const validAvgTimes = avgTimes.filter(([_, time]) => time > 0);
+                            if (validAvgTimes.length === 0) {
+                              return (
+                                <div className="space-y-4">
+                                  <div className="bg-white/70 rounded-2xl p-6 border border-green-200/50">
+                                    <div className="text-4xl mb-3">🤔</div>
+                                    <div className="text-2xl font-bold text-green-600 mb-2">No data yet</div>
+                                    <div className="text-lg font-comic text-green-700">
+                                      Start dancing to see results!
+                                    </div>
+                                  </div>
+                                  <div className="text-sm text-green-600 font-comic">
+                                    Ready to set records! 🚀
+                                  </div>
+                                </div>
+                              );
+                            }
+                            const bestPose = validAvgTimes.reduce((min, current) => current[1] < min[1] ? current : min);
                             return (
                               <div className="space-y-4">
                                 <div className="bg-white/70 rounded-2xl p-6 border border-green-200/50">
                                   <div className="text-3xl mb-3">{bestPose[0]}</div>
                                   <div className="text-5xl font-bold text-green-600 mb-2 animate-pulse">
-                                    {(Number(bestPose[1]) || 0).toFixed(1)}s
+                                    {bestPose[1].toFixed(1)}s
                                   </div>
                                   <div className="text-lg font-comic text-green-700">
                                     Average completion time
@@ -711,13 +733,30 @@ export default function DanceDoodleGameInsights() {
                               );
                             }
                             
-                            const worstPose = avgTimes.reduce((max, current) => (Number(current[1]) || 0) > (Number(max[1]) || 0) ? current : max);
+                            const validAvgTimes = avgTimes.filter(([_, time]) => time > 0);
+                            if (validAvgTimes.length === 0) {
+                              return (
+                                <div className="space-y-4">
+                                  <div className="bg-white/70 rounded-2xl p-6 border border-red-200/50">
+                                    <div className="text-4xl mb-3">🤔</div>
+                                    <div className="text-2xl font-bold text-red-600 mb-2">No data yet</div>
+                                    <div className="text-lg font-comic text-red-700">
+                                      Start dancing to see results!
+                                    </div>
+                                  </div>
+                                  <div className="text-sm text-red-600 font-comic">
+                                    Ready to improve! 💪
+                                  </div>
+                                </div>
+                              );
+                            }
+                            const worstPose = validAvgTimes.reduce((max, current) => current[1] > max[1] ? current : max);
                             return (
                               <div className="space-y-4">
                                 <div className="bg-white/70 rounded-2xl p-6 border border-red-200/50">
                                   <div className="text-3xl mb-3">{worstPose[0]}</div>
                                   <div className="text-5xl font-bold text-red-600 mb-2 animate-pulse">
-                                    {(Number(worstPose[1]) || 0).toFixed(1)}s
+                                    {worstPose[1].toFixed(1)}s
                                   </div>
                                   <div className="text-lg font-comic text-red-700">
                                     Average completion time
@@ -885,7 +924,10 @@ export default function DanceDoodleGameInsights() {
                     <CardHeader className="pb-3">
                       <CardTitle className="font-playful text-xl text-purple-600">Performance Comparison 📊</CardTitle>
                       <CardDescription className="font-comic text-base">
-                        Visual comparison of average vs last session performance
+                        {statistics?.totalGames === 1 
+                          ? "Your first game! This sets your baseline performance. Play more games to see improvement trends."
+                          : "Visual comparison of average vs last session performance"
+                        }
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -899,10 +941,11 @@ export default function DanceDoodleGameInsights() {
                             // Note: We include averageTime === 0 as it represents valid completion in 0 seconds
                             
                             const isCompleted = lastSessionTime !== null && lastSessionTime !== undefined;
-                            const difference = isCompleted ? (lastSessionTime - averageTime) : 0;
+                            const hasAverageData = averageTime > 0;
+                            const difference = isCompleted && hasAverageData ? (lastSessionTime - averageTime) : 0;
                             const differenceAbs = Math.abs(difference);
-                            const isImproving = isCompleted && difference < 0;
-                            const percentageChange = isCompleted ? Math.abs((difference / averageTime) * 100) : 0;
+                            const isImproving = isCompleted && hasAverageData && difference < 0;
+                            const percentageChange = isCompleted && hasAverageData ? Math.abs((difference / averageTime) * 100) : 0;
                             
                             return (
                               <div key={pose} className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200 hover:scale-105 transition-all">
@@ -925,7 +968,9 @@ export default function DanceDoodleGameInsights() {
                                 <div className="grid grid-cols-3 gap-4">
                                   <div className="text-center p-3 bg-blue-100 rounded-lg border border-blue-200">
                                     <div className="text-xs text-blue-600 font-medium mb-1">Average Time</div>
-                                    <div className="text-lg font-bold text-blue-700">{averageTime.toFixed(1)}s</div>
+                                    <div className="text-lg font-bold text-blue-700">
+                                      {hasAverageData ? `${averageTime.toFixed(1)}s` : (statistics?.totalGames === 1 ? 'First game' : 'No data')}
+                                    </div>
                                   </div>
                                   <div className="text-center p-3 bg-purple-100 rounded-lg border border-purple-200">
                                     <div className="text-xs text-purple-600 font-medium mb-1">Last Session</div>
@@ -935,8 +980,10 @@ export default function DanceDoodleGameInsights() {
                                   </div>
                                   <div className="text-center p-3 bg-gray-100 rounded-lg border border-gray-200">
                                     <div className="text-xs text-gray-600 font-medium mb-1">Difference</div>
-                                    <div className={`text-lg font-bold ${!isCompleted ? 'text-gray-500' : (isImproving ? 'text-green-600' : 'text-red-600')}`}>
-                                      {!isCompleted ? 'N/A' : (isImproving ? '-' : '+') + `${differenceAbs.toFixed(1)}s`}
+                                    <div className={`text-lg font-bold ${!isCompleted ? 'text-gray-500' : (hasAverageData ? (isImproving ? 'text-green-600' : 'text-red-600') : 'text-blue-600')}`}>
+                                      {!isCompleted ? 'N/A' : 
+                                       !hasAverageData ? 'Baseline' : 
+                                       (isImproving ? '-' : '+') + `${differenceAbs.toFixed(1)}s`}
                                     </div>
                                   </div>
                                 </div>
@@ -944,19 +991,23 @@ export default function DanceDoodleGameInsights() {
                                 <div className="mt-3">
                                   <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
                                     <span>Performance</span>
-                                    <span>{!isCompleted ? 'Not Attempted' : (isImproving ? 'Better' : 'Needs Work')}</span>
+                                    <span>{!isCompleted ? 'Not Attempted' : 
+                                           !hasAverageData ? 'Baseline Set' : 
+                                           (isImproving ? 'Better' : 'Needs Work')}</span>
                                   </div>
                                   <div className="w-full bg-gray-200 rounded-full h-2">
                                     <div 
                                       className={`h-2 rounded-full transition-all duration-700 ${
                                         !isCompleted
                                           ? 'bg-gray-400'
-                                          : isImproving 
-                                            ? 'bg-gradient-to-r from-green-400 to-green-600' 
-                                            : 'bg-gradient-to-r from-red-400 to-red-600'
+                                          : !hasAverageData
+                                            ? 'bg-gradient-to-r from-blue-400 to-blue-600'
+                                            : isImproving 
+                                              ? 'bg-gradient-to-r from-green-400 to-green-600' 
+                                              : 'bg-gradient-to-r from-red-400 to-red-600'
                                       }`}
                                       style={{ 
-                                        width: `${!isCompleted ? 0 : Math.min(percentageChange * 2, 100)}%`,
+                                        width: `${!isCompleted ? 0 : !hasAverageData ? 50 : Math.min(percentageChange * 2, 100)}%`,
                                         transform: isImproving ? 'scaleX(-1)' : 'scaleX(1)'
                                       }}
                                     ></div>
@@ -1021,14 +1072,9 @@ export default function DanceDoodleGameInsights() {
                    <CardContent>
                      <div className="space-y-4">
                        {gameHistory.slice(currentPage * 5, (currentPage + 1) * 5).map((record, index) => {
-                         const totalTime = DANCE_POSES.reduce((sum, pose) => {
-                           const time = getPoseTime(record, pose);
-                           return sum + (time !== null && time !== undefined ? time : 0);
-                         }, 0);
-                         const completedPoses = DANCE_POSES.filter(pose => {
-                           const time = getPoseTime(record, pose);
-                           return time !== null && time !== undefined;
-                         }).length;
+                         const completedTimes = DANCE_POSES.map(pose => getPoseTime(record, pose)).filter(time => time !== null) as number[];
+                         const totalTime = completedTimes.reduce((sum, time) => sum + time, 0);
+                         const completedPoses = completedTimes.length;
                          const averageTime = completedPoses > 0 ? totalTime / completedPoses : 0;
                          const completionRate = (completedPoses / DANCE_POSES.length) * 100;
                          const sessionNumber = totalElements - (currentPage * 5 + index);

@@ -1,7 +1,6 @@
 package com.example.dance_doodle;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,35 +41,30 @@ public interface DanceDoodleGameRepository extends JpaRepository<DanceDoodleGame
     
     // Get average completion times for all poses
     @Query("SELECT " +
-           "AVG(d.cool_arms) as cool_arms_avg, " +
-           "AVG(d.open_wings) as open_wings_avg, " +
-           "AVG(d.silly_boxer) as silly_boxer_avg, " +
-           "AVG(d.happy_stand_left) as happy_stand_left_avg, " +
-           "AVG(d.happy_stand_right) as happy_stand_right_avg, " +
-           "AVG(d.crossy_play) as crossy_play_avg, " +
-           "AVG(d.shh_fun) as shh_fun_avg, " +
-           "AVG(d.stretch_left) as stretch_left_avg, " +
-           "AVG(d.stretch_right) as stretch_right_avg " +
-           "FROM DanceDoodleGame d " +
-           "WHERE d.cool_arms IS NOT NULL OR d.open_wings IS NOT NULL OR " +
-           "d.silly_boxer IS NOT NULL OR d.happy_stand_left IS NOT NULL OR " +
-           "d.happy_stand_right IS NOT NULL OR d.crossy_play IS NOT NULL OR " +
-           "d.shh_fun IS NOT NULL OR d.stretch_left IS NOT NULL OR " +
-           "d.stretch_right IS NOT NULL")
+           "AVG(CASE WHEN d.cool_arms IS NOT NULL THEN d.cool_arms END) as cool_arms_avg, " +
+           "AVG(CASE WHEN d.open_wings IS NOT NULL THEN d.open_wings END) as open_wings_avg, " +
+           "AVG(CASE WHEN d.silly_boxer IS NOT NULL THEN d.silly_boxer END) as silly_boxer_avg, " +
+           "AVG(CASE WHEN d.happy_stand_left IS NOT NULL THEN d.happy_stand_left END) as happy_stand_left_avg, " +
+           "AVG(CASE WHEN d.happy_stand_right IS NOT NULL THEN d.happy_stand_right END) as happy_stand_right_avg, " +
+           "AVG(CASE WHEN d.crossy_play IS NOT NULL THEN d.crossy_play END) as crossy_play_avg, " +
+           "AVG(CASE WHEN d.shh_fun IS NOT NULL THEN d.shh_fun END) as shh_fun_avg, " +
+           "AVG(CASE WHEN d.stretch_left IS NOT NULL THEN d.stretch_left END) as stretch_left_avg, " +
+           "AVG(CASE WHEN d.stretch_right IS NOT NULL THEN d.stretch_right END) as stretch_right_avg " +
+           "FROM DanceDoodleGame d")
     List<Object[]> getAverageCompletionTimes();
     
     // Get child statistics
     @Query("SELECT " +
            "COUNT(d) as totalGames, " +
-           "AVG(d.cool_arms) as cool_arms_avg, " +
-           "AVG(d.open_wings) as open_wings_avg, " +
-           "AVG(d.silly_boxer) as silly_boxer_avg, " +
-           "AVG(d.happy_stand_left) as happy_stand_left_avg, " +
-           "AVG(d.happy_stand_right) as happy_stand_right_avg, " +
-           "AVG(d.crossy_play) as crossy_play_avg, " +
-           "AVG(d.shh_fun) as shh_fun_avg, " +
-           "AVG(d.stretch_left) as stretch_left_avg, " +
-           "AVG(d.stretch_right) as stretch_right_avg, " +
+           "AVG(CASE WHEN d.cool_arms IS NOT NULL THEN d.cool_arms END) as cool_arms_avg, " +
+           "AVG(CASE WHEN d.open_wings IS NOT NULL THEN d.open_wings END) as open_wings_avg, " +
+           "AVG(CASE WHEN d.silly_boxer IS NOT NULL THEN d.silly_boxer END) as silly_boxer_avg, " +
+           "AVG(CASE WHEN d.happy_stand_left IS NOT NULL THEN d.happy_stand_left END) as happy_stand_left_avg, " +
+           "AVG(CASE WHEN d.happy_stand_right IS NOT NULL THEN d.happy_stand_right END) as happy_stand_right_avg, " +
+           "AVG(CASE WHEN d.crossy_play IS NOT NULL THEN d.crossy_play END) as crossy_play_avg, " +
+           "AVG(CASE WHEN d.shh_fun IS NOT NULL THEN d.shh_fun END) as shh_fun_avg, " +
+           "AVG(CASE WHEN d.stretch_left IS NOT NULL THEN d.stretch_left END) as stretch_left_avg, " +
+           "AVG(CASE WHEN d.stretch_right IS NOT NULL THEN d.stretch_right END) as stretch_right_avg, " +
            "COUNT(CASE WHEN d.cool_arms IS NOT NULL THEN 1 END) as cool_arms_count, " +
            "COUNT(CASE WHEN d.open_wings IS NOT NULL THEN 1 END) as open_wings_count, " +
            "COUNT(CASE WHEN d.silly_boxer IS NOT NULL THEN 1 END) as silly_boxer_count, " +
