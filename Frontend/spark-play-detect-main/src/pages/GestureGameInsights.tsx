@@ -6,20 +6,20 @@ import { getCurrentChild } from '@/utils/childUtils';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Line,
-  LineChart,
-  PolarAngleAxis,
-  PolarGrid,
-  PolarRadiusAxis,
-  Radar,
-  RadarChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Line,
+    LineChart,
+    PolarAngleAxis,
+    PolarGrid,
+    PolarRadiusAxis,
+    Radar,
+    RadarChart,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis
 } from 'recharts';
 
 interface GestureGameRecord {
@@ -1178,7 +1178,7 @@ export default function GestureGameInsights() {
                          }).length;
                          const averageTime = completedGestures > 0 ? totalTime / completedGestures : 0;
                          const completionRate = (completedGestures / GESTURE_NAMES.length) * 100;
-                                                   const sessionNumber = totalElements - (currentPage * 5 + index);
+                         const sessionNumber = gameHistory.length - (currentPage * 5 + index);
                          
                          return (
                            <div key={record.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
