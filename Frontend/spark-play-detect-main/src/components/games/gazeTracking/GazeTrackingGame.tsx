@@ -107,20 +107,23 @@ class KalmanFilter {
     private R: number;
     private P: number;
     private x: number;
+    private v: number; // Velocity
     private initialized: boolean;
     
-    constructor(processNoise = 1e-3, measurementNoise = 1e-1, errorCovariance = 1) {
+    constructor(processNoise = 1e-4, measurementNoise = 1e-2, errorCovariance = 1) {
         this.A = 1;
         this.H = 1;
         this.Q = processNoise;
         this.R = measurementNoise;
         this.P = errorCovariance;
         this.x = 0;
+        this.v = 0; // Initialize velocity
         this.initialized = false;
     }
     
     reset(initialValue?: number) {
         this.x = initialValue || 0;
+        this.v = 0; // Reset velocity
         this.P = 1;
         this.initialized = !!initialValue;
     }
@@ -135,16 +138,53 @@ class KalmanFilter {
             return measurement;
         }
         
-        const x_pred = this.A * this.x;
-        const P_pred = this.A * this.P * this.A + this.Q;
+        // Predict position and velocity
+        const x_pred = this.x + this.v;
+        const v_pred = this.v;
         
-        const K = P_pred * this.H / (this.H * P_pred * this.H + this.R);
-        this.x = x_pred + K * (measurement - this.H * x_pred);
-        this.P = (1 - K * this.H) * P_pred;
+        // Update error covariance
+        const P_pred = this.P + this.Q;
+        
+        // Calculate Kalman gain
+        const K = P_pred / (P_pred + this.R);
+        
+        // Update position and velocity
+        this.x = x_pred + K * (measurement - x_pred);
+        this.v = v_pred + K * (measurement - x_pred) * 0.1; // Update velocity with smaller gain
+        
+        // Update error covariance
+        this.P = (1 - K) * P_pred;
         
         return this.x;
     }
+    
+    // Get current velocity for prediction
+    getVelocity(): number {
+        return this.v;
+    }
 }
+
+// Smooth interpolation function for weapon movement
+const smoothInterpolate = (current: number, target: number, velocity: number, deltaTime: number): { position: number, velocity: number } => {
+    const springStrength = 0.25; // Increased for faster response
+    const damping = 0.85; // Slightly reduced for less lag
+    
+    const displacement = target - current;
+    const springForce = displacement * springStrength;
+    
+    velocity = velocity * damping + springForce * deltaTime;
+    const position = current + velocity * deltaTime;
+    
+    return { position, velocity };
+};
+
+// Predict future gaze position based on velocity
+const predictGazePosition = (currentX: number, currentY: number, velocityX: number, velocityY: number, predictionTime: number = 0.05): { x: number, y: number } => {
+    const predictedX = currentX + velocityX * predictionTime * 1000; // Convert to milliseconds
+    const predictedY = currentY + velocityY * predictionTime * 1000;
+    
+    return { x: predictedX, y: predictedY };
+};
 
 const balloonColors = [
     '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
@@ -164,6 +204,8 @@ const GazeTrackingGame: React.FC = () => {
     const [isTracking, setIsTracking] = useState(false);
     const [gazeData, setGazeData] = useState<GazeData | null>(null);
     const [smoothGazePos, setSmoothGazePos] = useState({ x: 0, y: 0 });
+    const [interpolatedGazePos, setInterpolatedGazePos] = useState({ x: 0, y: 0 });
+    const [gazeVelocity, setGazeVelocity] = useState({ x: 0, y: 0 });
     const [balloons, setBalloons] = useState<Balloon[]>([]);
     const [score, setScore] = useState(0);
     const [balloonsPopped, setBalloonsPopped] = useState(0);
@@ -197,6 +239,8 @@ const GazeTrackingGame: React.FC = () => {
     const kalmanYRef = useRef<KalmanFilter | null>(null);
     const popSoundRef = useRef<HTMLAudioElement | null>(null);
     const gameContainerRef = useRef<HTMLDivElement | null>(null);
+    const animationFrameRef = useRef<number | null>(null);
+    const lastGazeUpdateRef = useRef<number>(0);
     const [showPopEffect, setShowPopEffect] = useState(false);
     
     // Refs to track current state values for timer
@@ -207,14 +251,49 @@ const GazeTrackingGame: React.FC = () => {
     // Initialize Kalman filters and pop sound
     useEffect(() => {
         if (!kalmanXRef.current) {
-            kalmanXRef.current = new KalmanFilter(1e-3, 1e-1, 1);
+            kalmanXRef.current = new KalmanFilter(1e-4, 1e-2, 1);
         }
         if (!kalmanYRef.current) {
-            kalmanYRef.current = new KalmanFilter(1e-3, 1e-1, 1);
+            kalmanYRef.current = new KalmanFilter(1e-4, 1e-2, 1);
         }
         
         // Audio removed to prevent system audio issues
     }, []);
+
+    // Smooth interpolation animation loop for weapon movement
+    useEffect(() => {
+        let lastTime = performance.now();
+        
+        const animate = (currentTime: number) => {
+            const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
+            lastTime = currentTime;
+            
+            if (gazeData && gameState === 'game') {
+                setInterpolatedGazePos(prev => {
+                    const currentX = gazeData.smoothX || gazeData.x;
+                    const currentY = gazeData.smoothY || gazeData.y;
+                    
+                    // Predict where the gaze will be in the next frame
+                    const predicted = predictGazePosition(currentX, currentY, gazeVelocity.x, gazeVelocity.y, deltaTime);
+                    
+                    const resultX = smoothInterpolate(prev.x, predicted.x, gazeVelocity.x, deltaTime);
+                    const resultY = smoothInterpolate(prev.y, predicted.y, gazeVelocity.y, deltaTime);
+                    
+                    return { x: resultX.position, y: resultY.position };
+                });
+            }
+            
+            animationFrameRef.current = requestAnimationFrame(animate);
+        };
+        
+        animationFrameRef.current = requestAnimationFrame(animate);
+        
+        return () => {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+            }
+        };
+    }, [gazeData, gameState, gazeVelocity]);
 
     const playPopSound = useCallback(() => {
         // Visual feedback instead of audio to prevent system audio issues
@@ -297,6 +376,16 @@ const GazeTrackingGame: React.FC = () => {
                     
                     setSmoothGazePos({ x: smoothX, y: smoothY });
                     
+                    // Update velocity for smooth interpolation
+                    const now = Date.now();
+                    const deltaTime = now - lastGazeUpdateRef.current;
+                    if (deltaTime > 0) {
+                        const velocityX = (smoothX - (gazeData?.smoothX || smoothX)) / deltaTime;
+                        const velocityY = (smoothY - (gazeData?.smoothY || smoothY)) / deltaTime;
+                        setGazeVelocity({ x: velocityX, y: velocityY });
+                    }
+                    lastGazeUpdateRef.current = now;
+                    
                     setGazeData({
                         x: browserX,
                         y: browserY,
@@ -322,7 +411,7 @@ const GazeTrackingGame: React.FC = () => {
                 setIsGazeAvailable(false);
                 // Don't clear the interval - keep trying
             }
-        }, 200); // Increased interval to reduce network load
+        }, 33); // 30 FPS for smooth weapon movement
     }, [isTracking]);
 
     const stopTracking = useCallback(async () => {
@@ -331,6 +420,13 @@ const GazeTrackingGame: React.FC = () => {
             clearInterval(intervalRef.current);
             intervalRef.current = null;
         }
+        
+        // Stop the smooth animation
+        if (animationFrameRef.current) {
+            cancelAnimationFrame(animationFrameRef.current);
+            animationFrameRef.current = null;
+        }
+        
         setGazeData(null);
         
         // Stop the camera
@@ -1235,9 +1331,12 @@ const GazeTrackingGame: React.FC = () => {
                           <div 
                               className="absolute pointer-events-none z-40"
                               style={{
-                                  left: `${gazeData.smoothX || gazeData.x}px`,
-                                  top: `${gazeData.smoothY || gazeData.y}px`,
+                                  left: `${interpolatedGazePos.x}px`,
+                                  top: `${interpolatedGazePos.y}px`,
                                   transform: 'translate(-50%, -50%) rotate(45deg)',
+                                  transition: 'none', // Disable CSS transitions for smooth movement
+                                  willChange: 'transform, left, top', // Optimize for hardware acceleration
+                                  backfaceVisibility: 'hidden', // Prevent flickering
                               }}
                           >
                                                                                             
@@ -1410,16 +1509,19 @@ const GazeTrackingGame: React.FC = () => {
                 </>
             )}
 
-                         {/* Calibration Weapon Pointer - Only show during calibration */}
-             {gameState === 'calibration' && gazeData && (
-                 <div 
-                     className="absolute pointer-events-none z-40"
-                     style={{
-                         left: `${gazeData.smoothX || gazeData.x}px`,
-                         top: `${gazeData.smoothY || gazeData.y}px`,
-                         transform: 'translate(-50%, -50%) rotate(45deg)',
-                     }}
-                 >
+                                                 {/* Calibration Weapon Pointer - Only show during calibration */}
+                        {gameState === 'calibration' && gazeData && (
+                            <div 
+                                className="absolute pointer-events-none z-40"
+                                style={{
+                                    left: `${interpolatedGazePos.x}px`,
+                                    top: `${interpolatedGazePos.y}px`,
+                                    transform: 'translate(-50%, -50%) rotate(45deg)',
+                                    transition: 'none', // Disable CSS transitions for smooth movement
+                                    willChange: 'transform, left, top', // Optimize for hardware acceleration
+                                    backfaceVisibility: 'hidden', // Prevent flickering
+                                }}
+                            >
                      {/* Weapon Blade - Sharp and deadly */}
                      <div className="w-20 h-1 bg-gradient-to-r from-slate-800 via-slate-600 to-slate-400 rounded-sm shadow-lg" />
                      
