@@ -95,20 +95,18 @@ const DanceDoodleGame: React.FC = () => {
         return `${childId}_${dateTime}`;
     }, []);
 
-    // Available dance poses - 9 poses for 9 rounds (one pose each, no repetition)
+    // Available dance poses - 7 poses for 7 rounds (one pose each, no repetition)
     const dancePoses = useMemo(() => [
         { name: "Cool Arms", label: "cool_arms", image: "/dance_doodle_images/cool_arms.jpg", description: "Show your strong arms like a superhero!" },
         { name: "Open Wings", label: "open_wings", image: "/dance_doodle_images/open_wings.jpg", description: "Spread your arms like a bird flying!" },
         { name: "Silly Boxer", label: "silly_boxer", image: "/dance_doodle_images/silly_boxer.jpg", description: "Make boxing moves like a champion!" },
-        { name: "Happy Stand Left", label: "happy_stand_left", image: "/dance_doodle_images/happy_stand_left.jpg", description: "Stand happily with your left side!" },
-        { name: "Happy Stand Right", label: "happy_stand_right", image: "/dance_doodle_images/happy_stand_right.jpg", description: "Stand happily with your right side!" },
+        { name: "Happy Stand", label: "happy_stand", image: "/dance_doodle_images/happy_stand_left.jpg", description: "Stand happily on either side!" },
         { name: "Crossy Play", label: "crossy_play", image: "/dance_doodle_images/crossy_play.jpg", description: "Cross your arms and legs like a gymnast!" },
         { name: "Shh Fun", label: "shh_fun", image: "/dance_doodle_images/shh_fun.jpg", description: "Put your finger on your lips like a secret keeper!" },
-        { name: "Stretch Left", label: "stretch_left", image: "/dance_doodle_images/stretch_left.jpg", description: "Stretch your left arm up high!" },
-        { name: "Stretch Right", label: "stretch_right", image: "/dance_doodle_images/stretch_right.jpg", description: "Stretch your right arm up high!" },
+        { name: "Stretch", label: "stretch", image: "/dance_doodle_images/stretch_left.jpg", description: "Stretch your arm up high on either side!" },
     ], []);
 
-    const totalRounds = 9; // 9 rounds with one pose each (no repetition)
+    const totalRounds = 7; // 7 rounds with one pose each (no repetition)
 
     // Save game data to backend
     const saveGameDataToBackend = useCallback(async (gameSession: DanceGameSession) => {
@@ -133,12 +131,10 @@ const DanceDoodleGame: React.FC = () => {
                 cool_arms: null,
                 open_wings: null,
                 silly_boxer: null,
-                happy_stand_left: null,
-                happy_stand_right: null,
+                happy_stand: null,
                 crossy_play: null,
                 shh_fun: null,
-                stretch_left: null,
-                stretch_right: null
+                stretch: null
             };
 
             // Map pose names to completion times
@@ -160,18 +156,14 @@ const DanceDoodleGame: React.FC = () => {
                     poseTimes.open_wings = round.completed ? round.timeTaken : null;
                 } else if (poseName === 'silly_boxer') {
                     poseTimes.silly_boxer = round.completed ? round.timeTaken : null;
-                } else if (poseName === 'happy_stand_left') {
-                    poseTimes.happy_stand_left = round.completed ? round.timeTaken : null;
-                } else if (poseName === 'happy_stand_right') {
-                    poseTimes.happy_stand_right = round.completed ? round.timeTaken : null;
+                } else if (poseName === 'happy_stand') {
+                    poseTimes.happy_stand = round.completed ? round.timeTaken : null;
                 } else if (poseName === 'crossy_play') {
                     poseTimes.crossy_play = round.completed ? round.timeTaken : null;
                 } else if (poseName === 'shh_fun') {
                     poseTimes.shh_fun = round.completed ? round.timeTaken : null;
-                } else if (poseName === 'stretch_left') {
-                    poseTimes.stretch_left = round.completed ? round.timeTaken : null;
-                } else if (poseName === 'stretch_right') {
-                    poseTimes.stretch_right = round.completed ? round.timeTaken : null;
+                } else if (poseName === 'stretch') {
+                    poseTimes.stretch = round.completed ? round.timeTaken : null;
                 } else {
                     console.log('No mapping found for:', round.poseName);
                 }
@@ -500,7 +492,11 @@ const DanceDoodleGame: React.FC = () => {
         setDetectedPose(prediction);
         setDetectedConfidence(confidence);
         
-        const isTargetPose = prediction === targetPoseRef.current;
+        // Check if the detected pose matches the target pose
+        // For happy_stand and stretch, accept both left and right variants
+        const isTargetPose = prediction === targetPoseRef.current || 
+            (targetPoseRef.current === 'happy_stand' && (prediction === 'happy_stand_left' || prediction === 'happy_stand_right')) ||
+            (targetPoseRef.current === 'stretch' && (prediction === 'stretch_left' || prediction === 'stretch_right'));
         setIsCorrect(isTargetPose);
         isCorrectRef.current = isTargetPose;
         
@@ -607,7 +603,7 @@ const DanceDoodleGame: React.FC = () => {
                 
                 // Mock detection for testing
                 if (Math.random() < 0.05) {
-                    const poses = ['cool_arms', 'open_wings', 'silly_boxer', 'happy_stand_left', 'happy_stand_right', 'crossy_play', 'shh_fun', 'stretch_left', 'stretch_right'];
+                    const poses = ['cool_arms', 'open_wings', 'silly_boxer', 'happy_stand', 'crossy_play', 'shh_fun', 'stretch'];
                     const randomPose = poses[Math.floor(Math.random() * poses.length)];
                     if (gameStarted && !gameEnded && !isProcessingRoundRef.current) {
                         handlePoseDetected(randomPose, 0.8);

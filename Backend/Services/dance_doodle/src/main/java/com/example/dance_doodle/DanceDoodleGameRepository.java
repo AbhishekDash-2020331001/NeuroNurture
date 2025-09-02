@@ -33,10 +33,9 @@ public interface DanceDoodleGameRepository extends JpaRepository<DanceDoodleGame
     // Get completed games (where at least one pose was completed)
     @Query("SELECT d FROM DanceDoodleGame d WHERE " +
            "d.cool_arms IS NOT NULL OR d.open_wings IS NOT NULL OR " +
-           "d.silly_boxer IS NOT NULL OR d.happy_stand_left IS NOT NULL OR " +
-           "d.happy_stand_right IS NOT NULL OR d.crossy_play IS NOT NULL OR " +
-           "d.shh_fun IS NOT NULL OR d.stretch_left IS NOT NULL OR " +
-           "d.stretch_right IS NOT NULL")
+           "d.silly_boxer IS NOT NULL OR d.happy_stand IS NOT NULL OR " +
+           "d.crossy_play IS NOT NULL OR d.shh_fun IS NOT NULL OR " +
+           "d.stretch IS NOT NULL")
     List<DanceDoodleGame> findCompletedGames();
     
     // Get average completion times for all poses
@@ -44,12 +43,10 @@ public interface DanceDoodleGameRepository extends JpaRepository<DanceDoodleGame
            "AVG(CASE WHEN d.cool_arms IS NOT NULL THEN d.cool_arms END) as cool_arms_avg, " +
            "AVG(CASE WHEN d.open_wings IS NOT NULL THEN d.open_wings END) as open_wings_avg, " +
            "AVG(CASE WHEN d.silly_boxer IS NOT NULL THEN d.silly_boxer END) as silly_boxer_avg, " +
-           "AVG(CASE WHEN d.happy_stand_left IS NOT NULL THEN d.happy_stand_left END) as happy_stand_left_avg, " +
-           "AVG(CASE WHEN d.happy_stand_right IS NOT NULL THEN d.happy_stand_right END) as happy_stand_right_avg, " +
+           "AVG(CASE WHEN d.happy_stand IS NOT NULL THEN d.happy_stand END) as happy_stand_avg, " +
            "AVG(CASE WHEN d.crossy_play IS NOT NULL THEN d.crossy_play END) as crossy_play_avg, " +
            "AVG(CASE WHEN d.shh_fun IS NOT NULL THEN d.shh_fun END) as shh_fun_avg, " +
-           "AVG(CASE WHEN d.stretch_left IS NOT NULL THEN d.stretch_left END) as stretch_left_avg, " +
-           "AVG(CASE WHEN d.stretch_right IS NOT NULL THEN d.stretch_right END) as stretch_right_avg " +
+           "AVG(CASE WHEN d.stretch IS NOT NULL THEN d.stretch END) as stretch_avg " +
            "FROM DanceDoodleGame d")
     List<Object[]> getAverageCompletionTimes();
     
@@ -59,21 +56,17 @@ public interface DanceDoodleGameRepository extends JpaRepository<DanceDoodleGame
            "AVG(CASE WHEN d.cool_arms IS NOT NULL THEN d.cool_arms END) as cool_arms_avg, " +
            "AVG(CASE WHEN d.open_wings IS NOT NULL THEN d.open_wings END) as open_wings_avg, " +
            "AVG(CASE WHEN d.silly_boxer IS NOT NULL THEN d.silly_boxer END) as silly_boxer_avg, " +
-           "AVG(CASE WHEN d.happy_stand_left IS NOT NULL THEN d.happy_stand_left END) as happy_stand_left_avg, " +
-           "AVG(CASE WHEN d.happy_stand_right IS NOT NULL THEN d.happy_stand_right END) as happy_stand_right_avg, " +
+           "AVG(CASE WHEN d.happy_stand IS NOT NULL THEN d.happy_stand END) as happy_stand_avg, " +
            "AVG(CASE WHEN d.crossy_play IS NOT NULL THEN d.crossy_play END) as crossy_play_avg, " +
            "AVG(CASE WHEN d.shh_fun IS NOT NULL THEN d.shh_fun END) as shh_fun_avg, " +
-           "AVG(CASE WHEN d.stretch_left IS NOT NULL THEN d.stretch_left END) as stretch_left_avg, " +
-           "AVG(CASE WHEN d.stretch_right IS NOT NULL THEN d.stretch_right END) as stretch_right_avg, " +
+           "AVG(CASE WHEN d.stretch IS NOT NULL THEN d.stretch END) as stretch_avg, " +
            "COUNT(CASE WHEN d.cool_arms IS NOT NULL THEN 1 END) as cool_arms_count, " +
            "COUNT(CASE WHEN d.open_wings IS NOT NULL THEN 1 END) as open_wings_count, " +
            "COUNT(CASE WHEN d.silly_boxer IS NOT NULL THEN 1 END) as silly_boxer_count, " +
-           "COUNT(CASE WHEN d.happy_stand_left IS NOT NULL THEN 1 END) as happy_stand_left_count, " +
-           "COUNT(CASE WHEN d.happy_stand_right IS NOT NULL THEN 1 END) as happy_stand_right_count, " +
+           "COUNT(CASE WHEN d.happy_stand IS NOT NULL THEN 1 END) as happy_stand_count, " +
            "COUNT(CASE WHEN d.crossy_play IS NOT NULL THEN 1 END) as crossy_play_count, " +
            "COUNT(CASE WHEN d.shh_fun IS NOT NULL THEN 1 END) as shh_fun_count, " +
-           "COUNT(CASE WHEN d.stretch_left IS NOT NULL THEN 1 END) as stretch_left_count, " +
-           "COUNT(CASE WHEN d.stretch_right IS NOT NULL THEN 1 END) as stretch_right_count " +
+           "COUNT(CASE WHEN d.stretch IS NOT NULL THEN 1 END) as stretch_count " +
            "FROM DanceDoodleGame d WHERE d.childId = :childId")
     List<Object[]> getChildStatistics(@Param("childId") String childId);
 }

@@ -29,12 +29,10 @@ interface DanceDoodleGameRecord {
   cool_arms?: number;
   open_wings?: number;
   silly_boxer?: number;
-  happy_stand_left?: number;
-  happy_stand_right?: number;
+  happy_stand?: number;
   crossy_play?: number;
   shh_fun?: number;
-  stretch_left?: number;
-  stretch_right?: number;
+  stretch?: number;
   videoURL?: string;
   isTrainingAllowed: boolean;
   suspectedASD: boolean;
@@ -77,8 +75,8 @@ const COLORS = [
 ];
 
 const DANCE_POSES = [
-  'Cool Arms 💪', 'Open Wings 🦋', 'Silly Boxer 🥊', 'Happy Stand Left 😊', 'Happy Stand Right 😊',
-  'Crossy Play ✌️', 'Shh Fun 🤫', 'Stretch Left 🤸', 'Stretch Right 🤸'
+  'Cool Arms 💪', 'Open Wings 🦋', 'Silly Boxer 🥊', 'Happy Stand 😊',
+  'Crossy Play ✌️', 'Shh Fun 🤫', 'Stretch 🤸'
 ];
 
 export default function DanceDoodleGameInsights() {
@@ -264,12 +262,10 @@ export default function DanceDoodleGameInsights() {
       'Cool Arms 💪': 'cool_arms',
       'Open Wings 🦋': 'open_wings',
       'Silly Boxer 🥊': 'silly_boxer',
-      'Happy Stand Left 😊': 'happy_stand_left',
-      'Happy Stand Right 😊': 'happy_stand_right',
+      'Happy Stand 😊': 'happy_stand',
       'Crossy Play ✌️': 'crossy_play',
       'Shh Fun 🤫': 'shh_fun',
-      'Stretch Left 🤸': 'stretch_left',
-      'Stretch Right 🤸': 'stretch_right'
+      'Stretch 🤸': 'stretch'
     };
     
     const field = poseMap[poseName];
@@ -282,12 +278,44 @@ export default function DanceDoodleGameInsights() {
 
   const getAverageTime = (poseName: string): number => {
     if (!statistics?.averageCompletionTimes) return 0;
-    return statistics.averageCompletionTimes[poseName] || 0;
+    
+    // Map pose display names to field names
+    const poseMap: Record<string, string> = {
+      'Cool Arms 💪': 'cool_arms',
+      'Open Wings 🦋': 'open_wings',
+      'Silly Boxer 🥊': 'silly_boxer',
+      'Happy Stand 😊': 'happy_stand',
+      'Crossy Play ✌️': 'crossy_play',
+      'Shh Fun 🤫': 'shh_fun',
+      'Stretch 🤸': 'stretch'
+    };
+    
+    const fieldName = poseMap[poseName];
+    if (!fieldName) return 0;
+    
+    const value = statistics.averageCompletionTimes[fieldName];
+    return (typeof value === 'number' && value !== null && value !== undefined) ? value : 0;
   };
 
   const getCompletionCount = (poseName: string): number => {
     if (!statistics?.poseCompletionCounts) return 0;
-    return statistics.poseCompletionCounts[poseName] || 0;
+    
+    // Map pose display names to field names
+    const poseMap: Record<string, string> = {
+      'Cool Arms 💪': 'cool_arms',
+      'Open Wings 🦋': 'open_wings',
+      'Silly Boxer 🥊': 'silly_boxer',
+      'Happy Stand 😊': 'happy_stand',
+      'Crossy Play ✌️': 'crossy_play',
+      'Shh Fun 🤫': 'shh_fun',
+      'Stretch 🤸': 'stretch'
+    };
+    
+    const fieldName = poseMap[poseName];
+    if (!fieldName) return 0;
+    
+    const value = statistics.poseCompletionCounts[fieldName];
+    return (typeof value === 'number' && value !== null && value !== undefined) ? value : 0;
   };
 
   const getCompletionRatio = (poseName: string): number => {
@@ -310,17 +338,49 @@ export default function DanceDoodleGameInsights() {
     color: COLORS[index % COLORS.length]
   }));
 
-  const consistencyData = DANCE_POSES.map((name, index) => ({
-    pose: name,
-    consistency: analysis?.consistencyScore?.[name] || 0,
-    color: COLORS[index % COLORS.length]
-  }));
+  const consistencyData = DANCE_POSES.map((name, index) => {
+    // Map pose display names to field names
+    const poseMap: Record<string, string> = {
+      'Cool Arms 💪': 'cool_arms',
+      'Open Wings 🦋': 'open_wings',
+      'Silly Boxer 🥊': 'silly_boxer',
+      'Happy Stand 😊': 'happy_stand',
+      'Crossy Play ✌️': 'crossy_play',
+      'Shh Fun 🤫': 'shh_fun',
+      'Stretch 🤸': 'stretch'
+    };
+    
+    const fieldName = poseMap[name];
+    const consistencyValue = fieldName ? (analysis?.consistencyScore?.[fieldName] || 0) : 0;
+    
+    return {
+      pose: name,
+      consistency: consistencyValue,
+      color: COLORS[index % COLORS.length]
+    };
+  });
 
-  const trendData = DANCE_POSES.map((name, index) => ({
-    pose: name,
-    trend: trends?.overallTrend?.[name] || 0,
-    color: COLORS[index % COLORS.length]
-  }));
+  const trendData = DANCE_POSES.map((name, index) => {
+    // Map pose display names to field names
+    const poseMap: Record<string, string> = {
+      'Cool Arms 💪': 'cool_arms',
+      'Open Wings 🦋': 'open_wings',
+      'Silly Boxer 🥊': 'silly_boxer',
+      'Happy Stand 😊': 'happy_stand',
+      'Crossy Play ✌️': 'crossy_play',
+      'Shh Fun 🤫': 'shh_fun',
+      'Stretch 🤸': 'stretch'
+    };
+    
+    const fieldName = poseMap[name];
+    const trendValue = fieldName ? (trends?.overallTrend?.[fieldName] || 0) : 0;
+    
+    return {
+      pose: name,
+      trend: trendValue,
+      color: COLORS[index % COLORS.length]
+    };
+  });
 
   // Session improvement curve data
   const sessionImprovementData = gameHistory.map((record, index) => {
@@ -941,11 +1001,11 @@ export default function DanceDoodleGameInsights() {
                             // Note: We include averageTime === 0 as it represents valid completion in 0 seconds
                             
                             const isCompleted = lastSessionTime !== null && lastSessionTime !== undefined;
-                            const hasAverageData = averageTime > 0;
+                            const hasAverageData = averageTime >= 0 && statistics?.totalGames > 1;
                             const difference = isCompleted && hasAverageData ? (lastSessionTime - averageTime) : 0;
                             const differenceAbs = Math.abs(difference);
                             const isImproving = isCompleted && hasAverageData && difference < 0;
-                            const percentageChange = isCompleted && hasAverageData ? Math.abs((difference / averageTime) * 100) : 0;
+                            const percentageChange = isCompleted && hasAverageData && averageTime > 0 ? Math.abs((difference / averageTime) * 100) : 0;
                             
                             return (
                               <div key={pose} className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200 hover:scale-105 transition-all">
@@ -1077,7 +1137,7 @@ export default function DanceDoodleGameInsights() {
                          const completedPoses = completedTimes.length;
                          const averageTime = completedPoses > 0 ? totalTime / completedPoses : 0;
                          const completionRate = (completedPoses / DANCE_POSES.length) * 100;
-                         const sessionNumber = totalElements - (currentPage * 5 + index);
+                         const sessionNumber = gameHistory.length - (currentPage * 5 + index);
                          
                          return (
                            <div key={record.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">

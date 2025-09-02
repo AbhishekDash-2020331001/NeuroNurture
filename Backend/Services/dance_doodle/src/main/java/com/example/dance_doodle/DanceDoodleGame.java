@@ -36,12 +36,10 @@ public class DanceDoodleGame {
     private Integer cool_arms;
     private Integer open_wings;
     private Integer silly_boxer;
-    private Integer happy_stand_left;
-    private Integer happy_stand_right;
+    private Integer happy_stand;
     private Integer crossy_play;
     private Integer shh_fun;
-    private Integer stretch_left;
-    private Integer stretch_right;
+    private Integer stretch;
     
     private String videoURL;
     

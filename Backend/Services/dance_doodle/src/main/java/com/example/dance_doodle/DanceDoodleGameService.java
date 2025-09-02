@@ -28,12 +28,10 @@ public class DanceDoodleGameService {
         game.setCool_arms(request.getCool_arms());
         game.setOpen_wings(request.getOpen_wings());
         game.setSilly_boxer(request.getSilly_boxer());
-        game.setHappy_stand_left(request.getHappy_stand_left());
-        game.setHappy_stand_right(request.getHappy_stand_right());
+        game.setHappy_stand(request.getHappy_stand());
         game.setCrossy_play(request.getCrossy_play());
         game.setShh_fun(request.getShh_fun());
-        game.setStretch_left(request.getStretch_left());
-        game.setStretch_right(request.getStretch_right());
+        game.setStretch(request.getStretch());
         game.setVideoURL(request.getVideoURL());
         game.setIsTrainingAllowed(request.getIsTrainingAllowed());
         game.setSuspectedASD(request.getSuspectedASD());
@@ -121,24 +119,20 @@ public class DanceDoodleGameService {
             averageTimes.put("cool_arms", result[1]);
             averageTimes.put("open_wings", result[2]);
             averageTimes.put("silly_boxer", result[3]);
-            averageTimes.put("happy_stand_left", result[4]);
-            averageTimes.put("happy_stand_right", result[5]);
-            averageTimes.put("crossy_play", result[6]);
-            averageTimes.put("shh_fun", result[7]);
-            averageTimes.put("stretch_left", result[8]);
-            averageTimes.put("stretch_right", result[9]);
+            averageTimes.put("happy_stand", result[4]);
+            averageTimes.put("crossy_play", result[5]);
+            averageTimes.put("shh_fun", result[6]);
+            averageTimes.put("stretch", result[7]);
             statistics.put("averageCompletionTimes", averageTimes);
             
             Map<String, Object> completionCounts = new HashMap<>();
-            completionCounts.put("cool_arms", result[10]);
-            completionCounts.put("open_wings", result[11]);
-            completionCounts.put("silly_boxer", result[12]);
-            completionCounts.put("happy_stand_left", result[13]);
-            completionCounts.put("happy_stand_right", result[14]);
-            completionCounts.put("crossy_play", result[15]);
-            completionCounts.put("shh_fun", result[16]);
-            completionCounts.put("stretch_left", result[17]);
-            completionCounts.put("stretch_right", result[18]);
+            completionCounts.put("cool_arms", result[8]);
+            completionCounts.put("open_wings", result[9]);
+            completionCounts.put("silly_boxer", result[10]);
+            completionCounts.put("happy_stand", result[11]);
+            completionCounts.put("crossy_play", result[12]);
+            completionCounts.put("shh_fun", result[13]);
+            completionCounts.put("stretch", result[14]);
             statistics.put("poseCompletionCounts", completionCounts);
             
             // Calculate days since last game
@@ -174,8 +168,8 @@ public class DanceDoodleGameService {
         Map<String, Integer> worstPerformance = new HashMap<>();
         Map<String, Double> consistencyScore = new HashMap<>();
         
-        String[] poses = {"cool_arms", "open_wings", "silly_boxer", "happy_stand_left", "happy_stand_right", 
-                         "crossy_play", "shh_fun", "stretch_left", "stretch_right"};
+        String[] poses = {"cool_arms", "open_wings", "silly_boxer", "happy_stand", 
+                         "crossy_play", "shh_fun", "stretch"};
         
         for (String pose : poses) {
             List<Integer> times = childGames.stream()
@@ -219,8 +213,8 @@ public class DanceDoodleGameService {
         DanceDoodleGame previousGame = childGames.get(1);
         
         Map<String, String> poseImprovement = new HashMap<>();
-        String[] poses = {"cool_arms", "open_wings", "silly_boxer", "happy_stand_left", "happy_stand_right", 
-                         "crossy_play", "shh_fun", "stretch_left", "stretch_right"};
+        String[] poses = {"cool_arms", "open_wings", "silly_boxer", "happy_stand", 
+                         "crossy_play", "shh_fun", "stretch"};
         
         for (String pose : poses) {
             Integer latestTime = getPoseTime(latestGame, pose);
@@ -286,8 +280,8 @@ public class DanceDoodleGameService {
         Integer worstTime = 0;
         int totalCompleted = 0;
         
-        String[] poses = {"cool_arms", "open_wings", "silly_boxer", "happy_stand_left", "happy_stand_right", 
-                         "crossy_play", "shh_fun", "stretch_left", "stretch_right"};
+        String[] poses = {"cool_arms", "open_wings", "silly_boxer", "happy_stand", 
+                         "crossy_play", "shh_fun", "stretch"};
         
         for (String pose : poses) {
             List<Integer> times = childGames.stream()
@@ -326,12 +320,10 @@ public class DanceDoodleGameService {
             case "cool_arms" -> game.getCool_arms();
             case "open_wings" -> game.getOpen_wings();
             case "silly_boxer" -> game.getSilly_boxer();
-            case "happy_stand_left" -> game.getHappy_stand_left();
-            case "happy_stand_right" -> game.getHappy_stand_right();
+            case "happy_stand" -> game.getHappy_stand();
             case "crossy_play" -> game.getCrossy_play();
             case "shh_fun" -> game.getShh_fun();
-            case "stretch_left" -> game.getStretch_left();
-            case "stretch_right" -> game.getStretch_right();
+            case "stretch" -> game.getStretch();
             default -> null;
         };
     }
