@@ -6,23 +6,23 @@ import { getCurrentChild } from '@/utils/childUtils';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  PolarAngleAxis,
-  PolarGrid,
-  PolarRadiusAxis,
-  Radar,
-  RadarChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Cell,
+    Line,
+    LineChart,
+    Pie,
+    PieChart,
+    PolarAngleAxis,
+    PolarGrid,
+    PolarRadiusAxis,
+    Radar,
+    RadarChart,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis
 } from 'recharts';
 
 interface MirrorPostureGameRecord {
@@ -31,8 +31,7 @@ interface MirrorPostureGameRecord {
   dateTime: string;
   childId: string;
   age: number;
-  lookingLeft?: number;
-  lookingRight?: number;
+  lookingSideways?: number;
   mouthOpen?: number;
   showingTeeth?: number;
   kiss?: number;
@@ -65,7 +64,7 @@ const COLORS = [
 ];
 
 const POSTURE_NAMES = [
-  'Looking Left 👀', 'Looking Right 👀', 'Mouth Open 😮', 'Showing Teeth 😁', 'Kiss 💋'
+  'Looking Sideways 👀', 'Mouth Open 😮', 'Showing Teeth 😁', 'Kiss 💋'
 ];
 
 export default function MirrorPostureGameInsights() {
@@ -155,8 +154,7 @@ export default function MirrorPostureGameInsights() {
                accuracy: accuracy,
                // Store individual posture times for trends analysis
                postureTimes: {
-                 'Looking Left 👀': session.lookingLeft,
-                 'Looking Right 👀': session.lookingRight,
+                 'Looking Sideways 👀': session.lookingSideways,
                  'Mouth Open 😮': session.mouthOpen,
                  'Showing Teeth 😁': session.showingTeeth,
                  'Kiss 💋': session.kiss
@@ -246,8 +244,7 @@ export default function MirrorPostureGameInsights() {
 
   const getPostureTime = (record: MirrorPostureGameRecord, postureName: string): number | null => {
     const postureMap: Record<string, keyof MirrorPostureGameRecord> = {
-      'Looking Left 👀': 'lookingLeft',
-      'Looking Right 👀': 'lookingRight',
+      'Looking Sideways 👀': 'lookingSideways',
       'Mouth Open 😮': 'mouthOpen',
       'Showing Teeth 😁': 'showingTeeth',
       'Kiss 💋': 'kiss'

@@ -32,15 +32,15 @@ public interface MirrorPostureGameRepository extends JpaRepository<MirrorPosture
     List<MirrorPostureGame> findGameHistoryByChildId(@Param("childId") String childId);
     
     // Custom query to get average completion times for all postures
-    @Query("SELECT AVG(m.lookingLeft), AVG(m.lookingRight), AVG(m.mouthOpen), AVG(m.showingTeeth), AVG(m.kiss) FROM MirrorPostureGame m")
+    @Query("SELECT AVG(m.lookingSideways), AVG(m.mouthOpen), AVG(m.showingTeeth), AVG(m.kiss) FROM MirrorPostureGame m")
     List<Object[]> getAverageCompletionTimes();
     
     // Custom query to get average completion times for a specific child
-    @Query("SELECT AVG(m.lookingLeft), AVG(m.lookingRight), AVG(m.mouthOpen), AVG(m.showingTeeth), AVG(m.kiss) FROM MirrorPostureGame m WHERE m.childId = :childId")
+    @Query("SELECT AVG(m.lookingSideways), AVG(m.mouthOpen), AVG(m.showingTeeth), AVG(m.kiss) FROM MirrorPostureGame m WHERE m.childId = :childId")
     List<Object[]> getAverageCompletionTimesByChild(@Param("childId") String childId);
     
     // Custom query to get posture completion counts for a specific child
-    @Query("SELECT COUNT(CASE WHEN m.lookingLeft IS NOT NULL THEN 1 END), COUNT(CASE WHEN m.lookingRight IS NOT NULL THEN 1 END), COUNT(CASE WHEN m.mouthOpen IS NOT NULL THEN 1 END), COUNT(CASE WHEN m.showingTeeth IS NOT NULL THEN 1 END), COUNT(CASE WHEN m.kiss IS NOT NULL THEN 1 END) FROM MirrorPostureGame m WHERE m.childId = :childId")
+    @Query("SELECT COUNT(CASE WHEN m.lookingSideways IS NOT NULL THEN 1 END), COUNT(CASE WHEN m.mouthOpen IS NOT NULL THEN 1 END), COUNT(CASE WHEN m.showingTeeth IS NOT NULL THEN 1 END), COUNT(CASE WHEN m.kiss IS NOT NULL THEN 1 END) FROM MirrorPostureGame m WHERE m.childId = :childId")
     List<Object[]> getPostureCompletionCountsByChild(@Param("childId") String childId);
     
     // Custom query to get recent games by child ID
@@ -48,11 +48,11 @@ public interface MirrorPostureGameRepository extends JpaRepository<MirrorPosture
     List<MirrorPostureGame> getRecentGamesByChildId(@Param("childId") String childId);
     
     // Custom query to get best performance by child
-    @Query("SELECT MIN(m.lookingLeft), MIN(m.lookingRight), MIN(m.mouthOpen), MIN(m.showingTeeth), MIN(m.kiss) FROM MirrorPostureGame m WHERE m.childId = :childId AND m.lookingLeft IS NOT NULL AND m.lookingRight IS NOT NULL AND m.mouthOpen IS NOT NULL AND m.showingTeeth IS NOT NULL AND m.kiss IS NOT NULL")
+    @Query("SELECT MIN(m.lookingSideways), MIN(m.mouthOpen), MIN(m.showingTeeth), MIN(m.kiss) FROM MirrorPostureGame m WHERE m.childId = :childId AND m.lookingSideways IS NOT NULL AND m.mouthOpen IS NOT NULL AND m.showingTeeth IS NOT NULL AND m.kiss IS NOT NULL")
     List<Object[]> getBestPerformanceByChild(@Param("childId") String childId);
     
     // Custom query to get worst performance by child
-    @Query("SELECT MAX(m.lookingLeft), MAX(m.lookingRight), MAX(m.mouthOpen), MAX(m.showingTeeth), MAX(m.kiss) FROM MirrorPostureGame m WHERE m.childId = :childId AND m.lookingLeft IS NOT NULL AND m.lookingRight IS NOT NULL AND m.mouthOpen IS NOT NULL AND m.showingTeeth IS NOT NULL AND m.kiss IS NOT NULL")
+    @Query("SELECT MAX(m.lookingSideways), MAX(m.mouthOpen), MAX(m.showingTeeth), MAX(m.kiss) FROM MirrorPostureGame m WHERE m.childId = :childId AND m.lookingSideways IS NOT NULL AND m.mouthOpen IS NOT NULL AND m.showingTeeth IS NOT NULL AND m.kiss IS NOT NULL")
     List<Object[]> getWorstPerformanceByChild(@Param("childId") String childId);
     
     // Custom query to count games by child ID
@@ -60,7 +60,7 @@ public interface MirrorPostureGameRepository extends JpaRepository<MirrorPosture
     Long countGamesByChildId(@Param("childId") String childId);
     
     // Custom query to get records where specific posture was completed
-    @Query("SELECT m FROM MirrorPostureGame m WHERE m.lookingLeft IS NOT NULL OR m.lookingRight IS NOT NULL OR m.mouthOpen IS NOT NULL OR m.showingTeeth IS NOT NULL OR m.kiss IS NOT NULL")
+    @Query("SELECT m FROM MirrorPostureGame m WHERE m.lookingSideways IS NOT NULL OR m.mouthOpen IS NOT NULL OR m.showingTeeth IS NOT NULL OR m.kiss IS NOT NULL")
     List<MirrorPostureGame> getCompletedPostures();
     
     // Custom query to get training data (where isTrainingAllowed = true)

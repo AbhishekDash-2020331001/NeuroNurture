@@ -33,8 +33,7 @@ public class MirrorPostureGame {
     private Integer age;
     
     // Posture completion times
-    private Integer lookingLeft;
-    private Integer lookingRight;
+    private Integer lookingSideways;
     private Integer mouthOpen;
     private Integer showingTeeth;
     private Integer kiss;

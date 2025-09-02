@@ -13,8 +13,7 @@ const FACIAL_EXPRESSIONS = [
   { id: 'mouth_open', name: 'Open Your Mouth!', image: '/mirror_posture_images/mouth_open.jpg', emoji: '😮', description: 'Open your mouth wide like you\'re surprised!' },
   { id: 'showing_teeth', name: 'Show Your Teeth!', image: '/mirror_posture_images/showing_teeth.jpg', emoji: '😁', description: 'Show your beautiful teeth with a big smile!' },
   { id: 'kiss', name: 'Make a Kiss!', image: '/mirror_posture_images/kiss.jpg', emoji: '😘', description: 'Pucker your lips like you\'re giving a kiss!' },
-  { id: 'looking_left', name: 'Look Left!', image: '/mirror_posture_images/looking_left.jpg', emoji: '👈', description: 'Turn your head and look to the left!' },
-  { id: 'looking_right', name: 'Look Right!', image: '/mirror_posture_images/looking_right.jpg', emoji: '👉', description: 'Turn your head and look to the right!' },
+  { id: 'looking_sideways', name: 'Look Sideways!', image: '/mirror_posture_images/looking_left.jpg', emoji: '👀', description: 'Turn your head and look to either side!' },
 ];
 
 const ROUND_DURATION = 15; // seconds
@@ -389,7 +388,12 @@ const MirrorPostureGame: React.FC = () => {
       detectedExpression: expression,
     }));
 
-    if (expression === currentExpression.id) {
+    // Check if the detected expression matches the current expression
+    // For looking_sideways, accept both looking_left and looking_right
+    const isCorrectExpression = expression === currentExpression.id || 
+      (currentExpression.id === 'looking_sideways' && (expression === 'looking_left' || expression === 'looking_right'));
+    
+    if (isCorrectExpression) {
       // Prevent multiple detections
       setIsProcessingRound(true);
       
@@ -528,8 +532,7 @@ const MirrorPostureGame: React.FC = () => {
 
       // Prepare posture completion times
       const postureTimes = {
-        lookingLeft: null,
-        lookingRight: null,
+        lookingSideways: null,
         mouthOpen: null,
         showingTeeth: null,
         kiss: null
@@ -540,12 +543,10 @@ const MirrorPostureGame: React.FC = () => {
          const postureName = round.expressionName.toLowerCase().replace(/\s+/g, '');
          console.log('Mapping posture:', round.expressionName, 'to lowercase:', postureName);
          
-         if (postureName.includes('lookleft')) {
-           postureTimes.lookingLeft = round.completed ? round.timeTaken : null;
-           console.log('Mapped to lookingLeft:', round.timeTaken);
-         } else if (postureName.includes('lookright')) {
-           postureTimes.lookingRight = round.completed ? round.timeTaken : null;
-           console.log('Mapped to lookingRight:', round.timeTaken);
+         if (postureName.includes('looksideways')) {
+           // For looking_sideways, map to the new lookingSideways field
+           postureTimes.lookingSideways = round.completed ? round.timeTaken : null;
+           console.log('Mapped to lookingSideways:', round.timeTaken);
          } else if (postureName.includes('openyourmouth')) {
            postureTimes.mouthOpen = round.completed ? round.timeTaken : null;
            console.log('Mapped to mouthOpen:', round.timeTaken);
@@ -767,9 +768,9 @@ const MirrorPostureGame: React.FC = () => {
 
               <div className="card-playful border-2 border-fun-yellow/20 p-6 text-center hover:scale-105 transition-all duration-300">
                 <div className="text-6xl mb-4 animate-bounce">4️⃣</div>
-                <h4 className="text-2xl font-playful text-primary mb-3">Play 5 Rounds</h4>
+                <h4 className="text-2xl font-playful text-primary mb-3">Play 4 Rounds</h4>
                 <p className="text-lg text-muted-foreground font-comic">
-                  Try to copy 5 different faces. You have 15 seconds for each one!
+                  Try to copy 4 different faces. You have 15 seconds for each one!
                 </p>
               </div>
             </div>
@@ -904,7 +905,7 @@ const MirrorPostureGame: React.FC = () => {
             <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
               <div className="bg-white/90 backdrop-blur-sm rounded-full px-6 py-2 shadow-lg border-2 border-primary">
                 <span className="text-lg font-playful text-primary">
-                  Round {gameStats.currentRound + 1} of 5
+                  Round {gameStats.currentRound + 1} of 4
                 </span>
               </div>
             </div>
@@ -952,8 +953,9 @@ const MirrorPostureGame: React.FC = () => {
                     {gameStats.detectedExpression && gameState === 'playing' && (
                       <div className="bg-white/90 backdrop-blur-sm rounded-lg p-2 text-center shadow-lg border border-secondary">
                         <div className="text-sm font-playful text-primary">
-                          Detected: {gameStats.detectedExpression === 'looking_left' && 'Looking Left 👈'}
-                          {gameStats.detectedExpression === 'looking_right' && 'Looking Right 👉'}
+                          Detected: {gameStats.detectedExpression === 'looking_left' && 'Looking Sideways 👀'}
+                          {gameStats.detectedExpression === 'looking_right' && 'Looking Sideways 👀'}
+                          {gameStats.detectedExpression === 'looking_sideways' && 'Looking Sideways 👀'}
                           {gameStats.detectedExpression === 'mouth_open' && 'Mouth Open 😮'}
                           {gameStats.detectedExpression === 'showing_teeth' && 'Showing Teeth 😁'}
                           {gameStats.detectedExpression === 'kiss' && 'Kiss 😘'}
@@ -983,24 +985,24 @@ const MirrorPostureGame: React.FC = () => {
                       <div className="text-6xl mb-3 animate-bounce drop-shadow-2xl">🎉</div>
                       
                       <div className="text-2xl font-playful mb-2 text-center drop-shadow-lg">
-                        Final Score: {gameStats.score}/5
+                        Final Score: {gameStats.score}/4
                       </div>
                       
                       <div className="text-lg font-comic mb-2 text-center drop-shadow-md">
-                        {gameStats.score === 5 ? "Perfect! You're an expression master! 🌟" : 
+                        {gameStats.score === 4 ? "Perfect! You're an expression master! 🌟" : 
                          gameStats.score >= 3 ? "Great job! You're getting better! 👍" : 
                          "Keep practicing! You'll improve! 💪"}
                       </div>
                       
                       <div className="text-xs font-comic text-center opacity-90 drop-shadow-sm mb-3">
-                        {gameStats.score === 5 ? "Incredible performance! You've mastered all expressions!" :
+                        {gameStats.score === 4 ? "Incredible performance! You've mastered all expressions!" :
                          gameStats.score >= 3 ? "Excellent work! You're on your way to becoming an expression expert!" :
                          "Good effort! Every practice session makes you stronger!"}
                       </div>
                       
                       {/* Achievement badges */}
                       <div className="flex gap-2 flex-wrap justify-center">
-                        {gameStats.score === 5 && (
+                        {gameStats.score === 4 && (
                           <div className="bg-yellow-400/80 text-yellow-900 px-2 py-1 rounded-full text-xs font-bold animate-pulse">
                             🏅 Perfect
                           </div>
@@ -1029,7 +1031,7 @@ const MirrorPostureGame: React.FC = () => {
                       🎯 Ready to Play?
                     </h2>
                     <p className="text-lg text-muted-foreground mb-6 leading-relaxed font-comic">
-                      Copy the facial expressions shown on the screen! You'll have 5 rounds to make the correct face within 15 seconds each.
+                      Copy the facial expressions shown on the screen! You'll have 4 rounds to make the correct face within 15 seconds each.
                     </p>
 
                     <div className="flex flex-col gap-4">
@@ -1194,10 +1196,10 @@ const MirrorPostureGame: React.FC = () => {
                  Game Complete!
                </h2>
                <div className="text-2xl font-playful mb-1">
-                 Score: {gameStats.score}/5
+                 Score: {gameStats.score}/4
                </div>
                <div className="text-lg font-comic">
-                 {gameStats.score === 5 ? "Perfect! 🌟" : 
+                 {gameStats.score === 4 ? "Perfect! 🌟" : 
                   gameStats.score >= 3 ? "Great job! 👍" : 
                   "Keep practicing! 💪"}
                </div>

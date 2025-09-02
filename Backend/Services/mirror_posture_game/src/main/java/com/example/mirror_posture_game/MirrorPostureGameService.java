@@ -23,8 +23,7 @@ public class MirrorPostureGameService {
         gameRecord.setDateTime(request.getDateTime() != null ? request.getDateTime() : java.time.LocalDateTime.now());
         gameRecord.setChildId(request.getChildId());
         gameRecord.setAge(request.getAge());
-        gameRecord.setLookingLeft(request.getLookingLeft());
-        gameRecord.setLookingRight(request.getLookingRight());
+        gameRecord.setLookingSideways(request.getLookingSideways());
         gameRecord.setMouthOpen(request.getMouthOpen());
         gameRecord.setShowingTeeth(request.getShowingTeeth());
         gameRecord.setKiss(request.getKiss());
@@ -117,20 +116,20 @@ public class MirrorPostureGameService {
         
         if (!avgTimes.isEmpty() && avgTimes.get(0) != null) {
             Object[] avgData = avgTimes.get(0);
-            averageCompletionTimes.put("Looking Left 👀", avgData[0] != null ? ((Number) avgData[0]).doubleValue() : 0.0);
-            averageCompletionTimes.put("Looking Right 👀", avgData[1] != null ? ((Number) avgData[1]).doubleValue() : 0.0);
-            averageCompletionTimes.put("Mouth Open 😮", avgData[2] != null ? ((Number) avgData[2]).doubleValue() : 0.0);
-            averageCompletionTimes.put("Showing Teeth 😁", avgData[3] != null ? ((Number) avgData[3]).doubleValue() : 0.0);
-            averageCompletionTimes.put("Kiss 💋", avgData[4] != null ? ((Number) avgData[4]).doubleValue() : 0.0);
+            // Use lookingSideways field for the consolidated "Looking Sideways" posture
+            averageCompletionTimes.put("Looking Sideways 👀", avgData[0] != null ? ((Number) avgData[0]).doubleValue() : 0.0);
+            averageCompletionTimes.put("Mouth Open 😮", avgData[1] != null ? ((Number) avgData[1]).doubleValue() : 0.0);
+            averageCompletionTimes.put("Showing Teeth 😁", avgData[2] != null ? ((Number) avgData[2]).doubleValue() : 0.0);
+            averageCompletionTimes.put("Kiss 💋", avgData[3] != null ? ((Number) avgData[3]).doubleValue() : 0.0);
         }
         
         if (!completionCounts.isEmpty() && completionCounts.get(0) != null) {
             Object[] countData = completionCounts.get(0);
-            postureCompletionCounts.put("Looking Left 👀", ((Number) countData[0]).longValue());
-            postureCompletionCounts.put("Looking Right 👀", ((Number) countData[1]).longValue());
-            postureCompletionCounts.put("Mouth Open 😮", ((Number) countData[2]).longValue());
-            postureCompletionCounts.put("Showing Teeth 😁", ((Number) countData[3]).longValue());
-            postureCompletionCounts.put("Kiss 💋", ((Number) countData[4]).longValue());
+            // Use lookingSideways field for the consolidated "Looking Sideways" posture
+            postureCompletionCounts.put("Looking Sideways 👀", ((Number) countData[0]).longValue());
+            postureCompletionCounts.put("Mouth Open 😮", ((Number) countData[1]).longValue());
+            postureCompletionCounts.put("Showing Teeth 😁", ((Number) countData[2]).longValue());
+            postureCompletionCounts.put("Kiss 💋", ((Number) countData[3]).longValue());
         }
         
         statistics.put("averageCompletionTimes", averageCompletionTimes);
@@ -152,24 +151,24 @@ public class MirrorPostureGameService {
         
         if (!bestPerformance.isEmpty() && bestPerformance.get(0) != null) {
             Object[] bestData = bestPerformance.get(0);
-            bestPerformanceMap.put("Looking Left 👀", bestData[0] != null ? ((Number) bestData[0]).doubleValue() : 0.0);
-            bestPerformanceMap.put("Looking Right 👀", bestData[1] != null ? ((Number) bestData[1]).doubleValue() : 0.0);
-            bestPerformanceMap.put("Mouth Open 😮", bestData[2] != null ? ((Number) bestData[2]).doubleValue() : 0.0);
-            bestPerformanceMap.put("Showing Teeth 😁", bestData[3] != null ? ((Number) bestData[3]).doubleValue() : 0.0);
-            bestPerformanceMap.put("Kiss 💋", bestData[4] != null ? ((Number) bestData[4]).doubleValue() : 0.0);
+            // Use lookingSideways field for the consolidated "Looking Sideways" posture
+            bestPerformanceMap.put("Looking Sideways 👀", bestData[0] != null ? ((Number) bestData[0]).doubleValue() : 0.0);
+            bestPerformanceMap.put("Mouth Open 😮", bestData[1] != null ? ((Number) bestData[1]).doubleValue() : 0.0);
+            bestPerformanceMap.put("Showing Teeth 😁", bestData[2] != null ? ((Number) bestData[2]).doubleValue() : 0.0);
+            bestPerformanceMap.put("Kiss 💋", bestData[3] != null ? ((Number) bestData[3]).doubleValue() : 0.0);
         }
         
         if (!worstPerformance.isEmpty() && worstPerformance.get(0) != null) {
             Object[] worstData = worstPerformance.get(0);
-            worstPerformanceMap.put("Looking Left 👀", worstData[0] != null ? ((Number) worstData[0]).doubleValue() : 0.0);
-            worstPerformanceMap.put("Looking Right 👀", worstData[1] != null ? ((Number) worstData[1]).doubleValue() : 0.0);
-            worstPerformanceMap.put("Mouth Open 😮", worstData[2] != null ? ((Number) worstData[2]).doubleValue() : 0.0);
-            worstPerformanceMap.put("Showing Teeth 😁", worstData[3] != null ? ((Number) worstData[3]).doubleValue() : 0.0);
-            worstPerformanceMap.put("Kiss 💋", worstData[4] != null ? ((Number) worstData[4]).doubleValue() : 0.0);
+            // Use lookingSideways field for the consolidated "Looking Sideways" posture
+            worstPerformanceMap.put("Looking Sideways 👀", worstData[0] != null ? ((Number) worstData[0]).doubleValue() : 0.0);
+            worstPerformanceMap.put("Mouth Open 😮", worstData[1] != null ? ((Number) worstData[1]).doubleValue() : 0.0);
+            worstPerformanceMap.put("Showing Teeth 😁", worstData[2] != null ? ((Number) worstData[2]).doubleValue() : 0.0);
+            worstPerformanceMap.put("Kiss 💋", worstData[3] != null ? ((Number) worstData[3]).doubleValue() : 0.0);
         }
         
         // Calculate consistency scores (lower variance = higher consistency)
-        String[] postures = {"Looking Left 👀", "Looking Right 👀", "Mouth Open 😮", "Showing Teeth 😁", "Kiss 💋"};
+        String[] postures = {"Looking Sideways 👀", "Mouth Open 😮", "Showing Teeth 😁", "Kiss 💋"};
         for (String posture : postures) {
             double best = bestPerformanceMap.getOrDefault(posture, 0.0);
             double worst = worstPerformanceMap.getOrDefault(posture, 0.0);
@@ -195,9 +194,9 @@ public class MirrorPostureGameService {
             MirrorPostureGame latest = recentGames.get(0);
             MirrorPostureGame previous = recentGames.get(1);
             
-            String[] postures = {"Looking Left 👀", "Looking Right 👀", "Mouth Open 😮", "Showing Teeth 😁", "Kiss 💋"};
-            Integer[] latestTimes = {latest.getLookingLeft(), latest.getLookingRight(), latest.getMouthOpen(), latest.getShowingTeeth(), latest.getKiss()};
-            Integer[] previousTimes = {previous.getLookingLeft(), previous.getLookingRight(), previous.getMouthOpen(), previous.getShowingTeeth(), previous.getKiss()};
+            String[] postures = {"Looking Sideways 👀", "Mouth Open 😮", "Showing Teeth 😁", "Kiss 💋"};
+            Integer[] latestTimes = {latest.getLookingSideways(), latest.getMouthOpen(), latest.getShowingTeeth(), latest.getKiss()};
+            Integer[] previousTimes = {previous.getLookingSideways(), previous.getMouthOpen(), previous.getShowingTeeth(), previous.getKiss()};
             
             for (int i = 0; i < postures.length; i++) {
                 if (latestTimes[i] != null && previousTimes[i] != null) {
@@ -222,13 +221,12 @@ public class MirrorPostureGameService {
         
         if (!bestPerformance.isEmpty() && bestPerformance.get(0) != null) {
             Object[] bestData = bestPerformance.get(0);
-            String[] postures = {"Looking Left 👀", "Looking Right 👀", "Mouth Open 😮", "Showing Teeth 😁", "Kiss 💋"};
+            String[] postures = {"Looking Sideways 👀", "Mouth Open 😮", "Showing Teeth 😁", "Kiss 💋"};
             Double[] times = {
                 bestData[0] != null ? ((Number) bestData[0]).doubleValue() : 0.0,
                 bestData[1] != null ? ((Number) bestData[1]).doubleValue() : 0.0,
                 bestData[2] != null ? ((Number) bestData[2]).doubleValue() : 0.0,
-                bestData[3] != null ? ((Number) bestData[3]).doubleValue() : 0.0,
-                bestData[4] != null ? ((Number) bestData[4]).doubleValue() : 0.0
+                bestData[3] != null ? ((Number) bestData[3]).doubleValue() : 0.0
             };
             
             int bestIndex = 0;
@@ -248,13 +246,12 @@ public class MirrorPostureGameService {
         
         if (!worstPerformance.isEmpty() && worstPerformance.get(0) != null) {
             Object[] worstData = worstPerformance.get(0);
-            String[] postures = {"Looking Left 👀", "Looking Right 👀", "Mouth Open 😮", "Showing Teeth 😁", "Kiss 💋"};
+            String[] postures = {"Looking Sideways 👀", "Mouth Open 😮", "Showing Teeth 😁", "Kiss 💋"};
             Double[] times = {
                 worstData[0] != null ? ((Number) worstData[0]).doubleValue() : 0.0,
                 worstData[1] != null ? ((Number) worstData[1]).doubleValue() : 0.0,
                 worstData[2] != null ? ((Number) worstData[2]).doubleValue() : 0.0,
-                worstData[3] != null ? ((Number) worstData[3]).doubleValue() : 0.0,
-                worstData[4] != null ? ((Number) worstData[4]).doubleValue() : 0.0
+                worstData[3] != null ? ((Number) worstData[3]).doubleValue() : 0.0
             };
             
             int worstIndex = 0;
