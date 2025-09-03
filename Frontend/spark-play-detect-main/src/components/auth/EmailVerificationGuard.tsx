@@ -28,13 +28,13 @@ export const EmailVerificationGuard: React.FC<EmailVerificationGuardProps> = ({ 
         setIsEmailVerified(verified);
       } else {
         // If not authenticated, redirect to login
-        navigate('/auth');
+        navigate('/');
         return;
       }
     } catch (err) {
       console.error('Error checking email verification status:', err);
       // If there's an error, assume not verified and redirect to login
-      navigate('/auth');
+      navigate('/');
       return;
     } finally {
       setIsLoading(false);
@@ -65,7 +65,7 @@ export const EmailVerificationGuard: React.FC<EmailVerificationGuardProps> = ({ 
             
             <div className="space-y-4">
               <button
-                onClick={() => navigate('/auth')}
+                onClick={() => navigate('/')}
                 className="btn-fun w-full font-comic"
               >
                 Go to Sign In

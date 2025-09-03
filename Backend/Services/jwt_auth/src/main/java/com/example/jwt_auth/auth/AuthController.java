@@ -12,8 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.jwt_auth.user.UserRepository;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -22,7 +20,6 @@ import jakarta.servlet.http.HttpServletResponse;
 public class AuthController {
 
     @Autowired private AuthService authService;
-    @Autowired private UserRepository userRepository;
 
     @GetMapping("/")
     public String hello() {
@@ -34,6 +31,70 @@ public class AuthController {
         try {
             authService.register(request);
             return ResponseEntity.ok("User registered. Please check your email to verify your account.");
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().contains("User already exists")) {
+                return ResponseEntity.status(409).body("User already exists");
+            }
+            if (e.getMessage() != null && e.getMessage().contains("Email already registered")) {
+                return ResponseEntity.status(409).body("Email already registered");
+            }
+            return ResponseEntity.status(500).body("Registration failed: " + e.getMessage());
+        }
+    }
+    
+    @PostMapping("/register/parent")
+    public ResponseEntity<String> registerParent(@RequestBody ParentRegistrationRequest request) {
+        try {
+            authService.registerParent(request);
+            return ResponseEntity.ok("Parent registered successfully. Please check your email to verify your account.");
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().contains("User already exists")) {
+                return ResponseEntity.status(409).body("User already exists");
+            }
+            if (e.getMessage() != null && e.getMessage().contains("Email already registered")) {
+                return ResponseEntity.status(409).body("Email already registered");
+            }
+            return ResponseEntity.status(500).body("Registration failed: " + e.getMessage());
+        }
+    }
+    
+    @PostMapping("/register/school")
+    public ResponseEntity<String> registerSchool(@RequestBody SchoolRegistrationRequest request) {
+        try {
+            authService.registerSchool(request);
+            return ResponseEntity.ok("School registered successfully. Please check your email to verify your account. Your account will be reviewed for approval.");
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().contains("User already exists")) {
+                return ResponseEntity.status(409).body("User already exists");
+            }
+            if (e.getMessage() != null && e.getMessage().contains("Email already registered")) {
+                return ResponseEntity.status(409).body("Email already registered");
+            }
+            return ResponseEntity.status(500).body("Registration failed: " + e.getMessage());
+        }
+    }
+    
+    @PostMapping("/register/doctor")
+    public ResponseEntity<String> registerDoctor(@RequestBody DoctorRegistrationRequest request) {
+        try {
+            authService.registerDoctor(request);
+            return ResponseEntity.ok("Doctor registered successfully. Please check your email to verify your account. Your account will be reviewed for approval.");
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().contains("User already exists")) {
+                return ResponseEntity.status(409).body("User already exists");
+            }
+            if (e.getMessage() != null && e.getMessage().contains("Email already registered")) {
+                return ResponseEntity.status(409).body("Email already registered");
+            }
+            return ResponseEntity.status(500).body("Registration failed: " + e.getMessage());
+        }
+    }
+    
+    @PostMapping("/register/admin")
+    public ResponseEntity<String> registerAdmin(@RequestBody AdminRegistrationRequest request) {
+        try {
+            authService.registerAdmin(request);
+            return ResponseEntity.ok("Admin registered successfully. Please check your email to verify your account.");
         } catch (RuntimeException e) {
             if (e.getMessage() != null && e.getMessage().contains("User already exists")) {
                 return ResponseEntity.status(409).body("User already exists");
@@ -127,39 +188,66 @@ public class AuthController {
 
     @GetMapping("/session")
     public ResponseEntity<Boolean> session(HttpServletRequest request) {
+        System.out.println("=== SESSION CHECK CALLED ===");
         String token = null;
         if (request.getCookies() != null) {
+            System.out.println("Cookies found: " + request.getCookies().length);
             for (var cookie : request.getCookies()) {
+                System.out.println("Cookie: " + cookie.getName() + " = " + cookie.getValue());
                 if ("jwt".equals(cookie.getName())) {
                     token = cookie.getValue();
                     break;
                 }
             }
+        } else {
+            System.out.println("No cookies found");
         }
-        if (token == null) return ResponseEntity.ok(false);
+        if (token == null) {
+            System.out.println("No JWT token found, returning false");
+            return ResponseEntity.ok(false);
+        }
         boolean valid = authService.validateToken(token);
+        System.out.println("Token valid: " + valid);
         return ResponseEntity.ok(valid);
     }
 
     @GetMapping("/me")
     public ResponseEntity<String> me(Authentication auth) {
-        if (auth == null) return ResponseEntity.status(401).body("");
+        System.out.println("=== /auth/me ENDPOINT ===");
+        System.out.println("Authentication: " + auth);
+        if (auth == null) {
+            System.out.println("Authentication is null, returning 401");
+            return ResponseEntity.status(401).body("");
+        }
+        System.out.println("Authentication name: " + auth.getName());
         return ResponseEntity.ok(auth.getName());
     }
 
     @PostMapping("/logout")
     public ResponseEntity<String> logout(Authentication auth, HttpServletResponse response) {
-        if (auth != null) {
-            // Clear the JWT cookie
-            ResponseCookie cookie = ResponseCookie.from("jwt", "")
-                    .httpOnly(true)
-                    .secure(false)
-                    .path("/")
-                    .maxAge(0)
-                    .sameSite("Lax")
-                    .build();
-            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-        }
-        return ResponseEntity.ok("Logged out");
+        // Clear the JWT cookie regardless of authentication status
+        ResponseCookie cookie = ResponseCookie.from("jwt", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        return ResponseEntity.ok("Logged out successfully");
+    }
+    
+    @GetMapping("/clear-cookie")
+    public ResponseEntity<String> clearCookie(HttpServletResponse response) {
+        // Clear the JWT cookie
+        ResponseCookie cookie = ResponseCookie.from("jwt", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        return ResponseEntity.ok("Cookie cleared");
     }
 }

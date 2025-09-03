@@ -20,7 +20,7 @@ export default function Dashboard() {
       .then(res => res.json())
       .then(authenticated => {
         if (!authenticated) {
-          navigate('/auth');
+          navigate('/');
         } else {
           fetch('http://localhost:8080/auth/me', { credentials: 'include' })
             .then(res => res.text())
@@ -51,7 +51,7 @@ export default function Dashboard() {
   const handleLogout = async () => {
     console.log('Logout button clicked');
     await fetch('http://localhost:8080/auth/logout', { method: 'POST', credentials: 'include' });
-    window.location.href = '/auth'; // Full reload ensures session check and clears dashboard state
+    window.location.href = '/'; // Full reload ensures session check and clears dashboard state
   };
 
   if (!authChecked) {

@@ -39,15 +39,27 @@ public class JwtFilter extends OncePerRequestFilter {
                 }
             }
         }
+        
+        System.out.println("=== JWT FILTER ===");
+        System.out.println("Request URI: " + request.getRequestURI());
+        System.out.println("Token found: " + (token != null));
+        if (token != null) {
+            System.out.println("Token: " + token.substring(0, Math.min(50, token.length())) + "...");
+        }
+        
         if (token != null) {
             try {
                 if (jwtUtil.validateToken(token)) {
                     String username = jwtUtil.extractUsername(token);
+                    System.out.println("Setting authentication for user: " + username);
                     UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(username, null, Collections.emptyList());
                     SecurityContextHolder.getContext().setAuthentication(auth);
+                } else {
+                    System.out.println("Token validation failed");
                 }
             } catch (JwtException ex) {
+                System.out.println("JWT Exception: " + ex.getMessage());
                 SecurityContextHolder.clearContext();
             }
         }

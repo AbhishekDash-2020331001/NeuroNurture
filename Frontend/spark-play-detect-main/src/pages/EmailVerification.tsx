@@ -41,7 +41,7 @@ const EmailVerification: React.FC = () => {
   }, [searchParams]);
 
   const handleRedirect = () => {
-    navigate('/auth');
+    navigate('/');
   };
 
   return (

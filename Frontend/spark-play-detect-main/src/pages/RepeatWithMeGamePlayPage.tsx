@@ -268,7 +268,7 @@ const RepeatWithMeGamePlayPage: React.FC = () => {
   const handleLogout = async () => {
     console.log('Logout button clicked');
     await fetch('http://localhost:8080/auth/logout', { method: 'POST', credentials: 'include' });
-    window.location.href = '/auth';
+    window.location.href = '/';
   };
 
   // Consent Screen

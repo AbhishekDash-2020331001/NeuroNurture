@@ -44,7 +44,7 @@ const EmailVerificationRequired: React.FC = () => {
   };
 
   const handleBackToLogin = () => {
-    navigate('/auth');
+    navigate('/');
   };
 
   return (

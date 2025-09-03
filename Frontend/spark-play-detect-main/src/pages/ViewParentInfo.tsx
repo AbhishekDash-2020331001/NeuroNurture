@@ -99,7 +99,7 @@ const ViewParentInfo = () => {
         method: 'POST', 
         credentials: 'include' 
       });
-      window.location.href = '/auth';
+      window.location.href = '/';
     } catch (error) {
       console.error('Error during logout:', error);
       toast.error("Logout failed. Please try again.");

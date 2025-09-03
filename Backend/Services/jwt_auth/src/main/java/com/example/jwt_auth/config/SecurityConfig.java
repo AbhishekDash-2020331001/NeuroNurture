@@ -1,9 +1,11 @@
 package com.example.jwt_auth.config;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -15,6 +17,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -54,7 +59,7 @@ public class SecurityConfig {
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
             @Override
-            public void addCorsMappings(CorsRegistry registry) {
+            public void addCorsMappings(@NonNull CorsRegistry registry) {
                 registry.addMapping("/**")
                         .allowedOrigins("http://localhost:8081")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
@@ -64,22 +69,39 @@ public class SecurityConfig {
     }
 
     @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:8081"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
+        
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, CustomOAuth2SuccessHandler oAuth2SuccessHandler) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
                 .requestMatchers(
                     "/auth/verify-email",
                     "/auth/resend-verification",
                     "/auth/register",
+                    "/auth/register/parent",
+                    "/auth/register/school",
+                    "/auth/register/doctor",
+                    "/auth/register/admin",
                     "/auth/login",
                     "/auth/oauth2/**",
                     "/auth/refresh-token",
                     "/login/oauth2/code/google",
                     "/oauth2/**",
                     "/auth/session", // Allow unauthenticated access to session check
-                    "/auth/me", // Allow unauthenticated access to user info
                     "/"
                 ).permitAll()
                 // Protected endpoints require authentication
@@ -89,6 +111,15 @@ public class SecurityConfig {
             // OAuth2 login configuration
             .oauth2Login(oauth2 -> oauth2
                 .successHandler(oAuth2SuccessHandler)
+                .failureHandler((request, response, exception) -> {
+                    System.out.println("=== OAUTH2 FAILURE ===");
+                    System.out.println("Error: " + exception.getMessage());
+                    System.out.println("Request URI: " + request.getRequestURI());
+                    System.out.println("Request URL: " + request.getRequestURL());
+                    exception.printStackTrace();
+                    response.sendRedirect("http://localhost:8081/auth?error=oauth2_failed");
+                })
+                .defaultSuccessUrl("http://localhost:8081/auth", true)
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 

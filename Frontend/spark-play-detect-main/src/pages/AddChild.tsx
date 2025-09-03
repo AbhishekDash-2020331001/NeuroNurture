@@ -96,7 +96,7 @@ const AddChild = () => {
         method: 'POST', 
         credentials: 'include' 
       });
-      window.location.href = '/auth'; // Full reload ensures session check and clears state
+      window.location.href = '/'; // Full reload ensures session check and clears state
     } catch (error) {
       console.error('Error during logout:', error);
       toast.error("Logout failed. Please try again.");

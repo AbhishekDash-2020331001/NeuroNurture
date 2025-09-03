@@ -106,7 +106,7 @@ const Index = () => {
         {/* Call to Action */}
         <div className="space-y-6">
           <Button 
-            onClick={() => navigate('/auth')}
+            onClick={() => navigate('/')}
             className="btn-fun text-xl px-12 py-4 font-comic btn-bounce text-lg"
           >
             Start Playing Now! 🚀

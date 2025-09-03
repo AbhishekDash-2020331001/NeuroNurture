@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -31,6 +33,10 @@ public class User {
     @Column(unique = true)
     private String email;
     
+    @Enumerated(EnumType.STRING)
+    @Column(name = "user_role")
+    private UserRole userRole;
+    
     @Column(name = "email_verified")
     private Boolean emailVerified = false;
     
@@ -42,4 +48,7 @@ public class User {
     
     @Column(name = "auth_provider")
     private String authProvider = "MANUAL"; // MANUAL or GOOGLE
+    
+    @Column(name = "is_verified")
+    private Boolean isVerified = false; // For doctor/school/admin verification
 }

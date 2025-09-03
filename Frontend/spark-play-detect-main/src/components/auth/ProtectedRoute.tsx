@@ -17,7 +17,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
         setAuthenticated(auth);
         setAuthChecked(true);
         if (!auth) {
-          navigate('/auth');
+          navigate('/');
         }
       });
   }, [navigate]);

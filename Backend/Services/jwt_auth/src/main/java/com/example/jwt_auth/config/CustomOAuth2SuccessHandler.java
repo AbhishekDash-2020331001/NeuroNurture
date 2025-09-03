@@ -13,6 +13,7 @@ import com.example.jwt_auth.JwtUtil;
 import com.example.jwt_auth.auth.AuthService;
 import com.example.jwt_auth.user.User;
 import com.example.jwt_auth.user.UserRepository;
+import com.example.jwt_auth.user.UserRole;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,8 +34,10 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+        System.out.println("=== OAUTH2 SUCCESS HANDLER CALLED ===");
         OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
         String email = oauthToken.getPrincipal().getAttribute("email");
+        System.out.println("OAuth2 email: " + email);
         
         User user = userRepository.findByUsername(email)
                 .orElseGet(() -> {
@@ -44,6 +47,8 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
                     newUser.setPassword(""); // No password for OAuth users
                     newUser.setEmailVerified(true); // Google emails are pre-verified
                     newUser.setAuthProvider("GOOGLE");
+                    newUser.setUserRole(UserRole.PARENT); // Google OAuth is only for parents
+                    newUser.setIsVerified(true); // Parents are auto-verified
                     return userRepository.save(newUser);
                 });
         
@@ -51,11 +56,19 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         if (user.getAuthProvider() == null) {
             user.setAuthProvider("GOOGLE");
             user.setEmailVerified(true);
+            user.setUserRole(UserRole.PARENT); // Ensure Google OAuth users are parents
+            user.setIsVerified(true);
             userRepository.save(user);
         }
         
-        String token = jwtUtil.generateToken(user.getUsername());
-        String refreshToken = authService.createRefreshToken(user);
+        // Check if user is a parent (Google OAuth is only allowed for parents)
+        if (user.getUserRole() != UserRole.PARENT) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Google OAuth is only available for parents. Please use manual registration for other roles.");
+            return;
+        }
+        
+        String token = jwtUtil.generateToken(user.getUsername(), user.getUserRole().toString());
+        authService.createRefreshToken(user);
 
         ResponseCookie cookie = ResponseCookie.from("jwt", token)
                 .httpOnly(true)
@@ -66,7 +79,16 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-        // Redirect to frontend auth page to let AuthSuccessHandler determine the flow
-        response.sendRedirect("http://localhost:8081/auth");
+        // Redirect based on user role
+        System.out.println("User role: " + user.getUserRole());
+        if (user.getUserRole() == UserRole.PARENT) {
+            // For parents, redirect to auth page to let AuthSuccessHandler determine the flow
+            System.out.println("Redirecting parent to /auth for AuthSuccessHandler");
+            response.sendRedirect("http://localhost:8081/auth");
+        } else {
+            // For other roles, redirect to their respective dashboards
+            System.out.println("Redirecting " + user.getUserRole() + " to dashboard");
+            response.sendRedirect("http://localhost:8081/" + user.getUserRole().toString().toLowerCase() + "/dashboard");
+        }
     }
 } 

@@ -17,6 +17,7 @@ import com.example.jwt_auth.token.RefreshToken;
 import com.example.jwt_auth.token.RefreshTokenRepository;
 import com.example.jwt_auth.user.User;
 import com.example.jwt_auth.user.UserRepository;
+import com.example.jwt_auth.user.UserRole;
 
 @Service
 @Transactional(readOnly = true)
@@ -49,6 +50,7 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.password));
         user.setEmailVerified(false);
         user.setAuthProvider("MANUAL");
+        user.setUserRole(UserRole.PARENT); // Default to PARENT for backward compatibility
         
         // Generate verification token
         String verificationToken = UUID.randomUUID().toString();
@@ -62,6 +64,162 @@ public class AuthService {
             emailService.sendVerificationEmail(request.email, request.username, verificationToken);
         } catch (Exception e) {
             // Log the error but don't fail registration
+            System.err.println("Failed to send verification email: " + e.getMessage());
+            System.err.println("Verification token for " + request.email + ": " + verificationToken);
+        }
+    }
+    
+    @Transactional
+    public void registerParent(ParentRegistrationRequest request) {
+        if (userRepository.findByUsername(request.username).isPresent()) {
+            throw new RuntimeException("User already exists");
+        }
+        if (userRepository.findByEmail(request.email).isPresent()) {
+            throw new RuntimeException("Email already registered");
+        }
+        
+        // Ensure username and email are the same
+        if (!request.username.equals(request.email)) {
+            throw new RuntimeException("Username and email must be the same");
+        }
+        
+        User user = new User();
+        user.setUsername(request.username);
+        user.setEmail(request.email);
+        user.setPassword(passwordEncoder.encode(request.password));
+        user.setUserRole(UserRole.PARENT);
+        user.setEmailVerified(false);
+        user.setAuthProvider("MANUAL");
+        user.setIsVerified(true); // Parents are auto-verified
+        
+        // Generate verification token
+        String verificationToken = UUID.randomUUID().toString();
+        user.setVerificationToken(verificationToken);
+        user.setVerificationTokenExpiry(LocalDateTime.now().plusHours(24));
+        
+        userRepository.save(user);
+        
+        // Send verification email
+        try {
+            emailService.sendVerificationEmail(request.email, request.username, verificationToken);
+        } catch (Exception e) {
+            System.err.println("Failed to send verification email: " + e.getMessage());
+            System.err.println("Verification token for " + request.email + ": " + verificationToken);
+        }
+    }
+    
+    @Transactional
+    public void registerSchool(SchoolRegistrationRequest request) {
+        if (userRepository.findByUsername(request.username).isPresent()) {
+            throw new RuntimeException("User already exists");
+        }
+        if (userRepository.findByEmail(request.email).isPresent()) {
+            throw new RuntimeException("Email already registered");
+        }
+        
+        // Ensure username and email are the same
+        if (!request.username.equals(request.email)) {
+            throw new RuntimeException("Username and email must be the same");
+        }
+        
+        User user = new User();
+        user.setUsername(request.username);
+        user.setEmail(request.email);
+        user.setPassword(passwordEncoder.encode(request.password));
+        user.setUserRole(UserRole.SCHOOL);
+        user.setEmailVerified(false);
+        user.setAuthProvider("MANUAL");
+        user.setIsVerified(false); // Schools need manual verification
+        
+        // Generate verification token
+        String verificationToken = UUID.randomUUID().toString();
+        user.setVerificationToken(verificationToken);
+        user.setVerificationTokenExpiry(LocalDateTime.now().plusHours(24));
+        
+        userRepository.save(user);
+        
+        // Send verification email
+        try {
+            emailService.sendVerificationEmail(request.email, request.username, verificationToken);
+        } catch (Exception e) {
+            System.err.println("Failed to send verification email: " + e.getMessage());
+            System.err.println("Verification token for " + request.email + ": " + verificationToken);
+        }
+    }
+    
+    @Transactional
+    public void registerDoctor(DoctorRegistrationRequest request) {
+        if (userRepository.findByUsername(request.username).isPresent()) {
+            throw new RuntimeException("User already exists");
+        }
+        if (userRepository.findByEmail(request.email).isPresent()) {
+            throw new RuntimeException("Email already registered");
+        }
+        
+        // Ensure username and email are the same
+        if (!request.username.equals(request.email)) {
+            throw new RuntimeException("Username and email must be the same");
+        }
+        
+        User user = new User();
+        user.setUsername(request.username);
+        user.setEmail(request.email);
+        user.setPassword(passwordEncoder.encode(request.password));
+        user.setUserRole(UserRole.DOCTOR);
+        user.setEmailVerified(false);
+        user.setAuthProvider("MANUAL");
+        user.setIsVerified(false); // Doctors need manual verification
+        
+        // Generate verification token
+        String verificationToken = UUID.randomUUID().toString();
+        user.setVerificationToken(verificationToken);
+        user.setVerificationTokenExpiry(LocalDateTime.now().plusHours(24));
+        
+        userRepository.save(user);
+        
+        // Send verification email
+        try {
+            emailService.sendVerificationEmail(request.email, request.username, verificationToken);
+        } catch (Exception e) {
+            System.err.println("Failed to send verification email: " + e.getMessage());
+            System.err.println("Verification token for " + request.email + ": " + verificationToken);
+        }
+    }
+    
+    @Transactional
+    public void registerAdmin(AdminRegistrationRequest request) {
+        if (userRepository.findByUsername(request.username).isPresent()) {
+            throw new RuntimeException("User already exists");
+        }
+        if (userRepository.findByEmail(request.email).isPresent()) {
+            throw new RuntimeException("Email already registered");
+        }
+        
+        // Ensure username and email are the same
+        if (!request.username.equals(request.email)) {
+            throw new RuntimeException("Username and email must be the same");
+        }
+        
+        User user = new User();
+        user.setUsername(request.username);
+        user.setEmail(request.email);
+        user.setPassword(passwordEncoder.encode(request.password));
+        user.setUserRole(UserRole.ADMIN);
+        user.setEmailVerified(false);
+        user.setAuthProvider("MANUAL");
+        user.setIsVerified(true); // Admins are auto-verified
+        
+        // Generate verification token
+        String verificationToken = UUID.randomUUID().toString();
+        user.setVerificationToken(verificationToken);
+        user.setVerificationTokenExpiry(LocalDateTime.now().plusHours(24));
+        
+        userRepository.save(user);
+        
+        // Send verification email
+        try {
+            emailService.sendVerificationEmail(request.email, request.username, verificationToken);
+        } catch (Exception e) {
             System.err.println("Failed to send verification email: " + e.getMessage());
             System.err.println("Verification token for " + request.email + ": " + verificationToken);
         }
@@ -115,7 +273,7 @@ public class AuthService {
             throw new RuntimeException("Please verify your email before logging in");
         }
         
-        String token = jwtUtil.generateToken(user.getUsername());
+        String token = jwtUtil.generateToken(user.getUsername(), user.getUserRole().toString());
         String refreshToken = createRefreshToken(user);
         return new AuthResponse(token, refreshToken);
     }
@@ -163,7 +321,7 @@ public class AuthService {
             throw new RuntimeException("Refresh token expired");
         }
 
-        return jwtUtil.generateToken(refreshToken.getUser().getUsername());
+        return jwtUtil.generateToken(refreshToken.getUser().getUsername(), refreshToken.getUser().getUserRole().toString());
     }
     
     @Transactional

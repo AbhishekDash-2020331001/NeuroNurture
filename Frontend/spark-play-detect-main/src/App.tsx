@@ -11,6 +11,8 @@ import RepeatWithMeGameplay from "./components/games/repeatWithMe/RepeatWithMeGa
 import AddChild from "./pages/AddChild";
 import Auth from "./pages/Auth";
 import ChildrenProfiles from "./pages/ChildrenProfiles";
+import DanceDoodleGameInsights from "./pages/DanceDoodleGameInsights";
+import DanceDoodleGamePage from "./pages/DanceDoodleGamePage";
 import Dashboard from "./pages/Dashboard";
 import EmailVerificationPage from "./pages/EmailVerification";
 import EmailVerificationRequired from "./pages/EmailVerificationRequired";
@@ -19,16 +21,21 @@ import GazeTrackingGamePage from "./pages/GazeTrackingGamePage";
 import GazeTrackingGamePlayPage from "./pages/GazeTrackingGamePlayPage";
 import GestureGame from "./pages/GestureGame";
 import GestureGameInsights from "./pages/GestureGameInsights";
-import Index from "./pages/Index";
+import LandingPage from "./pages/LandingPage";
 import MirrorPostureGameInsights from "./pages/MirrorPostureGameInsights";
 import MirrorPostureGamePage from "./pages/MirrorPostureGamePage";
 import NotFound from "./pages/NotFound";
 import ParentInfo from "./pages/ParentInfo";
 import RepeatWithMeGameInsights from "./pages/RepeatWithMeGameInsights";
 import RepeatWithMeGamePage from "./pages/RepeatWithMeGamePage";
-import DanceDoodleGamePage from "./pages/DanceDoodleGamePage";
-import DanceDoodleGameInsights from "./pages/DanceDoodleGameInsights";
 import ViewParentInfo from "./pages/ViewParentInfo";
+// Authentication pages
+import DoctorLogin from "./pages/auth/DoctorLogin";
+import DoctorRegister from "./pages/auth/DoctorRegister";
+import ParentLogin from "./pages/auth/ParentLogin";
+import ParentRegister from "./pages/auth/ParentRegister";
+import SchoolLogin from "./pages/auth/SchoolLogin";
+import SchoolRegister from "./pages/auth/SchoolRegister";
 const queryClient = new QueryClient();
 
 // Component to handle global camera cleanup
@@ -56,8 +63,15 @@ const App = () => (
       <BrowserRouter>
         <CameraCleanupHandler />
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/auth" element={<Auth />} />
+          {/* Authentication Routes */}
+          <Route path="/auth/parent/login" element={<ParentLogin />} />
+          <Route path="/auth/parent/register" element={<ParentRegister />} />
+          <Route path="/auth/school/login" element={<SchoolLogin />} />
+          <Route path="/auth/school/register" element={<SchoolRegister />} />
+          <Route path="/auth/doctor/login" element={<DoctorLogin />} />
+          <Route path="/auth/doctor/register" element={<DoctorRegister />} />
           <Route path="/verify-email" element={<EmailVerificationPage />} />
           <Route path="/email-verification-required" element={<EmailVerificationRequired />} />
           <Route path="/dashboard" element={
