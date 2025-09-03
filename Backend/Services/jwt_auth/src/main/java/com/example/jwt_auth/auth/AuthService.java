@@ -205,24 +205,17 @@ public class AuthService {
         user.setEmail(request.email);
         user.setPassword(passwordEncoder.encode(request.password));
         user.setUserRole(UserRole.ADMIN);
-        user.setEmailVerified(false);
+        user.setEmailVerified(true); // Admins don't need email verification
         user.setAuthProvider("MANUAL");
         user.setIsVerified(true); // Admins are auto-verified
         
-        // Generate verification token
-        String verificationToken = UUID.randomUUID().toString();
-        user.setVerificationToken(verificationToken);
-        user.setVerificationTokenExpiry(LocalDateTime.now().plusHours(24));
+        // Admins don't need verification tokens or email verification
+        user.setVerificationToken(null);
+        user.setVerificationTokenExpiry(null);
         
         userRepository.save(user);
         
-        // Send verification email
-        try {
-            emailService.sendVerificationEmail(request.email, request.username, verificationToken);
-        } catch (Exception e) {
-            System.err.println("Failed to send verification email: " + e.getMessage());
-            System.err.println("Verification token for " + request.email + ": " + verificationToken);
-        }
+        // No email verification needed for admin users
     }
     
     @Transactional
@@ -331,5 +324,10 @@ public class AuthService {
 
     public boolean validateToken(String token) {
         return jwtUtil.validateToken(token);
+    }
+    
+    public User getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 }

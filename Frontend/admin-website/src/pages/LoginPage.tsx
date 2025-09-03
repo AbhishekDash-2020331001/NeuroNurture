@@ -1,18 +1,18 @@
+import { Lock, User } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { toast } from 'sonner'
 import { Button } from '../components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
-import { toast } from 'sonner'
-import { Lock, User } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const { login } = useAuth()
+  const { login, isLoading: authLoading } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,13 +25,26 @@ export default function LoginPage() {
         toast.success('Login successful!')
         navigate('/dashboard')
       } else {
-        toast.error('Invalid credentials')
+        toast.error('Invalid credentials or insufficient permissions')
       }
     } catch (error) {
+      console.error('Login error:', error)
       toast.error('Login failed. Please try again.')
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Show loading state while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -90,9 +103,8 @@ export default function LoginPage() {
           </form>
           
           <div className="mt-6 text-center text-sm text-gray-500">
-            <p>Demo Credentials:</p>
-                                <p>Email: admin@neuronurture.com</p>
-            <p>Password: admin123</p>
+            <p>Admin credentials are managed by the system.</p>
+            <p>Contact your administrator for access.</p>
           </div>
         </CardContent>
       </Card>

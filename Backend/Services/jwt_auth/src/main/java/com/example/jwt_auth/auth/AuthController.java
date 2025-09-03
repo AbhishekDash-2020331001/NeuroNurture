@@ -1,5 +1,8 @@
 package com.example.jwt_auth.auth;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -11,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.example.jwt_auth.user.User;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -94,7 +99,7 @@ public class AuthController {
     public ResponseEntity<String> registerAdmin(@RequestBody AdminRegistrationRequest request) {
         try {
             authService.registerAdmin(request);
-            return ResponseEntity.ok("Admin registered successfully. Please check your email to verify your account.");
+            return ResponseEntity.ok("Admin registered successfully. You can now login.");
         } catch (RuntimeException e) {
             if (e.getMessage() != null && e.getMessage().contains("User already exists")) {
                 return ResponseEntity.status(409).body("User already exists");
@@ -110,6 +115,16 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody AuthRequest request, HttpServletResponse response) {
         try {
             AuthResponse authResponse = authService.loginWithTokens(request);
+            
+            // Get user information for the response
+            User user = authService.getUserByUsername(request.username);
+            Map<String, Object> loginResponse = new HashMap<>();
+            loginResponse.put("token", authResponse.token);
+            loginResponse.put("refreshToken", authResponse.refreshToken);
+            loginResponse.put("id", user.getId());
+            loginResponse.put("email", user.getEmail());
+            loginResponse.put("role", user.getUserRole().toString());
+            
             ResponseCookie cookie = ResponseCookie.from("jwt", authResponse.token)
                     .httpOnly(true)
                     .secure(false) // For local dev, allow HTTP
@@ -118,7 +133,7 @@ public class AuthController {
                     .sameSite("Lax") // Allow cross-origin for dev
                     .build();
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-            return ResponseEntity.ok(authResponse);
+            return ResponseEntity.ok(loginResponse);
         } catch (RuntimeException e) {
             if (e.getMessage() != null && e.getMessage().contains("Please verify your email")) {
                 return ResponseEntity.status(401)
@@ -212,15 +227,39 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<String> me(Authentication auth) {
+    public ResponseEntity<?> me(Authentication auth, @RequestParam(required = false) String format) {
         System.out.println("=== /auth/me ENDPOINT ===");
         System.out.println("Authentication: " + auth);
+        System.out.println("Format requested: " + format);
         if (auth == null) {
             System.out.println("Authentication is null, returning 401");
             return ResponseEntity.status(401).body("");
         }
         System.out.println("Authentication name: " + auth.getName());
-        return ResponseEntity.ok(auth.getName());
+        
+        try {
+            // Get user information for the response
+            User user = authService.getUserByUsername(auth.getName());
+            
+            // If format=json is requested, return full user data as JSON
+            if ("json".equals(format)) {
+                Map<String, Object> userData = new HashMap<>();
+                userData.put("id", user.getId());
+                userData.put("email", user.getEmail());
+                userData.put("username", user.getUsername());
+                userData.put("role", user.getUserRole().toString());
+                userData.put("isVerified", user.getIsVerified());
+                
+                return ResponseEntity.ok(userData);
+            }
+            
+            // Default behavior: return just the email/username as plain text for backward compatibility
+            return ResponseEntity.ok(user.getEmail());
+        } catch (Exception e) {
+            System.out.println("Error getting user data: " + e.getMessage());
+            // Fallback to just returning the username as plain text for backward compatibility
+            return ResponseEntity.ok(auth.getName());
+        }
     }
 
     @PostMapping("/logout")

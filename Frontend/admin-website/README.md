@@ -5,9 +5,10 @@ A comprehensive administration panel for the NeuroNurture platform, providing to
 ## Features
 
 ### 🔐 Authentication
-- Secure admin login system
-- Role-based access control
-- Session management
+- **JWT Integration**: Uses the JWT authentication service
+- **Role-based access control**: Only ADMIN role users can access
+- **Session management**: Automatic session validation and refresh
+- **Secure cookies**: JWT tokens stored in httpOnly cookies
 
 ### 👥 User Management
 - View all doctors, schools, and parents
@@ -75,9 +76,12 @@ npm run build
 
 ## Usage
 
-### Demo Credentials
-- **Email**: admin@neuronurture.com
-- **Password**: admin123
+### Admin User Setup
+Admin users must be created manually through the JWT service API. See `ADMIN_AUTHENTICATION_SETUP.md` for detailed instructions.
+
+### Prerequisites
+- JWT authentication service running on `http://localhost:8080`
+- Admin user created and email verified
 
 ### Navigation
 - **Dashboard**: Overview of system statistics
@@ -132,12 +136,23 @@ The admin website runs on port 3001 by default to avoid conflicts with the main 
 
 ## API Integration
 
-The current version uses mock data. To integrate with a real backend:
+### Authentication ✅
+- **Completed**: Integrated with JWT authentication service
+- **Endpoints**: Uses `/auth/login`, `/auth/session`, `/auth/me`, `/auth/logout`
+- **Security**: JWT tokens in httpOnly cookies, role-based access
 
-1. Replace mock data with API calls
-2. Update authentication to use real endpoints
-3. Implement proper error handling
-4. Add loading states and error boundaries
+### Data Integration (Pending)
+The current version uses mock data for:
+- User management data
+- Pending requests
+- Subscription information
+- Support tickets
+
+To complete the integration:
+1. Replace mock data with real API calls
+2. Implement proper error handling
+3. Add loading states and error boundaries
+4. Connect to respective backend services
 
 ## Security Considerations
 

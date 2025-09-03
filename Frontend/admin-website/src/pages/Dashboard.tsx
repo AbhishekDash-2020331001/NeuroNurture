@@ -1,21 +1,21 @@
-import { Routes, Route, Link, useLocation } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { Button } from '../components/ui/button'
-import { 
-  Users, 
-  School, 
-  Stethoscope, 
-  UserCheck, 
-  CreditCard, 
-  MessageSquare, 
-  LogOut,
-  Home,
-  Shield
+import {
+    CreditCard,
+    Home,
+    LogOut,
+    MessageSquare,
+    School,
+    Shield,
+    Stethoscope,
+    UserCheck,
+    Users
 } from 'lucide-react'
-import UserManagement from '../components/UserManagement'
+import { Link, Route, Routes, useLocation } from 'react-router-dom'
 import PendingRequests from '../components/PendingRequests'
 import SubscriptionManagement from '../components/SubscriptionManagement'
 import TicketManagement from '../components/TicketManagement'
+import { Button } from '../components/ui/button'
+import UserManagement from '../components/UserManagement'
+import { useAuth } from '../contexts/AuthContext'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -26,11 +26,27 @@ const navigation = [
 ]
 
 export default function Dashboard() {
-  const { admin, logout } = useAuth()
+  const { admin, logout, isLoading } = useAuth()
   const location = useLocation()
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+  }
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
