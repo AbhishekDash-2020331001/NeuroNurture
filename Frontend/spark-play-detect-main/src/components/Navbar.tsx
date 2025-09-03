@@ -21,16 +21,62 @@ const Navbar = ({ onLogout, showLogout = true }: NavbarProps) => {
     
     // Get selected child data
     const childData = getCurrentChild();
-    if (childData) {
-      setSelectedChild(childData);
-    }
+    setSelectedChild(childData);
   }, []);
 
-  const handleHomeClick = (e: React.MouseEvent) => {
+  // Listen for localStorage changes to update selected child
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const childData = getCurrentChild();
+      setSelectedChild(childData);
+    };
+
+    // Listen for storage events (when localStorage changes in other tabs)
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for custom events (when localStorage changes in same tab)
+    window.addEventListener('childSelectionChanged', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('childSelectionChanged', handleStorageChange);
+    };
+  }, []);
+
+  const handleHomeClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     console.log('Navbar home clicked');
-    window.location.href = 'http://localhost:8081';
+    
+    try {
+      // Check if user is authenticated
+      const sessionResponse = await fetch('http://localhost:8080/auth/session', { 
+        credentials: 'include' 
+      });
+      const isAuthenticated = await sessionResponse.json();
+      
+      if (!isAuthenticated) {
+        // Not authenticated - redirect to landing page
+        console.log('User not authenticated, redirecting to landing page');
+        window.location.href = '/';
+        return;
+      }
+      
+      // User is authenticated - check if child is selected
+      if (selectedChild) {
+        // Child is selected - redirect to dashboard
+        console.log('Child selected, redirecting to dashboard');
+        window.location.href = '/dashboard';
+      } else {
+        // No child selected - redirect to children profile selection
+        console.log('No child selected, redirecting to children profiles');
+        window.location.href = '/children';
+      }
+    } catch (error) {
+      console.error('Error checking authentication status:', error);
+      // On error, redirect to landing page as fallback
+      window.location.href = '/';
+    }
   };
 
   return (

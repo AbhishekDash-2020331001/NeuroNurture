@@ -3,6 +3,7 @@ import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardTitle } from '@/components/ui/card';
 import { getCurrentChild } from '@/utils/childUtils';
+import { performLogout } from '@/utils/logoutUtils';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FloatingGeminiButton from '../components/FloatingGeminiButton';
@@ -50,8 +51,7 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     console.log('Logout button clicked');
-    await fetch('http://localhost:8080/auth/logout', { method: 'POST', credentials: 'include' });
-    window.location.href = '/'; // Full reload ensures session check and clears dashboard state
+    await performLogout();
   };
 
   if (!authChecked) {

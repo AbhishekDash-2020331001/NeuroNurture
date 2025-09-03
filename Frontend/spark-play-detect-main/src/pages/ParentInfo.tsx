@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { clearCurrentChild } from "@/utils/childUtils";
 import { Heart, Mail, MapPin, User, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -29,6 +30,9 @@ const ParentInfo = () => {
   const [userEmail, setUserEmail] = useState<string>("");
 
   useEffect(() => {
+    // Clear any previously selected child since we're setting up parent info
+    clearCurrentChild();
+    
     // Fetch user email from JWT token
     fetch('http://localhost:8080/auth/me', { credentials: 'include' })
       .then(res => res.text())

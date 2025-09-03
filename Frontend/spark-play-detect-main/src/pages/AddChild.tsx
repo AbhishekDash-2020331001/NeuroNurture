@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { clearCurrentChild } from "@/utils/childUtils";
+import { performLogout } from "@/utils/logoutUtils";
 import { Baby, Calendar, Ruler, Sparkles, User, Weight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -30,6 +32,9 @@ const AddChild = () => {
   const [parentId, setParentId] = useState<number | null>(null);
 
   useEffect(() => {
+    // Clear any previously selected child since we're adding a new one
+    clearCurrentChild();
+    
     // Get parent info to get parentId
     fetch('http://localhost:8080/auth/me', { credentials: 'include' })
       .then(res => res.text())
@@ -92,11 +97,7 @@ const AddChild = () => {
 
   const handleLogout = async () => {
     try {
-      await fetch('http://localhost:8080/auth/logout', { 
-        method: 'POST', 
-        credentials: 'include' 
-      });
-      window.location.href = '/'; // Full reload ensures session check and clears state
+      await performLogout();
     } catch (error) {
       console.error('Error during logout:', error);
       toast.error("Logout failed. Please try again.");

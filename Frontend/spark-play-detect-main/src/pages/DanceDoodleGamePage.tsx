@@ -2,6 +2,7 @@ import DanceDoodleGame from '@/components/games/danceDoodle/DanceDoodleGame';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { stopAllCameraStreams } from '@/utils/cameraUtils';
+import { performLogout } from '@/utils/logoutUtils';
 import { ArrowLeft, Star, Trophy, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -32,8 +33,7 @@ const DanceDoodleGamePage = () => {
 
   const handleLogout = async () => {
     console.log('Logout button clicked');
-    await fetch('http://localhost:8080/auth/logout', { method: 'POST', credentials: 'include' });
-    window.location.href = '/';
+    await performLogout();
   };
 
   if (!authChecked) {

@@ -68,6 +68,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         }
         
         String token = jwtUtil.generateToken(user.getUsername(), user.getUserRole().toString());
+        System.out.println("Generated JWT token: " + token.substring(0, Math.min(50, token.length())) + "...");
         authService.createRefreshToken(user);
 
         ResponseCookie cookie = ResponseCookie.from("jwt", token)
@@ -77,6 +78,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
                 .maxAge(60 * 60)
                 .sameSite("Lax") // Allow cross-origin for dev
                 .build();
+        System.out.println("Setting JWT cookie: " + cookie.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         // Redirect based on user role

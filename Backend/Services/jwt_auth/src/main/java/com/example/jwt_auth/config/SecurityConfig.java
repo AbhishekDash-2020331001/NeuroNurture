@@ -119,7 +119,6 @@ public class SecurityConfig {
                     exception.printStackTrace();
                     response.sendRedirect("http://localhost:8081/auth?error=oauth2_failed");
                 })
-                .defaultSuccessUrl("http://localhost:8081/auth", true)
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 

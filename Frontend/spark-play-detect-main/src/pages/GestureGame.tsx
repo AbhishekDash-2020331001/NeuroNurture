@@ -2,6 +2,7 @@ import GestureRecognizerComponent from '@/components/games/gestureRecognizing/Ge
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { stopAllCameraStreams } from '@/utils/cameraUtils';
+import { performLogout } from '@/utils/logoutUtils';
 import { ArrowLeft, Star, Trophy, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -34,8 +35,7 @@ const GestureGame = () => {
 
   const handleLogout = async () => {
     console.log('Logout button clicked');
-    await fetch('http://localhost:8080/auth/logout', { method: 'POST', credentials: 'include' });
-    window.location.href = '/';
+    await performLogout();
   };
 
   if (!authChecked) {

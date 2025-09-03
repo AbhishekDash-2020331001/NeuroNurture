@@ -1,6 +1,7 @@
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { performLogout } from "@/utils/logoutUtils";
 import { Baby, Crown, Heart, Plus, Rocket, Sparkles, Star, Trash2, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -146,11 +147,7 @@ const ChildrenProfiles = () => {
 
   const handleLogout = async () => {
     try {
-      await fetch('http://localhost:8080/auth/logout', { 
-        method: 'POST', 
-        credentials: 'include' 
-      });
-      window.location.href = '/'; // Full reload ensures session check and clears state
+      await performLogout();
     } catch (error) {
       console.error('Error during logout:', error);
       toast.error("Logout failed. Please try again.");

@@ -14,4 +14,6 @@ export const getCurrentChild = () => {
 export const clearCurrentChild = () => {
   localStorage.removeItem("selectedChildId");
   localStorage.removeItem("selectedChild");
+  // Dispatch custom event to notify components of the change
+  window.dispatchEvent(new CustomEvent('childSelectionChanged'));
 }; 
