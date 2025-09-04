@@ -36,6 +36,16 @@ import ParentLogin from "./pages/auth/ParentLogin";
 import ParentRegister from "./pages/auth/ParentRegister";
 import SchoolLogin from "./pages/auth/SchoolLogin";
 import SchoolRegister from "./pages/auth/SchoolRegister";
+// School Dashboard imports
+import SchoolDashboardLayout from "./components/school/SchoolDashboardLayout";
+import SchoolDashboard from "./pages/school/SchoolDashboard";
+import Children from "./pages/school/Children";
+import ChildProfile from "./pages/school/ChildProfile";
+import Tasks from "./pages/school/Tasks";
+import TaskDetails from "./pages/school/TaskDetails";
+import Tournaments from "./pages/school/Tournaments";
+import { SchoolAuthProvider } from "./contexts/school/SchoolAuthContext";
+import SchoolAuthGuard from "./components/school/SchoolAuthGuard";
 const queryClient = new QueryClient();
 
 // Component to handle global camera cleanup
@@ -151,6 +161,23 @@ const App = () => (
               </EmailVerificationGuard>
             </ProtectedRoute>
           } />
+          {/* School Dashboard Routes */}
+          <Route path="/school" element={
+            <SchoolAuthProvider>
+              <SchoolAuthGuard>
+                <SchoolDashboardLayout />
+              </SchoolAuthGuard>
+            </SchoolAuthProvider>
+          }>
+            <Route path="dashboard" element={<SchoolDashboard />} />
+            <Route path="children" element={<Children />} />
+                              <Route path="children/:childId" element={<ChildProfile />} />
+                  <Route path="tasks" element={<Tasks />} />
+                  <Route path="tasks/:taskId" element={<TaskDetails />} />
+                  <Route path="tournaments" element={<Tournaments />} />
+                  {/* Additional school routes will be added here */}
+          </Route>
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -3,27 +3,38 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Brain, Building2, Eye, EyeOff, GraduationCap } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { SchoolAuthProvider, useSchoolAuth } from '@/contexts/school/SchoolAuthContext';
 
-const SchoolLogin: React.FC = () => {
+const SchoolLoginForm: React.FC = () => {
   const navigate = useNavigate();
+  const { login } = useSchoolAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
     
-    // TODO: Implement actual login logic
-    setTimeout(() => {
+    try {
+      const success = await login(formData.email, formData.password);
+      if (success) {
+        navigate('/school/dashboard');
+      } else {
+        setError('Invalid email or password. Use school@demo.com / school123');
+      }
+    } catch (err) {
+      setError('Login failed. Please try again.');
+    } finally {
       setIsLoading(false);
-      navigate('/school/dashboard'); // Redirect to school dashboard
-    }, 2000);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,12 +68,17 @@ const SchoolLogin: React.FC = () => {
               </div>
             </div>
             <CardTitle className="text-2xl font-bold text-gray-900">School Access</CardTitle>
-            <CardDescription className="text-gray-600">
-              Sign in to manage student development and organize competitions
-            </CardDescription>
+                         <CardDescription className="text-gray-600">
+               Sign in to manage child development and organize competitions
+             </CardDescription>
           </CardHeader>
           
           <CardContent>
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium text-gray-700">
@@ -158,12 +174,12 @@ const SchoolLogin: React.FC = () => {
             {/* School Features Preview */}
             <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
               <h4 className="text-sm font-semibold text-green-800 mb-2">School Features:</h4>
-              <ul className="text-xs text-green-700 space-y-1">
-                <li>• Student progress tracking</li>
-                <li>• Competition organization</li>
-                <li>• Performance analytics</li>
-                <li>• Task assignment system</li>
-              </ul>
+                             <ul className="text-xs text-green-700 space-y-1">
+                 <li>• Child progress tracking</li>
+                 <li>• Competition organization</li>
+                 <li>• Performance analytics</li>
+                 <li>• Task assignment system</li>
+               </ul>
             </div>
           </CardContent>
         </Card>
@@ -178,8 +194,16 @@ const SchoolLogin: React.FC = () => {
             Back to role selection
           </Link>
         </div>
+              </div>
       </div>
-    </div>
+    );
+  };
+
+const SchoolLogin: React.FC = () => {
+  return (
+    <SchoolAuthProvider>
+      <SchoolLoginForm />
+    </SchoolAuthProvider>
   );
 };
 
