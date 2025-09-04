@@ -20,6 +20,12 @@ public class ParentController {
     @Autowired private ParentRepository parentRepository;
     @Autowired private ChildRepository childRepository;
 
+    // Get all parents
+    @GetMapping
+    public ResponseEntity<List<Parent>> getAllParents() {
+        return ResponseEntity.ok(parentRepository.findAll());
+    }
+
     // Get parent by email
     @GetMapping("/by-email/{email}")
     public ResponseEntity<Parent> getParentByEmail(@PathVariable String email) {
@@ -46,6 +52,10 @@ public class ParentController {
             p.setAddress(parent.getAddress());
             p.setNumberOfChildren(parent.getNumberOfChildren());
             p.setSuspectedAutisticChildCount(parent.getSuspectedAutisticChildCount());
+            // Only update status if provided
+            if (parent.getStatus() != null) {
+                p.setStatus(parent.getStatus());
+            }
             return ResponseEntity.ok(parentRepository.save(p));
         } else {
             return ResponseEntity.ok(parentRepository.save(parent));
@@ -61,6 +71,10 @@ public class ParentController {
                     existingParent.setAddress(parent.getAddress());
                     existingParent.setNumberOfChildren(parent.getNumberOfChildren());
                     existingParent.setSuspectedAutisticChildCount(parent.getSuspectedAutisticChildCount());
+                    // Allow updating status field
+                    if (parent.getStatus() != null) {
+                        existingParent.setStatus(parent.getStatus());
+                    }
                     return ResponseEntity.ok(parentRepository.save(existingParent));
                 })
                 .orElse(ResponseEntity.notFound().build());
@@ -97,5 +111,22 @@ public class ParentController {
         }
         childRepository.deleteById(childId);
         return ResponseEntity.noContent().build();
+    }
+
+    // Update parent status (active/suspended)
+    @PutMapping("/{parentId}/status")
+    public ResponseEntity<Parent> updateParentStatus(@PathVariable Long parentId, @RequestBody String status) {
+        Optional<Parent> parentOpt = parentRepository.findById(parentId);
+        if (parentOpt.isPresent()) {
+            Parent existingParent = parentOpt.get();
+            if ("active".equals(status) || "suspended".equals(status)) {
+                existingParent.setStatus(status);
+                return ResponseEntity.ok(parentRepository.save(existingParent));
+            } else {
+                return ResponseEntity.badRequest().build();
+            }
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 } 

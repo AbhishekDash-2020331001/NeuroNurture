@@ -1,18 +1,21 @@
-import { useState } from 'react'
+import {
+    Ban,
+    CheckCircle,
+    ChevronDown,
+    ChevronRight,
+    Eye,
+    Loader2,
+    School,
+    Stethoscope,
+    UserCheck,
+    Users
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { adminService } from '../services/adminService'
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
-import { 
-  Users, 
-  School, 
-  Stethoscope, 
-  UserCheck, 
-  ChevronDown, 
-  ChevronRight,
-  Eye,
-  Ban,
-  CheckCircle
-} from 'lucide-react'
 
+// Convert Parent to User interface for compatibility
 interface User {
   id: string
   name: string
@@ -29,56 +32,48 @@ interface Child {
   progress: number
 }
 
-const mockUsers: User[] = [
-  {
-    id: '1',
-    name: 'John Smith',
-    email: 'john.smith@email.com',
-    status: 'active',
-    type: 'parent',
-    children: [
-      { id: 'c1', name: 'Emma Smith', age: 8, progress: 75 },
-      { id: 'c2', name: 'Liam Smith', age: 6, progress: 60 }
-    ]
-  },
-  {
-    id: '2',
-    name: 'ABC Elementary School',
-    email: 'admin@abcelementary.edu',
-    status: 'active',
-    type: 'school',
-    children: [
-      { id: 'c3', name: 'Sarah Johnson', age: 7, progress: 85 },
-      { id: 'c4', name: 'Michael Brown', age: 9, progress: 90 },
-      { id: 'c5', name: 'Emily Davis', age: 8, progress: 78 }
-    ]
-  },
-  {
-    id: '3',
-    name: 'Dr. Sarah Wilson',
-    email: 'dr.wilson@clinic.com',
-    status: 'active',
-    type: 'doctor',
-    children: [
-      { id: 'c6', name: 'Alex Thompson', age: 10, progress: 92 },
-      { id: 'c7', name: 'Sophie Lee', age: 7, progress: 68 }
-    ]
-  },
-  {
-    id: '4',
-    name: 'Mary Johnson',
-    email: 'mary.johnson@email.com',
-    status: 'suspended',
-    type: 'parent',
-    children: [
-      { id: 'c8', name: 'David Johnson', age: 9, progress: 45 }
-    ]
-  }
-]
-
 export default function UserManagement() {
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set())
   const [selectedType, setSelectedType] = useState<'all' | 'parent' | 'school' | 'doctor'>('all')
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch parents data on component mount
+  useEffect(() => {
+    const fetchParents = async () => {
+      try {
+        setLoading(true)
+        const parents = await adminService.getAllParents()
+        
+        // Convert Parent[] to User[] format
+        const convertedUsers: User[] = parents.map(parent => ({
+          id: parent.id.toString(),
+          name: parent.name,
+          email: parent.email,
+          status: parent.status,
+          type: 'parent' as const,
+          children: parent.children.map(child => ({
+            id: child.id.toString(),
+            name: child.name,
+            age: child.age,
+            progress: Math.floor(Math.random() * 100) // Mock progress for now
+          }))
+        }))
+        
+        setUsers(convertedUsers)
+        setError(null)
+      } catch (err) {
+        console.error('Error fetching parents:', err)
+        setError('Failed to load parent data')
+        setUsers([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchParents()
+  }, [])
 
   const toggleUserExpansion = (userId: string) => {
     const newExpanded = new Set(expandedUsers)
@@ -90,9 +85,30 @@ export default function UserManagement() {
     setExpandedUsers(newExpanded)
   }
 
+  const handleStatusUpdate = async (userId: string, newStatus: 'active' | 'suspended') => {
+    try {
+      const parentId = parseInt(userId)
+      const updatedParent = await adminService.updateParentStatus(parentId, newStatus)
+      
+      if (updatedParent) {
+        // Update the user in the local state
+        setUsers(prevUsers => 
+          prevUsers.map(user => 
+            user.id === userId 
+              ? { ...user, status: newStatus }
+              : user
+          )
+        )
+      }
+    } catch (err) {
+      console.error('Error updating parent status:', err)
+      setError('Failed to update parent status')
+    }
+  }
+
   const filteredUsers = selectedType === 'all' 
-    ? mockUsers 
-    : mockUsers.filter(user => user.type === selectedType)
+    ? users 
+    : users.filter(user => user.type === selectedType)
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -121,6 +137,26 @@ export default function UserManagement() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading parent data...</span>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600 mb-4">{error}</p>
+        <Button onClick={() => window.location.reload()}>
+          Retry
+        </Button>
+      </div>
+    )
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -138,26 +174,33 @@ export default function UserManagement() {
             size="sm"
             onClick={() => setSelectedType('parent')}
           >
-            Parents
+            Parents ({users.filter(u => u.type === 'parent').length})
           </Button>
           <Button
             variant={selectedType === 'school' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setSelectedType('school')}
+            disabled
           >
-            Schools
+            Schools (Coming Soon)
           </Button>
           <Button
             variant={selectedType === 'doctor' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setSelectedType('doctor')}
+            disabled
           >
-            Doctors
+            Doctors (Coming Soon)
           </Button>
         </div>
       </div>
 
-      <div className="space-y-4">
+      {filteredUsers.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-gray-500">No parents found.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
         {filteredUsers.map((user) => (
           <Card key={user.id} className="overflow-hidden">
             <CardHeader className="pb-3">
@@ -181,12 +224,22 @@ export default function UserManagement() {
                       View
                     </Button>
                     {user.status === 'active' ? (
-                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => handleStatusUpdate(user.id, 'suspended')}
+                      >
                         <Ban className="h-4 w-4 mr-2" />
                         Suspend
                       </Button>
                     ) : (
-                      <Button variant="outline" size="sm" className="text-green-600 hover:text-green-700">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-green-600 hover:text-green-700"
+                        onClick={() => handleStatusUpdate(user.id, 'active')}
+                      >
                         <CheckCircle className="h-4 w-4 mr-2" />
                         Activate
                       </Button>
@@ -240,7 +293,8 @@ export default function UserManagement() {
             )}
           </Card>
         ))}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

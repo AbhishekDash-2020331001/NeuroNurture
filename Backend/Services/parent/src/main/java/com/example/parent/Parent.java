@@ -34,6 +34,9 @@ public class Parent {
     private String address;
     private Integer numberOfChildren;
     private Integer suspectedAutisticChildCount;
+    
+    @Column(name = "status", nullable = false)
+    private String status = "active"; // Default to "active", can be "active" or "suspended"
 
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
