@@ -26,8 +26,8 @@ interface Tournament {
     endDate: string;
     status: 'upcoming' | 'active' | 'completed' | 'cancelled';
     games: string[];
-    participants: number;
     grade: string;
+    participants: number;
     prizes: string;
     createdAt: string;
 }
@@ -338,25 +338,25 @@ const Tournaments: React.FC = () => {
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">
                                     Tournament
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
                                     Grade
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
                                     Games
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
                                     Participants
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-36">
                                     Duration
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
                                     Status
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                                     Actions
                                 </th>
                             </tr>
@@ -364,49 +364,95 @@ const Tournaments: React.FC = () => {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {filteredTournaments.map((tournament) => (
                                 <tr key={tournament.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div>
+                                    <td className="px-6 py-4">
+                                        <div className="space-y-2">
                                             <div className="text-sm font-medium text-gray-900">{tournament.name}</div>
                                             <div className="text-sm text-gray-500">{tournament.description}</div>
+                                            <div className="text-xs text-green-600 font-medium">
+                                                <span className="inline-flex items-center">
+                                                    <Trophy className="h-3 w-3 mr-1" />
+                                                    {tournament.prizes}
+                                                </span>
+                                            </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className="inline-flex px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                                            {tournament.grade}
-                                        </span>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center">
+                                            <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg mr-3">
+                                                <span className="text-white text-xs font-bold">
+                                                    {tournament.grade.split(' ')[0].charAt(0)}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-semibold text-gray-900">
+                                                    {tournament.grade}
+                                                </div>
+                                                <div className="text-xs text-gray-500">
+                                                    Level
+                                                </div>
+                                            </div>
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="flex flex-wrap gap-1">
+                                    <td className="px-6 py-4">
+                                        <div className="space-y-1">
                                             {tournament.games.map((gameId) => {
                                                 const game = availableGames.find(g => g.id === gameId);
                                                 return game ? (
-                                                    <span key={gameId} className="inline-flex items-center px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
-                                                        {game.icon} {game.name}
-                                                    </span>
+                                                    <div key={gameId} className="flex items-center text-xs font-medium bg-gray-100 text-gray-800 rounded-full px-2 py-1 whitespace-nowrap">
+                                                        <span className="mr-1">{game.icon}</span>
+                                                        <span>{game.name}</span>
+                                                    </div>
                                                 ) : null;
                                             })}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {tournament.participants}
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center">
+                                            <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg mr-3">
+                                                <Users className="h-4 w-4 text-white" />
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-semibold text-gray-900">
+                                                    {tournament.participants}
+                                                </div>
+                                                <div className="text-xs text-gray-500">
+                                                    Children
+                                                </div>
+                                            </div>
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {formatDate(tournament.startDate)} - {formatDate(tournament.endDate)}
+                                    <td className="px-6 py-4 text-sm text-gray-900">
+                                        <div className="space-y-1">
+                                            <div className="flex items-center text-xs text-gray-600">
+                                                <Calendar className="h-3 w-3 mr-1" />
+                                                <span className="font-medium">Start:</span>
+                                            </div>
+                                            <div className="text-xs text-gray-900 font-medium ml-4">
+                                                {formatDate(tournament.startDate)}
+                                            </div>
+                                            <div className="flex items-center text-xs text-gray-600">
+                                                <Calendar className="h-3 w-3 mr-1" />
+                                                <span className="font-medium">End:</span>
+                                            </div>
+                                            <div className="text-xs text-gray-900 font-medium ml-4">
+                                                {formatDate(tournament.endDate)}
+                                            </div>
+                                        </div>
                                     </td>
 
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <td className="px-6 py-4">
                                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(tournament.status)}`}>
                                             {getStatusIcon(tournament.status)}
                                             <span className="ml-1">{tournament.status.charAt(0).toUpperCase() + tournament.status.slice(1)}</span>
                                         </span>
                                     </td>
 
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <td className="px-6 py-4">
                                         <div className="flex space-x-2">
                                             <button
                                                 onClick={() => navigate(`/school/tournaments/${tournament.id}`)}
                                                 className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                title="View Details"
+                                                title="View Leaderboard"
                                             >
                                                 <Eye className="h-4 w-4" />
                                             </button>
@@ -442,21 +488,26 @@ const Tournaments: React.FC = () => {
 
             {/* Create Tournament Modal */}
             {showCreateModal && (
-                <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+                <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden border border-gray-100">
                         {/* Modal Header */}
-                        <div className="bg-white border-b border-gray-200 px-6 py-4">
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200 px-8 py-6">
                             <div className="flex items-center justify-between">
-                                <div>
-                                    <h3 className="text-xl font-semibold text-gray-900">Create New Tournament</h3>
-                                    <p className="text-gray-600 text-sm">Set up a new competitive tournament for children</p>
+                                <div className="flex items-center space-x-4">
+                                    <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl">
+                                        <Trophy className="h-6 w-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-bold text-gray-900">Create New Tournament</h3>
+                                        <p className="text-gray-600 text-sm mt-1">Set up a competitive tournament for children</p>
+                                    </div>
                                 </div>
                                 <button
                                     onClick={() => setShowCreateModal(false)}
-                                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                    className="p-3 hover:bg-white hover:bg-opacity-50 rounded-xl transition-all duration-200 group"
                                 >
                                     <span className="sr-only">Close</span>
-                                    <span className="text-2xl">&times;</span>
+                                    <span className="text-2xl text-gray-400 group-hover:text-gray-600 transition-colors">&times;</span>
                                 </button>
                             </div>
                         </div>
@@ -589,17 +640,17 @@ const Tournaments: React.FC = () => {
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
-                            <div className="flex justify-end space-x-3">
+                        <div className="bg-white border-t border-gray-200 px-8 py-6 flex-shrink-0">
+                            <div className="flex justify-end space-x-4">
                                 <button
                                     onClick={() => setShowCreateModal(false)}
-                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                    className="px-6 py-3 text-sm font-semibold text-gray-700 bg-gray-100 border border-gray-200 rounded-xl hover:bg-gray-200 transition-all duration-200"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={handleCreateTournament}
-                                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                                    className="px-8 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                                 >
                                     Create Tournament
                                 </button>
@@ -611,45 +662,169 @@ const Tournaments: React.FC = () => {
 
             {/* Edit Tournament Modal */}
             {showEditModal && selectedTournament && (
-                <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+                <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden border border-gray-100 flex flex-col">
                         {/* Modal Header */}
-                        <div className="bg-white border-b border-gray-200 px-6 py-4">
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-gray-200 px-8 py-6">
                             <div className="flex items-center justify-between">
-                                <div>
-                                    <h3 className="text-xl font-semibold text-gray-900">Edit Tournament</h3>
-                                    <p className="text-gray-600 text-sm">Update tournament details</p>
+                                <div className="flex items-center space-x-4">
+                                    <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
+                                        <Edit className="h-6 w-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-bold text-gray-900">Edit Tournament</h3>
+                                        <p className="text-gray-600 text-sm mt-1">Update tournament details and settings</p>
+                                    </div>
                                 </div>
                                 <button
                                     onClick={() => setShowEditModal(false)}
-                                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                    className="p-3 hover:bg-white hover:bg-opacity-50 rounded-xl transition-all duration-200 group"
                                 >
                                     <span className="sr-only">Close</span>
-                                    <span className="text-2xl">&times;</span>
+                                    <span className="text-2xl text-gray-400 group-hover:text-gray-600 transition-colors">&times;</span>
                                 </button>
                             </div>
                         </div>
 
-                        {/* Modal Content - Same as create but with edit button */}
+                        {/* Modal Content */}
                         <div className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
-                            {/* Same content as create modal */}
-                            <div className="text-center py-8">
-                                <p className="text-gray-500">Edit form content would go here (same as create)</p>
+                            <div className="space-y-6">
+                                {/* Basic Information */}
+                                <div>
+                                    <h4 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Tournament Name *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={tournamentForm.name}
+                                                onChange={(e) => setTournamentForm(prev => ({ ...prev, name: e.target.value }))}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                placeholder="Enter tournament name"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Grade *
+                                            </label>
+                                            <select
+                                                value={tournamentForm.grade}
+                                                onChange={(e) => setTournamentForm(prev => ({ ...prev, grade: e.target.value }))}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            >
+                                                <option value="">Select Grade</option>
+                                                {availableGrades.map(grade => (
+                                                    <option key={grade} value={grade}>{grade}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Description *
+                                        </label>
+                                        <textarea
+                                            value={tournamentForm.description}
+                                            onChange={(e) => setTournamentForm(prev => ({ ...prev, description: e.target.value }))}
+                                            rows={3}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            placeholder="Describe the tournament purpose and goals"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Tournament Timeline */}
+                                <div>
+                                    <h4 className="text-lg font-medium text-gray-900 mb-4">Tournament Timeline</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Start Date *
+                                            </label>
+                                            <input
+                                                type="date"
+                                                value={tournamentForm.startDate}
+                                                onChange={(e) => setTournamentForm(prev => ({ ...prev, startDate: e.target.value }))}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                End Date *
+                                            </label>
+                                            <input
+                                                type="date"
+                                                value={tournamentForm.endDate}
+                                                onChange={(e) => setTournamentForm(prev => ({ ...prev, endDate: e.target.value }))}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                min={tournamentForm.startDate}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Game Selection */}
+                                <div>
+                                    <h4 className="text-lg font-medium text-gray-900 mb-4">Select Games</h4>
+                                    <p className="text-sm text-gray-600 mb-4">Choose which games will be included in this tournament</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {availableGames.map((game) => (
+                                            <div
+                                                key={game.id}
+                                                onClick={() => toggleGameSelection(game.id)}
+                                                className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${tournamentForm.games.includes(game.id)
+                                                        ? 'border-blue-500 bg-blue-50'
+                                                        : 'border-gray-200 hover:border-gray-300'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center space-x-3">
+                                                    <span className="text-2xl">{game.icon}</span>
+                                                    <div>
+                                                        <h5 className="font-medium text-gray-900">{game.name}</h5>
+                                                        <p className="text-xs text-gray-500">{game.category}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Prizes */}
+                                <div>
+                                    <h4 className="text-lg font-medium text-gray-900 mb-4">Prizes</h4>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Prizes
+                                        </label>
+                                        <textarea
+                                            value={tournamentForm.prizes}
+                                            onChange={(e) => setTournamentForm(prev => ({ ...prev, prizes: e.target.value }))}
+                                            rows={2}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            placeholder="Describe the prizes for winners"
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
-                            <div className="flex justify-end space-x-3">
+                        <div className="bg-white border-t border-gray-200 px-8 py-6 flex-shrink-0">
+                            <div className="flex justify-end space-x-4">
                                 <button
                                     onClick={() => setShowEditModal(false)}
-                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                    className="px-6 py-3 text-sm font-semibold text-gray-700 bg-gray-100 border border-gray-200 rounded-xl hover:bg-gray-200 transition-all duration-200"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={handleEditTournament}
-                                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                                    className="px-8 py-3 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                                 >
                                     Update Tournament
                                 </button>
@@ -661,32 +836,38 @@ const Tournaments: React.FC = () => {
 
             {/* Delete Confirmation Modal */}
             {showDeleteModal && selectedTournament && (
-                <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-                        <div className="p-6">
-                            <div className="flex items-center space-x-3 mb-4">
-                                <div className="p-2 bg-red-100 rounded-lg">
-                                    <Trash2 className="h-6 w-6 text-red-600" />
+                <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md border border-gray-100">
+                        <div className="p-8">
+                            <div className="flex items-center space-x-4 mb-6">
+                                <div className="p-4 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl">
+                                    <Trash2 className="h-8 w-8 text-white" />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-semibold text-gray-900">Delete Tournament</h3>
+                                    <h3 className="text-2xl font-bold text-gray-900">Delete Tournament</h3>
+                                    <p className="text-gray-500 text-sm mt-1">This action cannot be undone</p>
                                 </div>
                             </div>
 
-                            <p className="text-gray-600 mb-6">
-                                Are you sure you want to delete "{selectedTournament.name}"? This action cannot be undone.
-                            </p>
+                            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+                                <p className="text-gray-700 font-medium">
+                                    Are you sure you want to delete <span className="text-red-600 font-semibold">"{selectedTournament.name}"</span>?
+                                </p>
+                                <p className="text-gray-600 text-sm mt-2">
+                                    All tournament data, leaderboards, and participant records will be permanently removed.
+                                </p>
+                            </div>
 
-                            <div className="flex justify-end space-x-3">
+                            <div className="flex justify-end space-x-4">
                                 <button
                                     onClick={() => setShowDeleteModal(false)}
-                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                    className="px-6 py-3 text-sm font-semibold text-gray-700 bg-gray-100 border border-gray-200 rounded-xl hover:bg-gray-200 transition-all duration-200"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={handleDeleteTournament}
-                                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+                                    className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-red-600 to-red-700 rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-200 shadow-lg hover:shadow-xl"
                                 >
                                     Delete Tournament
                                 </button>
@@ -700,3 +881,4 @@ const Tournaments: React.FC = () => {
 };
 
 export default Tournaments;
+

@@ -48,7 +48,8 @@ import Children from "./pages/school/Children";
 import SchoolDashboard from "./pages/school/SchoolDashboard";
 import TaskDetails from "./pages/school/TaskDetails";
 import Tasks from "./pages/school/Tasks";
-import Tournaments from "./pages/school/tournaments";
+import Tournaments from "./pages/school/Tournaments";
+import TournamentDetails from "./pages/school/TournamentDetails";
 const queryClient = new QueryClient();
 
 // Component to handle global camera cleanup
@@ -195,11 +196,12 @@ const App = () => (
           }>
             <Route path="dashboard" element={<SchoolDashboard />} />
             <Route path="children" element={<Children />} />
-                              <Route path="children/:childId" element={<ChildProfile />} />
-                  <Route path="tasks" element={<Tasks />} />
-                  <Route path="tasks/:taskId" element={<TaskDetails />} />
-                  <Route path="tournaments" element={<Tournaments />} />
-                  {/* Additional school routes will be added here */}
+            <Route path="children/:childId" element={<ChildProfile />} />
+            <Route path="tasks" element={<Tasks />} />
+            <Route path="tasks/:taskId" element={<TaskDetails />} />
+            <Route path="tournaments" element={<Tournaments />} />
+            <Route path="tournaments/:id" element={<TournamentDetails />} />
+            {/* Additional school routes will be added here */}
           </Route>
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
