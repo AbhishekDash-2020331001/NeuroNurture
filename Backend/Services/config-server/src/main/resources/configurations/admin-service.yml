@@ -16,6 +16,10 @@ spring:
 server:
   port: 8090
 
+jwt:
+  secret: 40080cf6748b890c2f68d1cd28dd7dff4b1c86b3bde2fde127ec346ee47573cb
+  expiration: 86400000
+
 
 
 

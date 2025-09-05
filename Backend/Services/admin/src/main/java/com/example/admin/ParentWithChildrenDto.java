@@ -29,7 +29,7 @@ public class ParentWithChildrenDto {
         private Long id;
         private String name;
         private String gender;
-        private Integer age;
+        private String dateOfBirth;
         private Double height;
         private Double weight;
     }

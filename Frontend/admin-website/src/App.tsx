@@ -1,15 +1,19 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
 import { Toaster } from 'sonner'
-import LoginPage from './pages/LoginPage'
-import Dashboard from './pages/Dashboard'
-import { AuthProvider, useAuth } from './contexts/AuthContext'
 import './App.css'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import Dashboard from './pages/Dashboard'
+import LoginPage from './pages/LoginPage'
 
 const queryClient = new QueryClient()
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
+  
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
   
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />

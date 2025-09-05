@@ -108,7 +108,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-            // OAuth2 login configuration
+            // OAuth2 login configuration - only for OAuth-specific paths
             .oauth2Login(oauth2 -> oauth2
                 .successHandler(oAuth2SuccessHandler)
                 .failureHandler((request, response, exception) -> {
@@ -119,6 +119,7 @@ public class SecurityConfig {
                     exception.printStackTrace();
                     response.sendRedirect("http://localhost:8081/auth?error=oauth2_failed");
                 })
+                .loginPage("/auth/oauth2/authorization/google")
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 

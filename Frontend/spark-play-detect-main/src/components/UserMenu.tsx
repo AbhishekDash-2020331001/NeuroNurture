@@ -11,6 +11,7 @@ import {
     Crown,
     Heart,
     LogOut,
+    MessageSquare,
     Settings,
     User,
     Users
@@ -65,6 +66,11 @@ const UserMenu = ({ onLogout, showLogout = true, username, selectedChild }: User
       .catch(() => {
         navigate("/parent-info");
       });
+  };
+
+  const handleReportIssuesClick = () => {
+    console.log('Report Issues clicked');
+    navigate("/tickets");
   };
 
   return (
@@ -146,6 +152,24 @@ const UserMenu = ({ onLogout, showLogout = true, username, selectedChild }: User
               </p>
               <p className="text-xs text-gray-500">
                 View or edit parent details
+              </p>
+            </div>
+          </DropdownMenuItem>
+
+          {/* Report Issues */}
+          <DropdownMenuItem
+            onClick={handleReportIssuesClick}
+            className="flex items-center space-x-3 px-3 py-2.5 rounded-md hover:bg-gray-50 cursor-pointer group transition-all duration-200"
+          >
+            <div className="w-8 h-8 rounded-md bg-orange-100 flex items-center justify-center group-hover:bg-orange-200 transition-colors duration-200">
+              <MessageSquare className="w-4 h-4 text-orange-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">
+                Report Issues
+              </p>
+              <p className="text-xs text-gray-500">
+                Get help and support
               </p>
             </div>
           </DropdownMenuItem>

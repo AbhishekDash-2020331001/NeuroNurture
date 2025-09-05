@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
+import { adminAuthService } from '../services/adminAuthService'
 
 interface Admin {
   id: string
@@ -17,12 +18,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-const JWT_SERVICE_URL = 'http://localhost:8080'
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [admin, setAdmin] = useState<Admin | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  
 
   useEffect(() => {
     // Check if admin is already logged in by validating session
@@ -40,53 +40,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkSession = async () => {
     try {
-      const response = await fetch(`${JWT_SERVICE_URL}/auth/session`, {
-        credentials: 'include'
-      })
-      
-      if (response.ok) {
-        const isAuthenticated = await response.json()
-        if (isAuthenticated) {
-          // Get user info to verify it's an admin
-          const userResponse = await fetch(`${JWT_SERVICE_URL}/auth/me?format=json`, {
-            credentials: 'include'
-          })
-          
-          if (userResponse.ok) {
-            const userData = await userResponse.json()
-            if (userData.role === 'ADMIN') {
-              const adminData: Admin = {
-                id: userData.id || '1',
-                email: userData.email,
-                name: userData.name || 'System Administrator',
-                role: 'admin'
-              }
-              setAdmin(adminData)
-              setIsAuthenticated(true)
-            } else {
-              // User is authenticated but not an admin
-              console.warn('Authenticated user is not an admin:', userData.role)
-              setAdmin(null)
-              setIsAuthenticated(false)
-            }
-          } else {
-            // Session exists but user info fetch failed
-            console.warn('Failed to fetch user info during session check')
-            setAdmin(null)
-            setIsAuthenticated(false)
-          }
-        } else {
-          // Not authenticated
-          setAdmin(null)
-          setIsAuthenticated(false)
-        }
-      } else {
-        // Session check failed
+      const token = adminAuthService.getToken()
+      if (!token) {
         setAdmin(null)
         setIsAuthenticated(false)
+        return
       }
+
+      // Verify token with admin service
+      const adminData = await adminAuthService.getCurrentAdmin(token)
+      
+      const admin: Admin = {
+        id: adminData.adminId.toString(),
+        email: adminData.email,
+        name: adminData.username,
+        role: 'admin'
+      }
+      setAdmin(admin)
+      setIsAuthenticated(true)
     } catch (error) {
       console.error('Session check error:', error)
+      adminAuthService.removeToken()
       setAdmin(null)
       setIsAuthenticated(false)
     } finally {
@@ -96,36 +70,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch(`${JWT_SERVICE_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ username: email, password })
-      })
-
-      if (response.ok) {
-        const userData = await response.json()
-        
-        // Verify this is an admin user
-        if (userData.role === 'ADMIN') {
-          const adminData: Admin = {
-            id: userData.id || '1',
-            email: userData.email,
-            name: userData.name || 'System Administrator',
-            role: 'admin'
-          }
-          
-          setAdmin(adminData)
-          setIsAuthenticated(true)
-          return true
-        } else {
-          // Not an admin user
-          return false
-        }
+      const loginData = await adminAuthService.login(email, password)
+      
+      // Store token
+      adminAuthService.setToken(loginData.token)
+      
+      const admin: Admin = {
+        id: loginData.adminId.toString(),
+        email: loginData.email,
+        name: loginData.username,
+        role: 'admin'
       }
-      return false
+      
+      setAdmin(admin)
+      setIsAuthenticated(true)
+      return true
     } catch (error) {
       console.error('Login error:', error)
       return false
@@ -134,15 +93,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      // Call backend logout endpoint
-      await fetch(`${JWT_SERVICE_URL}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include'
-      })
+      // Remove token from localStorage
+      adminAuthService.removeToken()
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
-      // Clear local state regardless of backend response
+      // Clear local state
       setAdmin(null)
       setIsAuthenticated(false)
     }

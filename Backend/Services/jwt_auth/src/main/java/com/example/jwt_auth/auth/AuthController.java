@@ -1,6 +1,7 @@
 package com.example.jwt_auth.auth;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -288,5 +289,50 @@ public class AuthController {
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         return ResponseEntity.ok("Cookie cleared");
+    }
+    
+    @GetMapping("/admins")
+    public ResponseEntity<List<AdminUserDto>> getAdmins() {
+        List<User> adminUsers = authService.getAdmins();
+        List<AdminUserDto> adminDtos = adminUsers.stream()
+                .map(user -> new AdminUserDto(user.getId(), user.getUsername(), user.getEmail(), user.getUserRole().toString()))
+                .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(adminDtos);
+    }
+    
+    @GetMapping("/user-by-email")
+    public ResponseEntity<AdminUserDto> getUserByEmail(@RequestParam String email) {
+        try {
+            User user = authService.getUserByEmail(email);
+            AdminUserDto adminDto = new AdminUserDto(user.getId(), user.getUsername(), user.getEmail(), user.getUserRole().toString());
+            return ResponseEntity.ok(adminDto);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    // DTO for admin users
+    public static class AdminUserDto {
+        private Long id;
+        private String username;
+        private String email;
+        private String userRole;
+        
+        public AdminUserDto(Long id, String username, String email, String userRole) {
+            this.id = id;
+            this.username = username;
+            this.email = email;
+            this.userRole = userRole;
+        }
+        
+        // Getters and setters
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+        public String getUsername() { return username; }
+        public void setUsername(String username) { this.username = username; }
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+        public String getUserRole() { return userRole; }
+        public void setUserRole(String userRole) { this.userRole = userRole; }
     }
 }

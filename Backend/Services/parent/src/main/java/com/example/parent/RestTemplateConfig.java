@@ -1,4 +1,4 @@
-package com.example.admin;
+package com.example.parent;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,3 +12,4 @@ public class RestTemplateConfig {
         return new RestTemplate();
     }
 }
+

@@ -24,10 +24,13 @@ import GestureGameInsights from "./pages/GestureGameInsights";
 import LandingPage from "./pages/LandingPage";
 import MirrorPostureGameInsights from "./pages/MirrorPostureGameInsights";
 import MirrorPostureGamePage from "./pages/MirrorPostureGamePage";
+import NewTicketPage from "./pages/NewTicketPage";
 import NotFound from "./pages/NotFound";
 import ParentInfo from "./pages/ParentInfo";
 import RepeatWithMeGameInsights from "./pages/RepeatWithMeGameInsights";
 import RepeatWithMeGamePage from "./pages/RepeatWithMeGamePage";
+import TicketChatPage from "./pages/TicketChatPage";
+import TicketsPage from "./pages/TicketsPage";
 import ViewParentInfo from "./pages/ViewParentInfo";
 // Authentication pages
 import DoctorLogin from "./pages/auth/DoctorLogin";
@@ -37,15 +40,15 @@ import ParentRegister from "./pages/auth/ParentRegister";
 import SchoolLogin from "./pages/auth/SchoolLogin";
 import SchoolRegister from "./pages/auth/SchoolRegister";
 // School Dashboard imports
-import SchoolDashboardLayout from "./components/school/SchoolDashboardLayout";
-import SchoolDashboard from "./pages/school/SchoolDashboard";
-import Children from "./pages/school/Children";
-import ChildProfile from "./pages/school/ChildProfile";
-import Tasks from "./pages/school/Tasks";
-import TaskDetails from "./pages/school/TaskDetails";
-import Tournaments from "./pages/school/Tournaments";
-import { SchoolAuthProvider } from "./contexts/school/SchoolAuthContext";
 import SchoolAuthGuard from "./components/school/SchoolAuthGuard";
+import SchoolDashboardLayout from "./components/school/SchoolDashboardLayout";
+import { SchoolAuthProvider } from "./contexts/school/SchoolAuthContext";
+import ChildProfile from "./pages/school/ChildProfile";
+import Children from "./pages/school/Children";
+import SchoolDashboard from "./pages/school/SchoolDashboard";
+import TaskDetails from "./pages/school/TaskDetails";
+import Tasks from "./pages/school/Tasks";
+import Tournaments from "./pages/school/tournaments";
 const queryClient = new QueryClient();
 
 // Component to handle global camera cleanup
@@ -116,6 +119,27 @@ const App = () => (
             <ProtectedRoute>
               <EmailVerificationGuard>
                 <AddChild />
+              </EmailVerificationGuard>
+            </ProtectedRoute>
+          } />
+          <Route path="/tickets" element={
+            <ProtectedRoute>
+              <EmailVerificationGuard>
+                <TicketsPage />
+              </EmailVerificationGuard>
+            </ProtectedRoute>
+          } />
+          <Route path="/tickets/new" element={
+            <ProtectedRoute>
+              <EmailVerificationGuard>
+                <NewTicketPage />
+              </EmailVerificationGuard>
+            </ProtectedRoute>
+          } />
+          <Route path="/tickets/:ticketId" element={
+            <ProtectedRoute>
+              <EmailVerificationGuard>
+                <TicketChatPage />
               </EmailVerificationGuard>
             </ProtectedRoute>
           } />
