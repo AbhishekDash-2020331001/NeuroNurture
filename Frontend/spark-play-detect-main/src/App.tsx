@@ -50,6 +50,8 @@ import TaskDetails from "./pages/school/TaskDetails";
 import Tasks from "./pages/school/Tasks";
 import Tournaments from "./pages/school/Tournaments";
 import TournamentDetails from "./pages/school/TournamentDetails";
+import ChildProgressComparison from "./pages/school/ChildProgressComparison";
+
 const queryClient = new QueryClient();
 
 // Component to handle global camera cleanup
@@ -201,6 +203,7 @@ const App = () => (
             <Route path="tasks/:taskId" element={<TaskDetails />} />
             <Route path="tournaments" element={<Tournaments />} />
             <Route path="tournaments/:id" element={<TournamentDetails />} />
+            <Route path="progress-comparison" element={<ChildProgressComparison />} />
             {/* Additional school routes will be added here */}
           </Route>
           

@@ -79,36 +79,6 @@ const SchoolDashboard: React.FC = () => {
     }
   ];
 
-  const recentActivity = [
-    {
-      type: 'Task Completed',
-      description: 'Sarah Johnson completed Math Quiz',
-      time: '2 hours ago',
-      icon: BookOpen,
-      color: 'text-green-600'
-    },
-    {
-      type: 'Tournament Started',
-      description: 'Spring Games Tournament began',
-      time: '1 day ago',
-      icon: Trophy,
-      color: 'text-yellow-600'
-    },
-    {
-      type: 'New Child',
-      description: 'Mike Chen enrolled in Grade 3',
-      time: '2 days ago',
-      icon: Users,
-      color: 'text-blue-600'
-    },
-    {
-      type: 'Performance Update',
-      description: 'Class 2A improved by 15%',
-      time: '3 days ago',
-      icon: TrendingUp,
-      color: 'text-purple-600'
-    }
-  ];
 
   return (
     <div className="space-y-6">
@@ -178,24 +148,6 @@ const SchoolDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Recent Activity */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Activity</h2>
-        <div className="space-y-4">
-          {recentActivity.map((activity, index) => (
-            <div key={index} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50">
-              <div className={`p-2 rounded-lg bg-gray-100 ${activity.color}`}>
-                <activity.icon className="h-4 w-4" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">{activity.type}</p>
-                <p className="text-sm text-gray-600">{activity.description}</p>
-                <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Subscription Status */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -204,24 +156,34 @@ const SchoolDashboard: React.FC = () => {
           <div>
             <p className="text-sm text-gray-600">Current Plan</p>
             <p className="text-lg font-medium text-gray-900">
-              {school.subscriptionStatus === 'active' ? 'Premium Plan' : 'Basic Plan'}
+              {school.subscriptionPlan === 'premium' ? 'Premium Plan' : 'Free Plan'}
             </p>
             <p className="text-sm text-gray-500">
               {school.currentChildren} of {school.childrenLimit} children enrolled
             </p>
+            {school.subscriptionPlan === 'premium' && school.subscriptionExpiry && (
+              <p className="text-sm text-gray-500 mt-1">
+                Expires: {new Date(school.subscriptionExpiry).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </p>
+            )}
           </div>
           <div className="text-right">
             <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-              school.subscriptionStatus === 'active' 
-                ? 'bg-green-100 text-green-800'
-                : school.subscriptionStatus === 'expired'
-                ? 'bg-red-100 text-red-800'
-                : 'bg-yellow-100 text-yellow-800'
+              school.subscriptionPlan === 'premium' 
+                ? 'bg-blue-100 text-blue-800'
+                : 'bg-gray-100 text-gray-800'
             }`}>
-              {school.subscriptionStatus.charAt(0).toUpperCase() + school.subscriptionStatus.slice(1)}
+              {school.subscriptionPlan === 'premium' ? 'Premium' : 'Free'}
             </div>
-            {school.subscriptionStatus === 'active' && (
+            {school.subscriptionPlan === 'premium' && (
               <p className="text-xs text-gray-500 mt-1">All features available</p>
+            )}
+            {school.subscriptionPlan === 'free' && (
+              <p className="text-xs text-gray-500 mt-1">Limited features</p>
             )}
           </div>
         </div>

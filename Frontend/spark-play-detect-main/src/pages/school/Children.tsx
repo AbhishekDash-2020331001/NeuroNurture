@@ -5,9 +5,7 @@ import {
   Users, 
   Search, 
   Filter,
-  Eye,
   BookOpen,
-  BarChart3,
   Plus,
   GraduationCap,
   Calendar,
@@ -292,7 +290,12 @@ const Children: React.FC = () => {
                   </div>
                   
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900">{child.name}</h3>
+                    <Link
+                      to={`/school/children/${child.id}`}
+                      className="text-lg font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
+                    >
+                      {child.name}
+                    </Link>
                     <div className="flex items-center space-x-4 text-sm text-gray-500">
                       <span className="flex items-center">
                         <GraduationCap className="h-4 w-4 mr-1" />
@@ -337,29 +340,6 @@ const Children: React.FC = () => {
                     <p className="text-xs text-gray-500">Last Active</p>
                   </div>
                   
-                  <div className="flex space-x-2">
-                    <Link
-                      to={`/school/children/${child.id}`}
-                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="View Profile"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Link>
-                    <Link
-                      to={`/school/children/${child.id}/progress`}
-                      className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                      title="View Progress"
-                    >
-                      <BarChart3 className="h-4 w-4" />
-                    </Link>
-                    <Link
-                      to={`/school/children/${child.id}/tasks`}
-                      className="p-2 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors"
-                      title="View Tasks"
-                    >
-                      <BookOpen className="h-4 w-4" />
-                    </Link>
-                  </div>
                 </div>
               </div>
             </div>

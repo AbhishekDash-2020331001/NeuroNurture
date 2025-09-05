@@ -9,7 +9,7 @@ const SchoolDashboardLayout: React.FC = () => {
       <SchoolNavbar />
       
       {/* Main content */}
-      <main className="pt-24 p-6">
+      <main className="pt-20 px-4 sm:px-6 lg:px-12">
         <Outlet />
       </main>
     </div>

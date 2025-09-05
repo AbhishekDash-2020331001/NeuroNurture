@@ -7,6 +7,8 @@ interface School {
   address: string;
   phone: string;
   subscriptionStatus: 'active' | 'expired' | 'pending';
+  subscriptionPlan: 'free' | 'premium';
+  subscriptionExpiry?: string;
   childrenLimit: number;
   currentChildren: number;
 }
@@ -17,6 +19,7 @@ interface SchoolAuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  clearAuthData: () => void;
   updateSchoolData: (data: Partial<School>) => void;
 }
 
@@ -44,7 +47,15 @@ export const SchoolAuthProvider: React.FC<SchoolAuthProviderProps> = ({ children
     if (savedSchool) {
       try {
         const schoolData = JSON.parse(savedSchool);
-        setSchool(schoolData);
+        // Ensure new fields are present for backward compatibility
+        const updatedSchoolData = {
+          ...schoolData,
+          subscriptionPlan: schoolData.subscriptionPlan || 'premium',
+          subscriptionExpiry: schoolData.subscriptionExpiry || '2024-12-31'
+        };
+        setSchool(updatedSchoolData);
+        // Update localStorage with the new fields
+        localStorage.setItem('schoolAuth', JSON.stringify(updatedSchoolData));
       } catch (error) {
         console.error('Error parsing saved school data:', error);
         localStorage.removeItem('schoolAuth');
@@ -66,6 +77,8 @@ export const SchoolAuthProvider: React.FC<SchoolAuthProviderProps> = ({ children
           address: '123 Education Street, Learning City',
           phone: '+1-555-0123',
           subscriptionStatus: 'active',
+          subscriptionPlan: 'premium',
+          subscriptionExpiry: '2024-12-31',
           childrenLimit: 50,
           currentChildren: 25
         };
@@ -90,6 +103,11 @@ export const SchoolAuthProvider: React.FC<SchoolAuthProviderProps> = ({ children
     localStorage.removeItem('schoolAuth');
   };
 
+  const clearAuthData = () => {
+    setSchool(null);
+    localStorage.removeItem('schoolAuth');
+  };
+
   const updateSchoolData = (data: Partial<School>) => {
     if (school) {
       const updatedSchool = { ...school, ...data };
@@ -104,6 +122,7 @@ export const SchoolAuthProvider: React.FC<SchoolAuthProviderProps> = ({ children
     isLoading,
     login,
     logout,
+    clearAuthData,
     updateSchoolData
   };
 
