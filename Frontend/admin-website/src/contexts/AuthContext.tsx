@@ -50,6 +50,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Verify token with admin service
       const adminData = await adminAuthService.getCurrentAdmin(token)
       
+      // Store adminId in localStorage
+      localStorage.setItem('adminId', adminData.adminId.toString())
+      
       const admin: Admin = {
         id: adminData.adminId.toString(),
         email: adminData.email,
@@ -61,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Session check error:', error)
       adminAuthService.removeToken()
+      localStorage.removeItem('adminId')
       setAdmin(null)
       setIsAuthenticated(false)
     } finally {
@@ -74,6 +78,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Store token
       adminAuthService.setToken(loginData.token)
+      
+      // Store adminId in localStorage
+      localStorage.setItem('adminId', loginData.adminId.toString())
       
       const admin: Admin = {
         id: loginData.adminId.toString(),
@@ -93,8 +100,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      // Remove token from localStorage
+      // Remove token and adminId from localStorage
       adminAuthService.removeToken()
+      localStorage.removeItem('adminId')
     } catch (error) {
       console.error('Logout error:', error)
     } finally {

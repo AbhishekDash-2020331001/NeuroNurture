@@ -25,27 +25,65 @@ const SchoolRegister: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    setSuccess('');
     
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match');
+      setError('Passwords do not match');
       return;
     }
     
     if (!formData.agreeToTerms) {
-      alert('Please agree to the terms and conditions');
+      setError('Please agree to the terms and conditions');
       return;
     }
     
     setIsLoading(true);
     
-    // TODO: Implement actual registration logic
-    setTimeout(() => {
+    try {
+      const response = await fetch('http://localhost:8091/api/school/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: formData.email, // Use email as username
+          email: formData.email,
+          password: formData.password,
+          schoolName: formData.schoolName,
+          contactPerson: formData.contactPerson,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+          studentCount: parseInt(formData.studentCount)
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.text();
+        setSuccess(result);
+        // Store email for verification status checking
+        localStorage.setItem('schoolEmail', formData.email);
+        // Redirect to pending approval page after 5 seconds to show success message
+        setTimeout(() => {
+          navigate('/school/pending-approval');
+        }, 5000);
+      } else {
+        const errorText = await response.text();
+        setError(errorText);
+      }
+    } catch (err) {
+      setError('Registration failed. Please try again.');
+    } finally {
       setIsLoading(false);
-      navigate('/auth/school/login'); // Redirect to login after successful registration
-    }, 2000);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,6 +134,16 @@ const SchoolRegister: React.FC = () => {
           </CardHeader>
           
           <CardContent>
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="mb-4 p-3 bg-green-100 border border-green-300 text-green-700 rounded-lg text-sm">
+                {success}
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* School Information */}
               <div className="space-y-4">

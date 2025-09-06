@@ -44,14 +44,15 @@ import SchoolAuthGuard from "./components/school/SchoolAuthGuard";
 import SchoolDashboardLayout from "./components/school/SchoolDashboardLayout";
 import { SchoolAuthProvider } from "./contexts/school/SchoolAuthContext";
 import ChildProfile from "./pages/school/ChildProfile";
+import ChildProgressComparison from "./pages/school/ChildProgressComparison";
 import Children from "./pages/school/Children";
 import SchoolDashboard from "./pages/school/SchoolDashboard";
+import SchoolEmailVerification from "./pages/school/SchoolEmailVerification";
+import SchoolPendingApproval from "./pages/school/SchoolPendingApproval";
 import TaskDetails from "./pages/school/TaskDetails";
 import Tasks from "./pages/school/Tasks";
-import Tournaments from "./pages/school/Tournaments";
 import TournamentDetails from "./pages/school/TournamentDetails";
-import ChildProgressComparison from "./pages/school/ChildProgressComparison";
-
+import Tournaments from "./pages/school/tournaments";
 const queryClient = new QueryClient();
 
 // Component to handle global camera cleanup
@@ -90,6 +91,11 @@ const App = () => (
           <Route path="/auth/doctor/register" element={<DoctorRegister />} />
           <Route path="/verify-email" element={<EmailVerificationPage />} />
           <Route path="/email-verification-required" element={<EmailVerificationRequired />} />
+          {/* School specific routes - must be before nested /school route */}
+          <Route path="/school/login" element={<SchoolLogin />} />
+          <Route path="/school/register" element={<SchoolRegister />} />
+          <Route path="/school/verify-email" element={<SchoolEmailVerification />} />
+          <Route path="/school/pending-approval" element={<SchoolPendingApproval />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <EmailVerificationGuard>

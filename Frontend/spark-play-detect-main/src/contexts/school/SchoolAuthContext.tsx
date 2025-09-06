@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 interface School {
   id: string;
@@ -68,26 +68,41 @@ export const SchoolAuthProvider: React.FC<SchoolAuthProviderProps> = ({ children
     setIsLoading(true);
     
     try {
-      // Mock authentication - replace with actual API call later
-      if (email === 'school@demo.com' && password === 'school123') {
-        const mockSchool: School = {
-          id: 'school1',
-          name: 'Demo Elementary School',
-          email: 'school@demo.com',
-          address: '123 Education Street, Learning City',
-          phone: '+1-555-0123',
-          subscriptionStatus: 'active',
-          subscriptionPlan: 'premium',
-          subscriptionExpiry: '2024-12-31',
-          childrenLimit: 50,
-          currentChildren: 25
+      const response = await fetch('http://localhost:8091/api/school/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Store token and school data
+        localStorage.setItem('schoolToken', data.token);
+        localStorage.setItem('schoolEmail', email);
+        
+        const schoolData: School = {
+          id: data.school.id.toString(),
+          name: data.school.schoolName,
+          email: data.school.email,
+          address: `${data.school.address}, ${data.school.city}, ${data.school.state} ${data.school.zipCode}`,
+          phone: data.school.phone,
+          subscriptionStatus: data.school.subscriptionStatus,
+          subscriptionPlan: data.school.subscriptionPlan || 'premium',
+          subscriptionExpiry: data.school.subscriptionExpiry || '2024-12-31',
+          childrenLimit: data.school.childrenLimit,
+          currentChildren: data.school.currentChildren
         };
         
-        setSchool(mockSchool);
-        localStorage.setItem('schoolAuth', JSON.stringify(mockSchool));
+        setSchool(schoolData);
+        localStorage.setItem('schoolAuth', JSON.stringify(schoolData));
         setIsLoading(false);
         return true;
       } else {
+        const errorText = await response.text();
+        console.error('Login failed:', errorText);
         setIsLoading(false);
         return false;
       }
@@ -101,6 +116,8 @@ export const SchoolAuthProvider: React.FC<SchoolAuthProviderProps> = ({ children
   const logout = () => {
     setSchool(null);
     localStorage.removeItem('schoolAuth');
+    localStorage.removeItem('schoolToken');
+    localStorage.removeItem('schoolEmail');
   };
 
   const clearAuthData = () => {

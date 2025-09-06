@@ -3,13 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Brain, Building2, Eye, EyeOff, GraduationCap } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { SchoolAuthProvider, useSchoolAuth } from '@/contexts/school/SchoolAuthContext';
 
 const SchoolLoginForm: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useSchoolAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -24,11 +22,46 @@ const SchoolLoginForm: React.FC = () => {
     setError('');
     
     try {
-      const success = await login(formData.email, formData.password);
-      if (success) {
+      const response = await fetch('http://localhost:8091/api/school/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: formData.email, password: formData.password }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Store token and school data
+        localStorage.setItem('schoolToken', data.token);
+        localStorage.setItem('schoolEmail', formData.email);
+        
+        const schoolData = {
+          id: data.school.id.toString(),
+          name: data.school.schoolName,
+          email: data.school.email,
+          address: `${data.school.address}, ${data.school.city}, ${data.school.state} ${data.school.zipCode}`,
+          phone: data.school.phone,
+          subscriptionStatus: data.school.subscriptionStatus,
+          childrenLimit: data.school.childrenLimit,
+          currentChildren: data.school.currentChildren
+        };
+        
+        localStorage.setItem('schoolAuth', JSON.stringify(schoolData));
         navigate('/school/dashboard');
       } else {
-        setError('Invalid email or password. Use school@demo.com / school123');
+        const errorText = await response.text();
+        if (errorText.includes('email verification')) {
+          setError('Please verify your email before logging in. Check your email for verification instructions.');
+        } else if (errorText.includes('admin approval')) {
+          setError('Your school account is pending admin approval. You will be notified once approved.');
+          // Store email for status checking
+          localStorage.setItem('schoolEmail', formData.email);
+          navigate('/school/pending-approval');
+        } else {
+          setError('Invalid email or password.');
+        }
       }
     } catch (err) {
       setError('Login failed. Please try again.');
@@ -199,12 +232,4 @@ const SchoolLoginForm: React.FC = () => {
     );
   };
 
-const SchoolLogin: React.FC = () => {
-  return (
-    <SchoolAuthProvider>
-      <SchoolLoginForm />
-    </SchoolAuthProvider>
-  );
-};
-
-export default SchoolLogin;
+export default SchoolLoginForm;
