@@ -2,36 +2,49 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useDoctorAuth } from '@/contexts/doctor/DoctorAuthContext';
 import { ArrowLeft, Brain, Eye, EyeOff, Stethoscope, User } from 'lucide-react';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const DoctorLogin: React.FC = () => {
   const navigate = useNavigate();
+  const { login, isLoading, error, clearError } = useDoctorAuth();
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    password: '',
+    rememberMe: false
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setLoginError(null);
+    clearError();
     
-    // TODO: Implement actual login logic
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate('/doctor/dashboard'); // Redirect to doctor dashboard
-    }, 2000);
+    const success = await login({
+      email: formData.email,
+      password: formData.password,
+      rememberMe: formData.rememberMe
+    });
+    
+    if (success) {
+      navigate('/doctor/dashboard');
+    } else {
+      setLoginError('Login failed. Please check your credentials.');
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: type === 'checkbox' ? checked : value
     });
   };
+
+  const displayError = error?.message || loginError;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-violet-50 to-indigo-50 flex items-center justify-center p-4">
@@ -64,6 +77,13 @@ const DoctorLogin: React.FC = () => {
           
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Error Display */}
+              {displayError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-600">{displayError}</p>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium text-gray-700">
                   Professional Email
@@ -111,11 +131,14 @@ const DoctorLogin: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <input
-                    id="remember"
+                    id="rememberMe"
+                    name="rememberMe"
                     type="checkbox"
+                    checked={formData.rememberMe}
+                    onChange={handleInputChange}
                     className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                   />
-                  <label htmlFor="remember" className="ml-2 text-sm text-gray-600">
+                  <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-600">
                     Remember me
                   </label>
                 </div>
@@ -155,8 +178,19 @@ const DoctorLogin: React.FC = () => {
               </p>
             </div>
 
+            {/* Demo Credentials */}
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h4 className="text-sm font-semibold text-blue-800 mb-2">Demo Credentials:</h4>
+              <div className="text-xs text-blue-700 space-y-1">
+                <p><strong>Option 1:</strong> doctor@example.com / password</p>
+                <p><strong>Option 2:</strong> doctor@clinic.com / doctor123</p>
+                <p><strong>Option 3:</strong> dr.smith@hospital.com / medical123</p>
+                <p><strong>Option 4:</strong> test@doctor.com / test123</p>
+              </div>
+            </div>
+
             {/* Doctor Features Preview */}
-            <div className="mt-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
+            <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
               <h4 className="text-sm font-semibold text-purple-800 mb-2">Medical Features:</h4>
               <ul className="text-xs text-purple-700 space-y-1">
                 <li>• Patient progress monitoring</li>

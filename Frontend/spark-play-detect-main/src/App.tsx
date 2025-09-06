@@ -51,8 +51,18 @@ import SchoolEmailVerification from "./pages/school/SchoolEmailVerification";
 import SchoolPendingApproval from "./pages/school/SchoolPendingApproval";
 import TaskDetails from "./pages/school/TaskDetails";
 import Tasks from "./pages/school/Tasks";
-import TournamentDetails from "./pages/school/TournamentDetails";
 import Tournaments from "./pages/school/tournaments";
+import TournamentDetails from "./pages/school/TournamentDetails";
+// Doctor Dashboard imports
+import DoctorAuthGuard from "./components/doctor/DoctorAuthGuard";
+import DoctorDashboardLayout from "./components/doctor/DoctorDashboardLayout";
+import { DoctorAuthProvider } from "./contexts/doctor/DoctorAuthContext";
+import DoctorDashboard from "./pages/doctor/DoctorDashboard";
+import EnrolledChildren from "./pages/doctor/EnrolledChildren";
+import ChildProgress from "./pages/doctor/ChildProgress";
+import TaskManagement from "./pages/doctor/TaskManagement";
+import TaskHistory from "./pages/doctor/TaskHistory";
+import DoctorChat from "./pages/doctor/DoctorChat";
 const queryClient = new QueryClient();
 
 // Component to handle global camera cleanup
@@ -75,11 +85,12 @@ const CameraCleanupHandler = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <CameraCleanupHandler />
-        <Routes>
+      <DoctorAuthProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <CameraCleanupHandler />
+          <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/auth" element={<Auth />} />
           {/* Authentication Routes */}
@@ -213,10 +224,26 @@ const App = () => (
             {/* Additional school routes will be added here */}
           </Route>
           
+          {/* Doctor Dashboard Routes */}
+          <Route path="/doctor" element={
+            <DoctorAuthGuard>
+              <DoctorDashboardLayout />
+            </DoctorAuthGuard>
+          }>
+            <Route path="dashboard" element={<DoctorDashboard />} />
+            <Route path="children" element={<EnrolledChildren />} />
+            <Route path="children/:childId/progress" element={<ChildProgress />} />
+            <Route path="tasks" element={<TaskManagement />} />
+            <Route path="tasks/history" element={<TaskHistory />} />
+            <Route path="chat" element={<DoctorChat />} />
+            {/* Additional doctor routes will be added here */}
+          </Route>
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
+      </DoctorAuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
