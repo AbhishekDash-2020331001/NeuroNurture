@@ -21,7 +21,7 @@ jwt:
   expiration: 86400000
 
 sendgrid:
-  api-key: ${SENDGRID_API_KEY}
+  api-key: 
   from-email: abhishekdash997@gmail.com
   from-name: NeuroNurture
 
