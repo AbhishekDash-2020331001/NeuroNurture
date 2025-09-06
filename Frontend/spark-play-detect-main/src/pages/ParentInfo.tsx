@@ -54,7 +54,7 @@ const ParentInfo = () => {
     e.preventDefault();
     
     if (!formData.name || !formData.email) {
-      toast.error("Please fill in all required fields! 😊");
+      toast.error("Please fill in all required fields!");
       return;
     }
 
@@ -73,7 +73,7 @@ const ParentInfo = () => {
         throw new Error('Failed to save parent information');
       }
 
-      toast.success("Welcome! Let's meet your wonderful children! 🌟");
+      toast.success("Welcome! Let's meet your wonderful children!");
       navigate("/children");
     } catch (error) {
       toast.error("Failed to save parent information. Please try again.");
@@ -101,25 +101,20 @@ const ParentInfo = () => {
       {/* Beautiful Navbar */}
       <Navbar onLogout={handleLogout} />
 
-      {/* Floating decorative elements */}
-      <div className="fixed top-20 left-10 text-6xl bounce-gentle z-10">🌈</div>
-      <div className="fixed top-32 right-16 text-5xl float z-10">⭐</div>
-      <div className="fixed bottom-20 left-20 text-4xl wiggle z-10">🎈</div>
-      <div className="fixed bottom-10 right-10 text-5xl bounce-gentle z-10">🎉</div>
 
       <div className="max-w-lg mx-auto pt-8 px-4">
         {/* Header */}
-        <div className="text-center mb-6">
+        {/* <div className="text-center mb-6">
           <h1 className="text-3xl font-comic font-bold text-primary mb-3 bounce-gentle">
-            Welcome, Super Parent! 🦸‍♀️
+            Welcome, Super Parent!
           </h1>
           <p className="text-base text-muted-foreground font-nunito">
             Let's get to know you better! ✨
           </p>
-        </div>
+        </div> */}
 
         {/* Main Form Card */}
-        <Card className="card-playful shadow-xl border-2 border-fun-pink hover:scale-105 transition-all duration-300">
+        <Card className="card-playful shadow-xl border-2 border-fun-pink hover:scale-[1.01] transition-transform duration-500 ease-in-out transform-gpu will-change-transform">
           <CardHeader className="text-center bg-gradient-to-r from-fun-pink to-fun-purple rounded-t-2xl p-4">
             <CardTitle className="text-xl font-comic font-bold text-white flex items-center justify-center gap-2">
               <Heart className="w-5 h-5 bounce-gentle" />
@@ -141,7 +136,7 @@ const ParentInfo = () => {
                   type="text"
                   value={formData.name}
                   onChange={(e) => handleInputChange("name", e.target.value)}
-                  placeholder="Your wonderful name here! ✨"
+                  placeholder="Your wonderful name here!"
                   className="text-sm py-3 rounded-lg border-2 border-fun-blue focus:border-primary transition-all duration-300 hover:shadow-md"
                   required
                 />
@@ -208,7 +203,7 @@ const ParentInfo = () => {
                   type="text"
                   value={formData.address}
                   onChange={(e) => handleInputChange("address", e.target.value)}
-                  placeholder="Where do you live? 🏠"
+                  placeholder="Where do you live?"
                   className="text-sm py-3 rounded-lg border-2 border-fun-pink focus:border-primary transition-all duration-300 hover:shadow-md"
                 />
               </div>
@@ -219,7 +214,7 @@ const ParentInfo = () => {
                 disabled={isLoading}
                 className="w-full btn-fun bg-gradient-to-r from-primary to-fun-purple hover:from-primary/90 hover:to-fun-purple/90 text-white text-base py-3 mt-4 font-comic font-bold hover:scale-105 transition-all duration-300"
               >
-                {isLoading ? "Saving..." : "Let's Meet Your Children! 🌟"}
+                {isLoading ? "Saving..." : "Let's Meet Your Children!"}
               </Button>
             </form>
           </CardContent>

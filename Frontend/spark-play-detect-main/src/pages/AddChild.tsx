@@ -13,7 +13,7 @@ import { toast } from "sonner";
 
 interface ChildForm {
   name: string;
-  gender: "boy" | "girl" | "other";
+  gender: "male" | "female";
   dateOfBirth: string;
   height: number;
   weight: number;
@@ -23,7 +23,7 @@ const AddChild = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<ChildForm>({
     name: "",
-    gender: "boy",
+    gender: "male",
     dateOfBirth: "",
     height: 0,
     weight: 0,
@@ -61,7 +61,7 @@ const AddChild = () => {
     e.preventDefault();
     
     if (!formData.name || !formData.dateOfBirth || !formData.height || !formData.weight) {
-      toast.error("Please fill in all fields to create your child's profile! 😊");
+      toast.error("Please fill in all fields to create your child's profile!");
       return;
     }
 
@@ -85,7 +85,7 @@ const AddChild = () => {
         throw new Error('Failed to create child profile');
       }
 
-      toast.success(`${formData.name}'s profile created! Welcome to our learning family! 🎉`);
+      toast.success(`${formData.name}'s profile created! Welcome to our learning family!`);
       navigate("/children");
     } catch (error) {
       toast.error("Failed to create child profile. Please try again.");
@@ -104,47 +104,38 @@ const AddChild = () => {
     }
   };
 
-  const getGenderEmoji = (gender: string) => {
-    switch (gender) {
-      case "boy": return "👦";
-      case "girl": return "👧";
-      default: return "🧒";
-    }
-  };
 
   return (
     <div className="min-h-screen bg-soft font-nunito">
       {/* Beautiful Navbar */}
       <Navbar onLogout={handleLogout} />
 
-      {/* Floating decorative elements */}
-      <div className="fixed top-20 left-8 text-6xl bounce-gentle z-10">🌟</div>
-      <div className="fixed top-32 right-12 text-5xl float z-10">🎈</div>
-      <div className="fixed bottom-20 left-12 text-4xl wiggle z-10">🎨</div>
-      <div className="fixed bottom-8 right-8 text-5xl bounce-gentle z-10">🧸</div>
+      {/* Back Button - Top Left */}
+      <div className="absolute top-24 left-4 z-20">
+        <Button
+          onClick={() => navigate("/children")}
+          className="btn-fun bg-secondary hover:bg-secondary/90 text-secondary-foreground font-comic text-sm px-4 py-2"
+        >
+          ← Back
+        </Button>
+      </div>
 
       <div className="max-w-lg mx-auto pt-8 px-4">
         {/* Header */}
         <div className="text-center mb-6">
           <h1 className="text-3xl font-comic font-bold text-primary mb-3 bounce-gentle">
-            Add a New Little Star! ⭐
+            Add a New Little Star!
           </h1>
-          <p className="text-base text-muted-foreground font-nunito">
+          {/* <p className="text-base text-muted-foreground font-nunito">
             Let's create a special profile for your amazing child!
-          </p>
+          </p> */}
         </div>
 
         {/* Main Form Card */}
-        <Card className="card-playful shadow-xl border-2 border-fun-green hover:scale-105 transition-all duration-300">
-          <CardHeader className="text-center bg-gradient-to-r from-fun-green to-fun-blue rounded-t-2xl p-4">
-            <CardTitle className="text-xl font-comic font-bold text-white flex items-center justify-center gap-2">
-              <Baby className="w-5 h-5 bounce-gentle" />
-              Child's Profile
-              <Baby className="w-5 h-5 bounce-gentle" />
-            </CardTitle>
-          </CardHeader>
+        <Card className="card-playful shadow-xl border-2 border-fun-green hover:scale-[1.005] transition-all duration-700 ease-in-out transform-gpu will-change-transform">
+
           
-          <CardContent className="p-6 space-y-4">
+          <CardContent className="p-1 space-y-4">
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Child's Name */}
               <div className="space-y-2 group">
@@ -157,8 +148,8 @@ const AddChild = () => {
                   type="text"
                   value={formData.name}
                   onChange={(e) => handleInputChange("name", e.target.value)}
-                  placeholder="What's their wonderful name? ✨"
-                  className="text-sm py-3 rounded-lg border-2 border-fun-purple focus:border-primary transition-all duration-300 hover:shadow-md"
+                  placeholder="Enter child's name"
+                  className="text-sm py-3 rounded-lg border-2 border-fun-purple focus:border-primary transition-all duration-500 ease-in-out hover:shadow-md transform-gpu"
                   required
                 />
               </div>
@@ -169,33 +160,18 @@ const AddChild = () => {
                   <Sparkles className="w-4 h-4 text-fun-pink group-hover:scale-110 transition-transform" />
                   Gender
                 </Label>
-                <Select onValueChange={(value) => handleInputChange("gender", value as "boy" | "girl" | "other")}>
-                  <SelectTrigger className="text-sm py-3 rounded-lg border-2 border-fun-pink focus:border-primary hover:shadow-md">
-                    <SelectValue placeholder="Choose gender">
-                      <span className="flex items-center gap-2">
-                        <span className="text-xl">{getGenderEmoji(formData.gender)}</span>
-                        {formData.gender ? formData.gender.charAt(0).toUpperCase() + formData.gender.slice(1) : "Choose gender"}
-                      </span>
+                <Select onValueChange={(value) => handleInputChange("gender", value as "male" | "female")}>
+                  <SelectTrigger className="text-sm py-3 rounded-lg border-2 border-fun-pink focus:border-primary transition-all duration-500 ease-in-out hover:shadow-md transform-gpu">
+                    <SelectValue placeholder="Select gender">
+                      {formData.gender ? formData.gender.charAt(0).toUpperCase() + formData.gender.slice(1) : "Select gender"}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="boy" className="text-sm">
-                      <span className="flex items-center gap-2">
-                        <span className="text-xl">👦</span>
-                        Boy
-                      </span>
+                    <SelectItem value="male" className="text-sm">
+                      Male
                     </SelectItem>
-                    <SelectItem value="girl" className="text-sm">
-                      <span className="flex items-center gap-2">
-                        <span className="text-xl">👧</span>
-                        Girl
-                      </span>
-                    </SelectItem>
-                    <SelectItem value="other" className="text-sm">
-                      <span className="flex items-center gap-2">
-                        <span className="text-xl">🧒</span>
-                        Other
-                      </span>
+                    <SelectItem value="female" className="text-sm">
+                      Female
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -207,14 +183,22 @@ const AddChild = () => {
                   <Calendar className="w-4 h-4 text-fun-blue group-hover:scale-110 transition-transform" />
                   Date of Birth *
                 </Label>
-                <Input
-                  id="dateOfBirth"
-                  type="date"
-                  value={formData.dateOfBirth}
-                  onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
-                  className="text-sm py-3 rounded-lg border-2 border-fun-blue focus:border-primary transition-all duration-300 hover:shadow-md"
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="dateOfBirth"
+                    type="date"
+                    value={formData.dateOfBirth}
+                    onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
+                    className="text-sm py-3 pl-4 pr-12 rounded-lg border-2 border-fun-blue focus:border-primary focus:ring-2 focus:ring-blue-100 transition-all duration-500 ease-in-out hover:shadow-md transform-gpu bg-white font-medium text-gray-700"
+                    min="2010-01-01"
+                    max="2024-12-31"
+                    required
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Select your child's date of birth</p>
               </div>
 
               {/* Height */}
@@ -226,14 +210,15 @@ const AddChild = () => {
                 <Input
                   id="height"
                   type="number"
-                  min="50"
+                  min="30"
                   max="200"
                   value={formData.height || ""}
                   onChange={(e) => handleInputChange("height", parseInt(e.target.value) || 0)}
-                  placeholder="How tall are they? 📏"
-                  className="text-sm py-3 rounded-lg border-2 border-fun-green focus:border-primary transition-all duration-300 hover:shadow-md"
+                  placeholder="Enter height in cm"
+                  className="text-sm py-3 rounded-lg border-2 border-fun-green focus:border-primary transition-all duration-500 ease-in-out hover:shadow-md transform-gpu"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">Height range: 30cm - 200cm</p>
               </div>
 
               {/* Weight */}
@@ -250,8 +235,8 @@ const AddChild = () => {
                   step="0.1"
                   value={formData.weight || ""}
                   onChange={(e) => handleInputChange("weight", parseFloat(e.target.value) || 0)}
-                  placeholder="What's their weight? ⚖️"
-                  className="text-sm py-3 rounded-lg border-2 border-fun-orange focus:border-primary transition-all duration-300 hover:shadow-md"
+                  placeholder="Enter weight in kg"
+                  className="text-sm py-3 rounded-lg border-2 border-fun-orange focus:border-primary transition-all duration-500 ease-in-out hover:shadow-md transform-gpu"
                   required
                 />
               </div>
@@ -260,23 +245,13 @@ const AddChild = () => {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full btn-fun bg-gradient-to-r from-fun-green to-fun-blue hover:from-fun-green/90 hover:to-fun-blue/90 text-white text-base py-3 mt-4 font-comic font-bold hover:scale-105 transition-all duration-300"
+                className="w-full btn-fun bg-gradient-to-r from-fun-green to-fun-blue hover:from-fun-green/90 hover:to-fun-blue/90 text-white text-base py-3 mt-4 font-comic font-bold hover:scale-[1.02] transition-all duration-500 ease-in-out transform-gpu will-change-transform"
               >
-                {isLoading ? "Creating Profile..." : "Create Profile & Start Playing! 🚀"}
+                {isLoading ? "Creating Profile..." : "Create Profile & Start Playing"}
               </Button>
             </form>
           </CardContent>
         </Card>
-
-        {/* Back Button */}
-        <div className="text-center mt-4">
-          <Button
-            onClick={() => navigate("/children")}
-            className="btn-fun bg-secondary hover:bg-secondary/90 text-secondary-foreground font-comic text-sm px-4 py-2"
-          >
-            ← Back to Children Profiles
-          </Button>
-        </div>
       </div>
     </div>
   );

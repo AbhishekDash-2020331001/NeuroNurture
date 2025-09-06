@@ -165,7 +165,7 @@ const ChildrenProfiles = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-soft flex items-center justify-center">
-        <div className="text-2xl font-comic">Loading children profiles... 🌟</div>
+        <div className="text-2xl font-comic">Loading children profiles...</div>
       </div>
     );
   }
@@ -182,11 +182,6 @@ const ChildrenProfiles = () => {
         <div className="absolute top-1/2 left-1/4 w-2 h-2 bg-purple-300 rounded-full animate-bounce opacity-70"></div>
         <div className="absolute top-1/3 right-1/4 w-4 h-4 bg-orange-300 rounded-full animate-pulse opacity-50"></div>
         
-        {/* Floating stars */}
-        <div className="absolute top-16 left-1/3 text-yellow-400 animate-pulse">⭐</div>
-        <div className="absolute top-48 right-1/4 text-pink-400 animate-bounce">✨</div>
-        <div className="absolute bottom-40 left-1/5 text-blue-400 animate-pulse">🌟</div>
-        <div className="absolute bottom-24 right-1/5 text-green-400 animate-bounce">💫</div>
         
         {/* Animated gradient background */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-100/30 via-purple-100/20 to-pink-100/30 animate-pulse"></div>
@@ -195,22 +190,12 @@ const ChildrenProfiles = () => {
       {/* Beautiful Navbar */}
       <Navbar onLogout={handleLogout} />
 
-      {/* Enhanced floating decorative elements */}
-      <div className="fixed top-20 left-8 text-4xl bounce-gentle z-10 animate-pulse">🎪</div>
-      <div className="fixed top-32 right-12 text-3xl float z-10 animate-bounce">🎨</div>
-      <div className="fixed bottom-16 left-16 text-2xl wiggle z-10 animate-pulse">🧸</div>
-      <div className="fixed bottom-8 right-8 text-3xl bounce-gentle z-10 animate-bounce">🎮</div>
-      
-      {/* Additional floating elements */}
-      <div className="fixed top-1/4 left-1/6 text-2xl animate-spin z-10">🎯</div>
-      <div className="fixed top-3/4 right-1/6 text-2xl animate-pulse z-10">🎪</div>
-      <div className="fixed bottom-1/3 left-1/2 text-2xl animate-bounce z-10">🎭</div>
 
       <div className="max-w-6xl mx-auto pt-8 px-4 relative z-20">
         {/* Enhanced Header with animations */}
         <div className="text-center mb-8">
           <h1 className="text-5xl font-comic font-bold text-primary mb-4 bounce-gentle hover:scale-105 transition-transform duration-300">
-            Choose Your Little Star! ⭐
+            Choose Your Little Star!
           </h1>
           <p className="text-xl text-muted-foreground font-nunito hover:text-primary transition-colors duration-300">
             Click on a child's card to enter their magical learning world!
@@ -223,7 +208,7 @@ const ChildrenProfiles = () => {
         {/* Welcome message */}
         <div className="text-center mb-8">
           <p className="text-lg text-muted-foreground font-comic">
-            Use the user menu in the top-right corner to access parent info and other options! ✨
+            Use the user menu in the top-right corner to access parent info and other options!
           </p>
         </div>
 
@@ -243,11 +228,6 @@ const ChildrenProfiles = () => {
                 {/* Enhanced glowing border effect */}
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-fun-blue/20 via-fun-purple/20 to-fun-pink/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm animate-pulse"></div>
                 
-                {/* Multiple sparkle effects */}
-                <div className="absolute top-1 right-1 text-yellow-400 opacity-0 group-hover:opacity-100 transition-all duration-300 animate-pulse">✨</div>
-                <div className="absolute bottom-1 left-1 text-pink-400 opacity-0 group-hover:opacity-100 transition-all duration-500 animate-bounce">🌟</div>
-                <div className="absolute top-1 left-1 text-blue-400 opacity-0 group-hover:opacity-100 transition-all duration-700 animate-spin">💫</div>
-                <div className="absolute bottom-1 right-1 text-green-400 opacity-0 group-hover:opacity-100 transition-all duration-400 animate-ping">🎈</div>
                 
                 {/* Enhanced floating particles */}
                 <div className="absolute top-1/4 left-1/4 w-1 h-1 bg-yellow-300 rounded-full opacity-0 group-hover:opacity-100 animate-ping transition-all duration-300"></div>
@@ -316,11 +296,6 @@ const ChildrenProfiles = () => {
             {/* Enhanced glowing border effect */}
             <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-fun-green/20 via-fun-blue/20 to-fun-purple/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm animate-pulse"></div>
             
-            {/* Multiple sparkle effects */}
-            <div className="absolute top-1 right-1 text-yellow-400 opacity-0 group-hover:opacity-100 transition-all duration-300 animate-pulse">✨</div>
-            <div className="absolute bottom-1 left-1 text-green-400 opacity-0 group-hover:opacity-100 transition-all duration-500 animate-bounce">🎉</div>
-            <div className="absolute top-1 left-1 text-blue-400 opacity-0 group-hover:opacity-100 transition-all duration-700 animate-spin">💫</div>
-            <div className="absolute bottom-1 right-1 text-pink-400 opacity-0 group-hover:opacity-100 transition-all duration-400 animate-ping">🎊</div>
             
             {/* Enhanced floating particles */}
             <div className="absolute top-1/4 left-1/4 w-1 h-1 bg-green-300 rounded-full opacity-0 group-hover:opacity-100 animate-ping transition-all duration-300"></div>
@@ -340,7 +315,7 @@ const ChildrenProfiles = () => {
               </h3>
               
               <p className="text-sm text-muted-foreground font-medium">
-                Create new profile! ✨
+                Create new profile!
               </p>
             </div>
           </Card>
