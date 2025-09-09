@@ -3,15 +3,19 @@ import { Button } from '@/components/ui/button';
 import { stopAllCameraStreams } from '@/utils/cameraUtils';
 import { ArrowLeft, Star, Trophy, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import GazeTrackingGamePlayPage from './GazeTrackingGamePlayPage';
 
 type GameScreen = 'instructions' | 'consent' | 'game' | 'loading' | 'countdown' | 'results';
 
 const GazeTrackingGame = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [authChecked, setAuthChecked] = useState(false);
   const [currentGameScreen, setCurrentGameScreen] = useState<GameScreen>('instructions');
+  
+  // Extract taskId from URL query parameters
+  const taskId = searchParams.get('taskId');
 
   useEffect(() => {
     fetch('http://localhost:8080/auth/session', { credentials: 'include' })
@@ -91,7 +95,7 @@ const GazeTrackingGame = () => {
 
       {/* Game Component - Full screen during gameplay */}
       <div className={`${shouldShowNavbar ? 'flex-1 flex items-center justify-center px-4 overflow-hidden' : 'h-full'} w-full max-w-4xl mx-auto`}>
-        <GazeTrackingGamePlayPage onScreenChange={setCurrentGameScreen} />
+        <GazeTrackingGamePlayPage onScreenChange={setCurrentGameScreen} taskId={taskId} />
       </div>
 
       {/* Bottom Encouragement - Only show on non-gameplay screens */}

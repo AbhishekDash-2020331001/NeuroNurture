@@ -32,6 +32,10 @@ public class RepeatWithMeGame {
     @Column(nullable = false)
     private Integer age;
     
+    // School task tracking
+    @Column
+    private String schoolTaskId;
+    
     // Round scores (similarity scores for each round) - Support all 12 rounds
     @Column
     private Double round1Score;

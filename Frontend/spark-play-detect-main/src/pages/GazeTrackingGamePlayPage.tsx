@@ -28,6 +28,7 @@ type GameScreen = 'instructions' | 'consent' | 'game' | 'loading' | 'countdown' 
 
 interface GazeTrackingGamePlayPageProps {
     onScreenChange?: (screen: GameScreen) => void;
+    taskId?: string | null;
 }
 
 class KalmanFilter {
@@ -82,7 +83,7 @@ const balloonColors = [
     '#FFEB3B', '#4CAF50', '#9C27B0', '#FF5722', '#2196F3'
 ];
 
-const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onScreenChange }) => {
+const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onScreenChange, taskId }) => {
     const navigate = useNavigate();
     const [currentScreen, setCurrentScreen] = useState<GameScreen>('instructions');
     const [gameState, setGameState] = useState<'loading' | 'countdown' | 'game' | 'results'>('loading');
@@ -174,6 +175,7 @@ const GazeTrackingGamePlayPage: React.FC<GazeTrackingGamePlayPageProps> = ({ onS
                         sessionId: sessionId,
                         childId: childId,
                         age: parseInt(childAge) || 8,
+                        schoolTaskId: taskId, // Include school task ID if available
                         round1Count: round1Count,
                         round2Count: round2Count,
                         round3Count: round3Count,

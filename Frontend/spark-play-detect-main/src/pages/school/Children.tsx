@@ -1,16 +1,23 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useSchoolAuth } from '@/contexts/school/SchoolAuthContext';
-import { 
-  Users, 
-  Search, 
-  Filter,
-  BookOpen,
-  Plus,
-  GraduationCap,
-  Calendar,
-  TrendingUp
+import { childrenService, SchoolChild } from '@/services/childrenService';
+import {
+    AlertCircle,
+    Brain,
+    Calendar,
+    CheckCircle,
+    Clock,
+    GraduationCap,
+    Mail,
+    MapPin,
+    Phone,
+    Plus,
+    Search,
+    User,
+    Users,
+    X
 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface Child {
   id: string;
@@ -27,85 +34,98 @@ interface Child {
   avatar?: string;
 }
 
-const mockChildren: Child[] = [
-  {
-    id: '1',
-    name: 'Sarah Johnson',
-    grade: 'Grade 3',
-    age: 8,
-    parentName: 'Michael Johnson',
-    parentEmail: 'michael.johnson@email.com',
-    enrollmentDate: '2024-01-15',
-    lastActive: '2024-01-20',
-    overallScore: 87,
-    gamesPlayed: 24,
-    tasksCompleted: 18
-  },
-  {
-    id: '2',
-    name: 'Alex Chen',
-    grade: 'Grade 2',
-    age: 7,
-    parentName: 'Lisa Chen',
-    parentEmail: 'lisa.chen@email.com',
-    enrollmentDate: '2024-01-10',
-    lastActive: '2024-01-19',
-    overallScore: 92,
-    gamesPlayed: 31,
-    tasksCompleted: 22
-  },
-  {
-    id: '3',
-    name: 'Emma Rodriguez',
-    grade: 'Grade 4',
-    age: 9,
-    parentName: 'Carlos Rodriguez',
-    parentEmail: 'carlos.rodriguez@email.com',
-    enrollmentDate: '2024-01-05',
-    lastActive: '2024-01-20',
-    overallScore: 78,
-    gamesPlayed: 19,
-    tasksCompleted: 15
-  },
-  {
-    id: '4',
-    name: 'James Wilson',
-    grade: 'Grade 3',
-    age: 8,
-    parentName: 'Jennifer Wilson',
-    parentEmail: 'jennifer.wilson@email.com',
-    enrollmentDate: '2024-01-12',
-    lastActive: '2024-01-18',
-    overallScore: 85,
-    gamesPlayed: 28,
-    tasksCompleted: 20
-  },
-  {
-    id: '5',
-    name: 'Maya Patel',
-    grade: 'Grade 2',
-    age: 7,
-    parentName: 'Raj Patel',
-    parentEmail: 'raj.patel@email.com',
-    enrollmentDate: '2024-01-08',
-    lastActive: '2024-01-20',
-    overallScore: 90,
-    gamesPlayed: 35,
-    tasksCompleted: 25
-  }
-];
+interface ChildDetails {
+  id: number;
+  name: string;
+  age: number;
+  height: number;
+  weight: number;
+  grade: string;
+  parentName: string;
+  parentEmail: string;
+  parentPhone: string;
+  parentAddress: string;
+  schoolId: number | null;
+  enrolled: boolean;
+}
+
+// Mock data removed - now using real data from API
 
 const Children: React.FC = () => {
   const { school } = useSchoolAuth();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGrade, setSelectedGrade] = useState('all');
   const [sortBy, setSortBy] = useState('name');
+  
+  // Real children data state
+  const [children, setChildren] = useState<SchoolChild[]>([]);
+  const [isLoadingChildren, setIsLoadingChildren] = useState(true);
+  const [childrenError, setChildrenError] = useState('');
+  
+  // Add Child Modal State
+  const [showAddChildModal, setShowAddChildModal] = useState(false);
+  const [childIdInput, setChildIdInput] = useState('');
+  const [childDetails, setChildDetails] = useState<ChildDetails | null>(null);
+  const [selectedEnrollmentGrade, setSelectedEnrollmentGrade] = useState('');
+  const [isLoadingChild, setIsLoadingChild] = useState(false);
+  const [isEnrolling, setIsEnrolling] = useState(false);
+  const [error, setError] = useState('');
+
+  // Grade options with beautiful names and descriptions
+  const gradeOptions = [
+    {
+      value: 'Gentle Bloom',
+      label: 'Gentle Bloom',
+      description: 'Mild autism - Needs gentle support and encouragement',
+      color: 'text-green-600 bg-green-100',
+      icon: '🌱'
+    },
+    {
+      value: 'Rising Star',
+      label: 'Rising Star', 
+      description: 'Moderate autism - Requires structured guidance and patience',
+      color: 'text-blue-600 bg-blue-100',
+      icon: '⭐'
+    },
+    {
+      value: 'Bright Light',
+      label: 'Bright Light',
+      description: 'Severe autism - Needs intensive support and specialized care',
+      color: 'text-purple-600 bg-purple-100',
+      icon: '✨'
+    }
+  ];
+
+  // Fetch children data when component mounts
+  useEffect(() => {
+    const fetchChildren = async () => {
+      if (!school?.id) return;
+      
+      setIsLoadingChildren(true);
+      setChildrenError('');
+      
+      try {
+        const childrenData = await childrenService.getChildrenBySchool(parseInt(school.id));
+        setChildren(childrenData);
+      } catch (error) {
+        console.error('Error fetching children:', error);
+        setChildrenError('Failed to load children data. Please try again.');
+      } finally {
+        setIsLoadingChildren(false);
+      }
+    };
+
+    fetchChildren();
+  }, [school?.id]);
 
   // SchoolAuthGuard handles authentication, so we can assume school exists here
 
-  const filteredChildren = mockChildren.filter(child => {
-    const matchesSearch = child.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         child.parentName.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredChildren = children.filter(child => {
+    const searchTermLower = searchTerm.toLowerCase();
+    const matchesSearch = child.name.toLowerCase().includes(searchTermLower) ||
+                         child.parentName.toLowerCase().includes(searchTermLower) ||
+                         child.id.toString().toLowerCase().includes(searchTermLower);
     const matchesGrade = selectedGrade === 'all' || child.grade === selectedGrade;
     return matchesSearch && matchesGrade;
   });
@@ -155,196 +175,550 @@ const Children: React.FC = () => {
     return diffDays;
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Children Management</h1>
-          <p className="text-gray-600">
-            Manage {school.currentChildren} enrolled children and track their progress
-          </p>
-        </div>
-        <div className="mt-4 sm:mt-0">
-          <Link
-            to="/school/children/add"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add New Child
-          </Link>
-        </div>
-      </div>
+  // Handle child lookup by ID
+  const handleLookupChild = async () => {
+    if (!childIdInput.trim()) {
+      setError('Please enter a child ID');
+      return;
+    }
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-blue-500 text-white">
-              <Users className="h-6 w-6" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Children</p>
-              <p className="text-2xl font-bold text-gray-900">{school.currentChildren}</p>
-            </div>
-          </div>
-        </div>
+    setIsLoadingChild(true);
+    setError('');
+    setChildDetails(null);
+
+    try {
+      const response = await fetch(`http://localhost:8082/api/parents/children/${childIdInput}/details`);
+      if (response.ok) {
+        const childData = await response.json();
+        setChildDetails(childData);
+      } else if (response.status === 404) {
+        setError('Child not found. Please check the child ID.');
+      } else {
+        setError('Failed to fetch child details. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error fetching child details:', error);
+      setError('Network error. Please check your connection and try again.');
+    } finally {
+      setIsLoadingChild(false);
+    }
+  };
+
+  // Handle child enrollment
+  const handleEnrollChild = async () => {
+    if (!childDetails || !school || !selectedEnrollmentGrade) {
+      setError('Please select a grade for the child');
+      return;
+    }
+
+    setIsEnrolling(true);
+    setError('');
+
+    try {
+      const response = await fetch(`http://localhost:8082/api/parents/children/${childDetails.id}/enroll-school`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          schoolId: parseInt(school.id),
+          grade: selectedEnrollmentGrade
+        }),
+      });
+
+      if (response.ok) {
+        // Success - close modal and refresh data
+        setShowAddChildModal(false);
+        setChildIdInput('');
+        setChildDetails(null);
+        setSelectedEnrollmentGrade('');
+        setError('');
         
+        // Refresh children list
+        const childrenData = await childrenService.getChildrenBySchool(parseInt(school.id));
+        setChildren(childrenData);
+        
+        alert(`Child enrolled successfully as ${selectedEnrollmentGrade}!`);
+      } else {
+        const errorText = await response.text();
+        setError(`Enrollment failed: ${errorText}`);
+      }
+    } catch (error) {
+      console.error('Error enrolling child:', error);
+      setError('Network error during enrollment. Please try again.');
+    } finally {
+      setIsEnrolling(false);
+    }
+  };
+
+  // Reset modal state
+  const resetModal = () => {
+    setShowAddChildModal(false);
+    setChildIdInput('');
+    setChildDetails(null);
+    setSelectedEnrollmentGrade('');
+    setError('');
+    setIsLoadingChild(false);
+    setIsEnrolling(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="space-y-6 p-6">
+        {/* Professional Header */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-green-500 text-white">
-              <TrendingUp className="h-6 w-6" />
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-gray-800 rounded-lg">
+              <Users className="h-6 w-6 text-white" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Avg. Score</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {Math.round(mockChildren.reduce((acc, child) => acc + child.overallScore, 0) / mockChildren.length)}%
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Children Management
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Manage {school.currentChildren} enrolled children and track their progress
               </p>
             </div>
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-yellow-500 text-white">
-              <BookOpen className="h-6 w-6" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Active Tasks</p>
-              <p className="text-2xl font-bold text-gray-900">12</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-purple-500 text-white">
-              <GraduationCap className="h-6 w-6" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Grades</p>
-              <p className="text-2xl font-bold text-gray-900">4</p>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Filters and Search */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
+        {/* Children List with Integrated Controls */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white border-b border-gray-200 px-6 py-4">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              {/* Left side - Title and description */}
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">
+                  Children ({filteredChildren.length})
+                </h2>
+                <p className="text-gray-600 text-sm">Manage and track student progress</p>
+              </div>
+
+              {/* Right side - Controls */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search children or parents..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+                  <input
+                    type="text"
+                    placeholder="Search by name, ID, or parent..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 w-full sm:w-64"
+                  />
           </div>
           
-          <div className="flex gap-3">
+                {/* Grade Filter */}
             <select
               value={selectedGrade}
               onChange={(e) => setSelectedGrade(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-w-[140px]"
             >
               <option value="all">All Grades</option>
-              <option value="Grade 1">Grade 1</option>
-              <option value="Grade 2">Grade 2</option>
-              <option value="Grade 3">Grade 3</option>
-              <option value="Grade 4">Grade 4</option>
+                  <option value="Gentle Bloom">Gentle Bloom</option>
+                  <option value="Rising Star">Rising Star</option>
+                  <option value="Bright Light">Bright Light</option>
             </select>
             
+                {/* Sort */}
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-w-[160px]"
             >
               <option value="name">Sort by Name</option>
               <option value="grade">Sort by Grade</option>
               <option value="score">Sort by Score</option>
               <option value="recent">Sort by Recent Activity</option>
             </select>
+                
+                {/* Add New Child Button */}
+                <button
+                  onClick={() => setShowAddChildModal(true)}
+                  className="inline-flex items-center px-4 py-2 bg-gray-800 text-white text-sm font-semibold rounded-lg hover:bg-gray-900 transition-all duration-200"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add New Child
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-
-      {/* Children List */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">
-            Children ({filteredChildren.length})
-          </h2>
-        </div>
         
-        <div className="divide-y divide-gray-200">
-          {sortedChildren.map((child) => (
-            <div key={child.id} className="p-6 hover:bg-gray-50 transition-colors">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                    {child.name.charAt(0)}
-                  </div>
-                  
+        {isLoadingChildren ? (
+          <div className="p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading children...</p>
+          </div>
+        ) : childrenError ? (
+          <div className="p-8 text-center">
+            <div className="text-red-600 mb-4">
+              <AlertCircle className="h-12 w-12 mx-auto mb-2" />
+              <p className="text-lg font-medium">Error Loading Children</p>
+              <p className="text-sm">{childrenError}</p>
+            </div>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        ) : children.length === 0 ? (
+          <div className="p-8 text-center">
+            <div className="text-gray-400 mb-4">
+              <Users className="h-12 w-12 mx-auto mb-2" />
+              <p className="text-lg font-medium">No Children Enrolled</p>
+              <p className="text-sm">No children have been enrolled in this school yet.</p>
+            </div>
+            <button
+              onClick={() => setShowAddChildModal(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Add First Child
+            </button>
+          </div>
+        ) : (
+          <div>
+            {/* Column Headers */}
+            <div className="bg-white px-6 py-3 border-b border-gray-200">
+              <div className="flex items-center">
+                {/* Student Column - Flexible width */}
+                <div className="flex items-center space-x-4 flex-1 min-w-0">
+                  <div className="w-10"></div> {/* Spacer for avatar */}
                   <div>
-                    <Link
-                      to={`/school/children/${child.id}`}
-                      className="text-lg font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
-                    >
-                      {child.name}
-                    </Link>
-                    <div className="flex items-center space-x-4 text-sm text-gray-500">
-                      <span className="flex items-center">
-                        <GraduationCap className="h-4 w-4 mr-1" />
-                        {child.grade}
-                      </span>
-                      <span>{child.age} years old</span>
-                      <span className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        Enrolled {formatDate(child.enrollmentDate)}
-                      </span>
-                    </div>
-                    <div className="mt-1 text-sm text-gray-600">
-                      Parent: {child.parentName} ({child.parentEmail})
-                    </div>
+                    <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Student</h3>
                   </div>
                 </div>
                 
-                <div className="flex items-center space-x-6">
-                  <div className="text-center">
-                    <div className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(child.overallScore)}`}>
-                      {child.overallScore}% - {getScoreLabel(child.overallScore)}
+                {/* Fixed width columns for proper alignment */}
+                <div className="flex items-center">
+                  <div className="w-20 text-center">
+                    <div className="flex items-center justify-center space-x-1 mb-1">
+                      <Brain className="h-4 w-4 text-gray-600" />
+                      <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">ALI</span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">Overall Score</p>
                   </div>
                   
-                  <div className="text-center">
-                    <p className="text-sm font-medium text-gray-900">{child.gamesPlayed}</p>
-                    <p className="text-xs text-gray-500">Games Played</p>
+                  <div className="w-16 text-center">
+                    <div className="flex items-center justify-center space-x-1 mb-1">
+                      <Clock className="h-4 w-4 text-gray-600" />
+                      <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Age</span>
+                    </div>
                   </div>
                   
-                  <div className="text-center">
-                    <p className="text-sm font-medium text-gray-900">{child.tasksCompleted}</p>
-                    <p className="text-xs text-gray-500">Tasks Completed</p>
+                  <div className="w-32 text-center">
+                    <div className="flex items-center justify-center space-x-1 mb-1">
+                      <GraduationCap className="h-4 w-4 text-gray-600" />
+                      <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Grade</span>
+                    </div>
                   </div>
-                  
-                  <div className="text-center">
-                    <p className={`text-sm font-medium ${
-                      getDaysSinceLastActive(child.lastActive) <= 1 ? 'text-green-600' : 'text-yellow-600'
-                    }`}>
-                      {getDaysSinceLastActive(child.lastActive)} day{getDaysSinceLastActive(child.lastActive) !== 1 ? 's' : ''} ago
-                    </p>
-                    <p className="text-xs text-gray-500">Last Active</p>
-                  </div>
-                  
                 </div>
               </div>
             </div>
-          ))}
+
+      {/* Children List */}
+            <div className="divide-y divide-gray-100">
+              {sortedChildren.map((child) => {
+                // Generate dummy ALI percentage (60-95% range)
+                const dummyALI = Math.floor(Math.random() * 36) + 60;
+                
+                return (
+                  <div 
+                    key={child.id} 
+                    className="px-6 py-4 hover:bg-gray-50 transition-colors cursor-pointer group"
+                    onClick={() => navigate(`/school/children/${child.id}`)}
+                  >
+                    <div className="flex items-center">
+                      {/* Student Column - Flexible width */}
+                      <div className="flex items-center space-x-4 flex-1 min-w-0">
+                        <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-white font-semibold text-sm shadow-sm group-hover:shadow-md transition-all duration-200">
+                          {child.name.charAt(0)}
+                        </div>
+                  
+                        <div className="min-w-0 flex-1">
+                    <Link
+                      to={`/school/children/${child.id}`}
+                            className="text-lg font-semibold text-gray-900 hover:text-indigo-600 transition-colors cursor-pointer group-hover:text-indigo-600 block truncate"
+                    >
+                      {child.name}
+                    </Link>
+                          <div className="flex items-center text-xs text-gray-500 mt-1">
+                            <Calendar className="h-3 w-3 mr-1" />
+                            Enrolled {formatDate(child.enrollmentDate)}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Fixed width columns for proper alignment */}
+                      <div className="flex items-center">
+                        {/* ALI (Autism Likelihood Index) */}
+                        <div className="w-20 text-center">
+                          <div className={`px-2 py-1 rounded text-sm font-bold mx-auto inline-block ${
+                            dummyALI >= 85 ? 'text-red-700 bg-red-100' :
+                            dummyALI >= 75 ? 'text-yellow-700 bg-yellow-100' :
+                            dummyALI >= 65 ? 'text-yellow-600 bg-yellow-50' :
+                            'text-green-700 bg-green-100'
+                          }`}>
+                            {dummyALI}%
+                          </div>
+                        </div>
+                        
+                        {/* Age */}
+                        <div className="w-16 text-center">
+                          <div className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-sm font-bold mx-auto inline-block">
+                            {child.age}
+                          </div>
+                        </div>
+                        
+                        {/* Grade */}
+                        <div className="w-32 text-center">
+                          <div className={`px-2 py-1 rounded text-sm font-bold mx-auto inline-block ${
+                            child.grade === 'Gentle Bloom' ? 'text-green-700 bg-green-100' :
+                            child.grade === 'Rising Star' ? 'text-gray-700 bg-gray-100' :
+                            'text-red-700 bg-red-100'
+                          }`}>
+                            {child.grade}
+                          </div>
+                        </div>
+                    </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
         </div>
+
+        {/* Add Child Modal */}
+      {showAddChildModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Add New Child</h2>
+                <button
+                  onClick={resetModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Child ID Input */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Child ID
+                </label>
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    value={childIdInput}
+                    onChange={(e) => setChildIdInput(e.target.value)}
+                    placeholder="Enter child ID..."
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    disabled={isLoadingChild}
+                  />
+                  <button
+                    onClick={handleLookupChild}
+                    disabled={isLoadingChild || !childIdInput.trim()}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isLoadingChild ? 'Looking up...' : 'Lookup'}
+                  </button>
+                </div>
+                {error && (
+                  <div className="mt-2 flex items-center text-red-600 text-sm">
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    {error}
+                  </div>
+                )}
+              </div>
+
+              {/* Child Details */}
+              {childDetails && (
+                <div className="border border-gray-200 rounded-lg p-6 mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <User className="h-5 w-5 mr-2" />
+                    Child Information
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Name</label>
+                      <p className="text-gray-900">{childDetails.name}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Age</label>
+                      <p className="text-gray-900">{childDetails.age} years old</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Height</label>
+                      <p className="text-gray-900">{childDetails.height} cm</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600">Weight</label>
+                      <p className="text-gray-900">{childDetails.weight} kg</p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
+                      <User className="h-4 w-4 mr-2" />
+                      Parent Information
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 flex items-center">
+                          <User className="h-4 w-4 mr-1" />
+                          Parent Name
+                        </label>
+                        <p className="text-gray-900">{childDetails.parentName}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 flex items-center">
+                          <Mail className="h-4 w-4 mr-1" />
+                          Email
+                        </label>
+                        <p className="text-gray-900">{childDetails.parentEmail}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 flex items-center">
+                          <Phone className="h-4 w-4 mr-1" />
+                          Phone
+                        </label>
+                        <p className="text-gray-900">{childDetails.parentPhone}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 flex items-center">
+                          <MapPin className="h-4 w-4 mr-1" />
+                          Address
+                        </label>
+                        <p className="text-gray-900">{childDetails.parentAddress}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Enrollment Status */}
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600">Enrollment Status</label>
+                        <div className="flex items-center mt-1">
+                          {childDetails.enrolled ? (
+                            <>
+                              <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                              <span className="text-green-600 font-medium">Already enrolled in a school</span>
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle className="h-4 w-4 text-yellow-600 mr-2" />
+                              <span className="text-yellow-600 font-medium">Not enrolled in any school</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Grade Selection - Only show if child is not enrolled */}
+              {childDetails && !childDetails.enrolled && (
+                <div className="border border-gray-200 rounded-lg p-6 mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <GraduationCap className="h-5 w-5 mr-2" />
+                    Assign Grade Level
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Please select the appropriate grade level for {childDetails.name} based on their autism severity:
+                  </p>
+                  
+                  <div className="space-y-3">
+                    {gradeOptions.map((option) => (
+                      <div
+                        key={option.value}
+                        className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                          selectedEnrollmentGrade === option.value
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        onClick={() => setSelectedEnrollmentGrade(option.value)}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                            selectedEnrollmentGrade === option.value
+                              ? 'border-blue-500 bg-blue-500'
+                              : 'border-gray-300'
+                          }`}>
+                            {selectedEnrollmentGrade === option.value && (
+                              <CheckCircle className="h-4 w-4 text-white" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-2xl">{option.icon}</span>
+                              <h4 className="font-semibold text-gray-900">{option.label}</h4>
+                            </div>
+                            <p className="text-sm text-gray-600 mt-1">{option.description}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {!selectedEnrollmentGrade && (
+                    <div className="mt-3 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-2" />
+                      Please select a grade level to continue
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={resetModal}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                {childDetails && !childDetails.enrolled && (
+                  <button
+                    onClick={handleEnrollChild}
+                    disabled={isEnrolling || !selectedEnrollmentGrade}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+                  >
+                    {isEnrolling ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Enrolling...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Enroll as {selectedEnrollmentGrade || 'Grade'}
+                      </>
+                    )}
+                  </button>
+                )}
+                {childDetails && childDetails.enrolled && (
+                  <button
+                    disabled
+                    className="px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed flex items-center"
+                  >
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    Already Enrolled
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );

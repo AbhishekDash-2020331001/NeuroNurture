@@ -75,14 +75,19 @@ export default function Dashboard() {
         onTabChange={setActiveTab} 
       />
 
-      <div className="max-w-7xl mx-auto space-y-6 px-1 py-4 pt-20 relative z-10">
-        {/* Tab Content */}
-        <div className="min-h-[600px]">
-          {activeTab === 'playground' && <ChildPlaygroundPage username={username} />}
-          {activeTab === 'school' && <ChildSchoolPage />}
-          {activeTab === 'doctor' && <ChildDoctorPage />}
+      {activeTab === 'school' ? (
+        <div className="w-full relative z-10" style={{ marginTop: '80px' }}>
+          <ChildSchoolPage />
         </div>
-      </div>
+      ) : (
+        <div className="max-w-7xl mx-auto space-y-6 px-1 py-4 pt-20 relative z-10">
+          {/* Tab Content */}
+          <div className="min-h-[600px]">
+            {activeTab === 'playground' && <ChildPlaygroundPage username={username} />}
+            {activeTab === 'doctor' && <ChildDoctorPage />}
+          </div>
+        </div>
+      )}
       
       {/* Gemini Chat Components */}
       <FloatingGeminiButton 

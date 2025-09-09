@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { getCurrentChild, getCurrentChildId } from '../../../utils/childUtils';
 import Navbar from '../../Navbar';
 import { Button } from '../../ui/button';
@@ -14,6 +15,9 @@ interface GameResult {
 type GameState = 'idle' | 'listening' | 'speaking' | 'processing' | 'finished';
 
 const RepeatWithMeGameplay: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const taskId = searchParams.get('taskId');
+  
   const [gameState, setGameState] = useState<GameState>('idle');
   const [roundCountdown, setRoundCountdown] = useState<number>(2);
   const [isRoundCountdownActive, setIsRoundCountdownActive] = useState<boolean>(false);
@@ -442,6 +446,7 @@ const RepeatWithMeGameplay: React.FC = () => {
          sessionId: sessionId,
          childId: childData?.id?.toString() || 'unknown',
          age: consentData?.childAge ? parseInt(consentData.childAge) : (childData?.dateOfBirth ? calculateAge(childData.dateOfBirth) : 8),
+         schoolTaskId: taskId, // Include school task ID if available
          // All 12 rounds
          round1Score: resultsToUse[0]?.similarity_score || null,
          round2Score: resultsToUse[1]?.similarity_score || null,

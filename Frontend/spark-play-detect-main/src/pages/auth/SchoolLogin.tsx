@@ -32,6 +32,8 @@ const SchoolLoginForm: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('School login response:', data);
+        console.log('JWT Token received:', data.token);
         
         // Store token and school data
         localStorage.setItem('schoolToken', data.token);

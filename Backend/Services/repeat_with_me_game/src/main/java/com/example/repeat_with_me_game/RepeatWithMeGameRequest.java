@@ -8,6 +8,9 @@ public class RepeatWithMeGameRequest {
     private String childId;
     private Integer age;
     
+    // School task tracking
+    private String schoolTaskId;
+    
     // Round scores - Support all 12 rounds
     private Double round1Score;
     private Double round2Score;

@@ -25,6 +25,7 @@ public class DanceDoodleGameService {
         game.setDateTime(request.getDateTime() != null ? request.getDateTime() : LocalDateTime.now());
         game.setChildId(request.getChildId());
         game.setAge(request.getAge());
+        game.setSchoolTaskId(request.getSchoolTaskId());
         game.setCool_arms(request.getCool_arms());
         game.setOpen_wings(request.getOpen_wings());
         game.setSilly_boxer(request.getSilly_boxer());
@@ -326,6 +327,16 @@ public class DanceDoodleGameService {
             case "stretch" -> game.getStretch();
             default -> null;
         };
+    }
+    
+    // Get sessions by task ID and child ID
+    public List<DanceDoodleGame> getSessionsByTaskAndChild(String taskId, String childId) {
+        return repository.findBySchoolTaskIdAndChildId(taskId, childId);
+    }
+    
+    // Delete all sessions by task ID
+    public void deleteSessionsByTaskId(String taskId) {
+        repository.deleteBySchoolTaskId(taskId);
     }
 }
 

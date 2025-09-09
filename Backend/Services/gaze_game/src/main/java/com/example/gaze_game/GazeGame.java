@@ -32,6 +32,10 @@ public class GazeGame {
     @Column(nullable = false)
     private Integer age;
     
+    // School task tracking
+    @Column
+    private String schoolTaskId;
+    
     // Round-specific balloon counts
     private Integer round1Count;
     private Integer round2Count;

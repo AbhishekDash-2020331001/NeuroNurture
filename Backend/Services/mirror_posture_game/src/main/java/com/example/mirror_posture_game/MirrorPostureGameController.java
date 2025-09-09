@@ -68,6 +68,20 @@ public class MirrorPostureGameController {
         return ResponseEntity.ok(records);
     }
     
+    // Get sessions by task ID and child ID
+    @GetMapping("/sessions/task/{taskId}/child/{childId}")
+    public ResponseEntity<List<MirrorPostureGame>> getSessionsByTaskAndChild(@PathVariable String taskId, @PathVariable String childId) {
+        List<MirrorPostureGame> sessions = service.getSessionsByTaskAndChild(taskId, childId);
+        return ResponseEntity.ok(sessions);
+    }
+    
+    // Delete all sessions by task ID
+    @DeleteMapping("/sessions/task/{taskId}")
+    public ResponseEntity<Void> deleteSessionsByTaskId(@PathVariable String taskId) {
+        service.deleteSessionsByTaskId(taskId);
+        return ResponseEntity.ok().build();
+    }
+    
     // Get training data
     @GetMapping("/training-data")
     public ResponseEntity<List<MirrorPostureGame>> getTrainingData() {

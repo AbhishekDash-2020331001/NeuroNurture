@@ -70,4 +70,10 @@ public interface GazeGameRepository extends JpaRepository<GazeGame, Long> {
     // Custom query to get total games played this month
     @Query(value = "SELECT COUNT(*) FROM gaze_game WHERE date_time >= CURRENT_DATE - INTERVAL '30 days'", nativeQuery = true)
     Long getThisMonthGamesCount();
+    
+    // Find by school task ID and child ID
+    List<GazeGame> findBySchoolTaskIdAndChildId(String schoolTaskId, String childId);
+    
+    // Delete all sessions by school task ID
+    void deleteBySchoolTaskId(String schoolTaskId);
 }

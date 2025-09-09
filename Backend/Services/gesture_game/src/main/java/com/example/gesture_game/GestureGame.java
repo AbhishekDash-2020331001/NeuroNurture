@@ -32,6 +32,10 @@ public class GestureGame {
     @Column(nullable = false)
     private Integer age;
     
+    // School task tracking
+    @Column
+    private String schoolTaskId;
+    
     // Gesture completion times
     private Integer thumbs_up;
     private Integer thumbs_down;

@@ -164,5 +164,19 @@ public class DanceDoodleGameController {
     public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok("Dance Doodle Game Service is running!");
     }
+    
+    // Get sessions by task ID and child ID
+    @GetMapping("/sessions/task/{taskId}/child/{childId}")
+    public ResponseEntity<List<DanceDoodleGame>> getSessionsByTaskAndChild(@PathVariable String taskId, @PathVariable String childId) {
+        List<DanceDoodleGame> sessions = service.getSessionsByTaskAndChild(taskId, childId);
+        return ResponseEntity.ok(sessions);
+    }
+    
+    // Delete all sessions by task ID
+    @DeleteMapping("/sessions/task/{taskId}")
+    public ResponseEntity<Void> deleteSessionsByTaskId(@PathVariable String taskId) {
+        service.deleteSessionsByTaskId(taskId);
+        return ResponseEntity.ok().build();
+    }
 }
 

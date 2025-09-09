@@ -25,7 +25,11 @@ interface DanceGameSession {
   consentData?: any;
 }
 
-const DanceDoodleGame: React.FC = () => {
+interface DanceDoodleGameProps {
+  taskId?: string | null;
+}
+
+const DanceDoodleGame: React.FC<DanceDoodleGameProps> = ({ taskId }) => {
     const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const [webcamRunning, setWebcamRunning] = useState(false)
@@ -176,6 +180,7 @@ const DanceDoodleGame: React.FC = () => {
                 dateTime: gameSession.startTime,
                 childId: childData?.id?.toString() || '1',
                 age: gameSession.consentData?.childAge ? parseInt(gameSession.consentData.childAge) : (childData?.dateOfBirth ? calculateAge(childData.dateOfBirth) : 8),
+                schoolTaskId: taskId, // Include school task ID if available
                 ...poseTimes,
                 videoURL: "https://example.com/dummy-video.mp4", // Dummy URL for now
                 isTrainingAllowed: gameSession.consentData?.dataConsent === true,

@@ -1,11 +1,7 @@
 package com.example.school.filter;
 
-import com.example.school.service.SchoolAuthService;
-import com.example.school.util.JwtUtil;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -14,7 +10,13 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
+import com.example.school.service.SchoolAuthService;
+import com.example.school.util.JwtUtil;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -28,6 +30,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        
+        String requestPath = request.getRequestURI();
+        System.err.println("JwtAuthenticationFilter: Processing request to " + requestPath);
+        
+        // Skip JWT validation for permitAll endpoints
+        if (requestPath.startsWith("/api/school/auth/") || 
+            requestPath.startsWith("/api/school/admin/") ||
+            requestPath.startsWith("/api/school/verify-email") ||
+            requestPath.startsWith("/api/school/tasks/") ||
+            requestPath.startsWith("/api/school/task-performance/") ||
+            requestPath.startsWith("/api/school/schools/") ||
+            requestPath.startsWith("/api/school/children/")) {
+            System.err.println("JwtAuthenticationFilter: Skipping JWT validation for " + requestPath);
+            filterChain.doFilter(request, response);
+            return;
+        }
         
         final String authorizationHeader = request.getHeader("Authorization");
         

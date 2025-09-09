@@ -14,6 +14,12 @@ public interface RepeatWithMeGameRepository extends JpaRepository<RepeatWithMeGa
     
     List<RepeatWithMeGame> findByChildId(String childId);
     
+    // Find by school task ID and child ID
+    List<RepeatWithMeGame> findBySchoolTaskIdAndChildId(String schoolTaskId, String childId);
+    
+    // Delete all sessions by school task ID
+    void deleteBySchoolTaskId(String schoolTaskId);
+    
     List<RepeatWithMeGame> findBySessionId(String sessionId);
     
     List<RepeatWithMeGame> findByIsTrainingAllowedTrue();

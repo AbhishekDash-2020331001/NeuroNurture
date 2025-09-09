@@ -21,6 +21,7 @@ interface SchoolAuthContextType {
   logout: () => void;
   clearAuthData: () => void;
   updateSchoolData: (data: Partial<School>) => void;
+  testJwtAuth: () => Promise<boolean>;
 }
 
 const SchoolAuthContext = createContext<SchoolAuthContextType | undefined>(undefined);
@@ -44,6 +45,11 @@ export const SchoolAuthProvider: React.FC<SchoolAuthProviderProps> = ({ children
   useEffect(() => {
     // Check for existing school session in localStorage
     const savedSchool = localStorage.getItem('schoolAuth');
+    const savedToken = localStorage.getItem('schoolToken');
+    console.log('SchoolAuthContext: Checking saved data...');
+    console.log('Saved school:', savedSchool);
+    console.log('Saved token:', savedToken);
+    
     if (savedSchool) {
       try {
         const schoolData = JSON.parse(savedSchool);
@@ -56,6 +62,7 @@ export const SchoolAuthProvider: React.FC<SchoolAuthProviderProps> = ({ children
         setSchool(updatedSchoolData);
         // Update localStorage with the new fields
         localStorage.setItem('schoolAuth', JSON.stringify(updatedSchoolData));
+        console.log('SchoolAuthContext: School data loaded successfully');
       } catch (error) {
         console.error('Error parsing saved school data:', error);
         localStorage.removeItem('schoolAuth');
@@ -78,6 +85,8 @@ export const SchoolAuthProvider: React.FC<SchoolAuthProviderProps> = ({ children
 
       if (response.ok) {
         const data = await response.json();
+        console.log('SchoolAuthContext login response:', data);
+        console.log('JWT Token received:', data.token);
         
         // Store token and school data
         localStorage.setItem('schoolToken', data.token);
@@ -133,6 +142,30 @@ export const SchoolAuthProvider: React.FC<SchoolAuthProviderProps> = ({ children
     }
   };
 
+  // Test JWT authentication
+  const testJwtAuth = async (): Promise<boolean> => {
+    const token = localStorage.getItem('schoolToken');
+    if (!token) {
+      console.log('No JWT token found');
+      return false;
+    }
+
+    try {
+      const response = await fetch('http://localhost:8091/api/school/tasks/school/1', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      console.log('JWT test response status:', response.status);
+      return response.ok;
+    } catch (error) {
+      console.error('JWT test error:', error);
+      return false;
+    }
+  };
+
   const value: SchoolAuthContextType = {
     school,
     isAuthenticated: !!school,
@@ -140,7 +173,8 @@ export const SchoolAuthProvider: React.FC<SchoolAuthProviderProps> = ({ children
     login,
     logout,
     clearAuthData,
-    updateSchoolData
+    updateSchoolData,
+    testJwtAuth
   };
 
   return (

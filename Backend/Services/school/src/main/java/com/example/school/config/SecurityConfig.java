@@ -33,6 +33,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/school/auth/**").permitAll()
                 .requestMatchers("/api/school/admin/**").permitAll() // Allow admin service to access these endpoints
                 .requestMatchers("/api/school/verify-email").permitAll() // Allow email verification
+                .requestMatchers("/api/school/tasks/**").permitAll() // Allow task management endpoints
+                .requestMatchers("/api/school/task-performance/**").permitAll() // Allow task performance endpoints
+                .requestMatchers("/api/school/schools/**").permitAll() // Allow parent service to access school info
+                .requestMatchers("/api/school/children/**").permitAll() // Allow children endpoints for progress tracking
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -43,7 +47,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:3000", "http://localhost:8081", "http://localhost:3001", "http://localhost:8090"));
+        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:3000", "http://localhost:8081", "http://localhost:3001", "http://localhost:8090", "http://localhost:5173"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

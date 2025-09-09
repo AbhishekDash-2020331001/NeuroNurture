@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { stopAllCameraStreams } from "@/utils/cameraUtils";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import RepeatWithMeGameplay from "./components/games/repeatWithMe/RepeatWithMeGameplay";
 import AddChild from "./pages/AddChild";
 import Auth from "./pages/Auth";
@@ -40,10 +40,12 @@ import ParentRegister from "./pages/auth/ParentRegister";
 import SchoolLogin from "./pages/auth/SchoolLogin";
 import SchoolRegister from "./pages/auth/SchoolRegister";
 // School Dashboard imports
+import SchoolRedirectGuard from "./components/auth/SchoolRedirectGuard";
 import SchoolAuthGuard from "./components/school/SchoolAuthGuard";
 import SchoolDashboardLayout from "./components/school/SchoolDashboardLayout";
 import { SchoolAuthProvider } from "./contexts/school/SchoolAuthContext";
 import ChildProfile from "./pages/school/ChildProfile";
+import ChildProgress from "./pages/school/ChildProgress";
 import ChildProgressComparison from "./pages/school/ChildProgressComparison";
 import Children from "./pages/school/Children";
 import SchoolDashboard from "./pages/school/SchoolDashboard";
@@ -51,18 +53,17 @@ import SchoolEmailVerification from "./pages/school/SchoolEmailVerification";
 import SchoolPendingApproval from "./pages/school/SchoolPendingApproval";
 import TaskDetails from "./pages/school/TaskDetails";
 import Tasks from "./pages/school/Tasks";
-import Tournaments from "./pages/school/tournaments";
 import TournamentDetails from "./pages/school/TournamentDetails";
+import Tournaments from "./pages/school/tournaments";
 // Doctor Dashboard imports
 import DoctorAuthGuard from "./components/doctor/DoctorAuthGuard";
 import DoctorDashboardLayout from "./components/doctor/DoctorDashboardLayout";
 import { DoctorAuthProvider } from "./contexts/doctor/DoctorAuthContext";
+import DoctorChat from "./pages/doctor/DoctorChat";
 import DoctorDashboard from "./pages/doctor/DoctorDashboard";
 import EnrolledChildren from "./pages/doctor/EnrolledChildren";
-import ChildProgress from "./pages/doctor/ChildProgress";
-import TaskManagement from "./pages/doctor/TaskManagement";
 import TaskHistory from "./pages/doctor/TaskHistory";
-import DoctorChat from "./pages/doctor/DoctorChat";
+import TaskManagement from "./pages/doctor/TaskManagement";
 const queryClient = new QueryClient();
 
 // Component to handle global camera cleanup
@@ -91,8 +92,18 @@ const App = () => (
         <BrowserRouter>
           <CameraCleanupHandler />
           <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/auth" element={<Auth />} />
+          <Route path="/" element={
+            <>
+              <SchoolRedirectGuard />
+              <LandingPage />
+            </>
+          } />
+          <Route path="/auth" element={
+            <>
+              <SchoolRedirectGuard />
+              <Auth />
+            </>
+          } />
           {/* Authentication Routes */}
           <Route path="/auth/parent/login" element={<ParentLogin />} />
           <Route path="/auth/parent/register" element={<ParentRegister />} />
@@ -213,9 +224,11 @@ const App = () => (
               </SchoolAuthGuard>
             </SchoolAuthProvider>
           }>
+            <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<SchoolDashboard />} />
             <Route path="children" element={<Children />} />
             <Route path="children/:childId" element={<ChildProfile />} />
+            <Route path="children/:childId/progress" element={<ChildProgress />} />
             <Route path="tasks" element={<Tasks />} />
             <Route path="tasks/:taskId" element={<TaskDetails />} />
             <Route path="tournaments" element={<Tournaments />} />

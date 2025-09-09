@@ -66,7 +66,11 @@ interface ConsentData {
 
 
 
-const MirrorPostureGame: React.FC = () => {
+interface MirrorPostureGameProps {
+  taskId?: string | null;
+}
+
+const MirrorPostureGame: React.FC<MirrorPostureGameProps> = ({ taskId }) => {
   const [gameState, setGameState] = useState<GameState>('idle');
   const [currentScreen, setCurrentScreen] = useState<GameScreen>('instructions');
   const [countdown, setCountdown] = useState<number>(5);
@@ -566,6 +570,7 @@ const MirrorPostureGame: React.FC = () => {
          dateTime: gameSession.startTime,
          childId: childData?.id?.toString() || '1',
          age: gameSession.consentData?.childAge ? parseInt(gameSession.consentData.childAge) : (childData?.dateOfBirth ? calculateAge(childData.dateOfBirth) : 8),
+         schoolTaskId: taskId, // Include school task ID if available
          ...postureTimes,
          videoURL: "https://example.com/dummy-video.mp4", // Dummy URL for now
          isTrainingAllowed: gameSession.consentData?.dataConsent === true,

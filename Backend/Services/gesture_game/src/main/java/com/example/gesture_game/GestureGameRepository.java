@@ -18,6 +18,12 @@ public interface GestureGameRepository extends JpaRepository<GestureGame, Long> 
     // Find all records by child ID
     List<GestureGame> findByChildId(String childId);
     
+    // Find by school task ID and child ID
+    List<GestureGame> findBySchoolTaskIdAndChildId(String schoolTaskId, String childId);
+    
+    // Delete all sessions by school task ID
+    void deleteBySchoolTaskId(String schoolTaskId);
+    
     // Find paginated records by child ID, ordered by date
     Page<GestureGame> findByChildIdOrderByDateTimeDesc(String childId, Pageable pageable);
     

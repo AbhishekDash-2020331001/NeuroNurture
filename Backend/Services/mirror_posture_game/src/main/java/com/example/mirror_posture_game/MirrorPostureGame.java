@@ -32,6 +32,10 @@ public class MirrorPostureGame {
     @Column(nullable = false)
     private Integer age;
     
+    // School task tracking
+    @Column
+    private String schoolTaskId;
+    
     // Posture completion times
     private Integer lookingSideways;
     private Integer mouthOpen;

@@ -9,6 +9,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/gaze-game")
+@CrossOrigin(originPatterns = {"http://localhost:3000", "http://localhost:8081", "http://localhost:3001", "http://localhost:8090", "http://localhost:5173"})
 @Slf4j
 public class GazeGameController {
     
@@ -334,5 +337,36 @@ public class GazeGameController {
     @GetMapping("/health")
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("Gaze Game Service is running!");
+    }
+    
+    /**
+     * Get sessions by task ID and child ID
+     */
+    @GetMapping("/sessions/task/{taskId}/child/{childId}")
+    public ResponseEntity<?> getSessionsByTaskAndChild(@PathVariable String taskId, @PathVariable String childId) {
+        try {
+            log.info("Retrieving sessions for task ID: {} and child ID: {}", taskId, childId);
+            List<GazeGame> sessions = gazeGameService.getSessionsByTaskAndChild(taskId, childId);
+            return ResponseEntity.ok(sessions);
+        } catch (Exception e) {
+            log.error("Error retrieving sessions for task ID {} and child ID {}: {}", taskId, childId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve sessions: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Delete all sessions by task ID
+     */
+    @DeleteMapping("/sessions/task/{taskId}")
+    public ResponseEntity<Void> deleteSessionsByTaskId(@PathVariable String taskId) {
+        try {
+            log.info("Deleting all sessions for task ID: {}", taskId);
+            gazeGameService.deleteSessionsByTaskId(taskId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("Error deleting sessions for task ID {}: {}", taskId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }

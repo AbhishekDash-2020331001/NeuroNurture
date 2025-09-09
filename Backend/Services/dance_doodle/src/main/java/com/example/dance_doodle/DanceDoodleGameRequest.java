@@ -12,6 +12,9 @@ public class DanceDoodleGameRequest {
     private String childId;
     private Integer age;
     
+    // School task tracking
+    private String schoolTaskId;
+    
     // Dance pose completion times
     private Integer cool_arms;
     private Integer open_wings;

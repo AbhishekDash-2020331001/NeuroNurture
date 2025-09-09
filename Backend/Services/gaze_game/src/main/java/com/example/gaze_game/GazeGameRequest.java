@@ -9,6 +9,9 @@ public class GazeGameRequest {
     private String childId;
     private Integer age;
     
+    // School task tracking
+    private String schoolTaskId;
+    
     // Round-specific data
     private Integer round1Count;
     private Integer round2Count;

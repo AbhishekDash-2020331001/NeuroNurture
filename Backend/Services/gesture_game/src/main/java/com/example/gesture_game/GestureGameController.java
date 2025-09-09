@@ -68,6 +68,20 @@ public class GestureGameController {
         return ResponseEntity.ok(records);
     }
     
+    // Get sessions by task ID and child ID
+    @GetMapping("/sessions/task/{taskId}/child/{childId}")
+    public ResponseEntity<List<GestureGame>> getSessionsByTaskAndChild(@PathVariable String taskId, @PathVariable String childId) {
+        List<GestureGame> sessions = service.getSessionsByTaskAndChild(taskId, childId);
+        return ResponseEntity.ok(sessions);
+    }
+    
+    // Delete all sessions by task ID
+    @DeleteMapping("/sessions/task/{taskId}")
+    public ResponseEntity<Void> deleteSessionsByTaskId(@PathVariable String taskId) {
+        service.deleteSessionsByTaskId(taskId);
+        return ResponseEntity.ok().build();
+    }
+    
     // Get paginated game history by child ID
     @GetMapping("/child/{childId}/history")
     public ResponseEntity<Page<GestureGame>> getPaginatedGameHistoryByChildId(

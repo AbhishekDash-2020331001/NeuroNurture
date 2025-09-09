@@ -18,6 +18,12 @@ public interface MirrorPostureGameRepository extends JpaRepository<MirrorPosture
     // Find all records by child ID
     List<MirrorPostureGame> findByChildId(String childId);
     
+    // Find by school task ID and child ID
+    List<MirrorPostureGame> findBySchoolTaskIdAndChildId(String schoolTaskId, String childId);
+    
+    // Delete all sessions by school task ID
+    void deleteBySchoolTaskId(String schoolTaskId);
+    
     // Find paginated records by child ID, ordered by date
     Page<MirrorPostureGame> findByChildIdOrderByDateTimeDesc(String childId, Pageable pageable);
     

@@ -69,5 +69,11 @@ public interface DanceDoodleGameRepository extends JpaRepository<DanceDoodleGame
            "COUNT(CASE WHEN d.stretch IS NOT NULL THEN 1 END) as stretch_count " +
            "FROM DanceDoodleGame d WHERE d.childId = :childId")
     List<Object[]> getChildStatistics(@Param("childId") String childId);
+    
+    // Find by school task ID and child ID
+    List<DanceDoodleGame> findBySchoolTaskIdAndChildId(String schoolTaskId, String childId);
+    
+    // Delete all sessions by school task ID
+    void deleteBySchoolTaskId(String schoolTaskId);
 }
 

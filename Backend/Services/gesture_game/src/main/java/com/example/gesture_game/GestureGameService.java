@@ -34,6 +34,7 @@ public class GestureGameService {
         game.setSessionId(request.getSessionId());
         game.setChildId(request.getChildId());
         game.setAge(request.getAge());
+        game.setSchoolTaskId(request.getSchoolTaskId());
         game.setVideoURL(request.getVideoURL());
         game.setIsTrainingAllowed(request.getIsTrainingAllowed());
         game.setSuspectedASD(request.getSuspectedASD());
@@ -68,6 +69,16 @@ public class GestureGameService {
     
     public List<GestureGame> getRecordsByChildId(String childId) {
         return repository.findByChildId(childId);
+    }
+    
+    // Get sessions by task ID and child ID
+    public List<GestureGame> getSessionsByTaskAndChild(String taskId, String childId) {
+        return repository.findBySchoolTaskIdAndChildId(taskId, childId);
+    }
+    
+    // Delete all sessions by task ID
+    public void deleteSessionsByTaskId(String taskId) {
+        repository.deleteBySchoolTaskId(taskId);
     }
     
     public Page<GestureGame> getPaginatedGameHistoryByChildId(String childId, Pageable pageable) {

@@ -4,6 +4,7 @@ import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -33,9 +34,13 @@ public class Child {
     private String gender;
     private Double height;
     private Double weight;
+    private String grade; // Autism severity grade: "Gentle Bloom", "Rising Star", "Bright Light"
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     @JsonBackReference
     private Parent parent;
+
+    @Column(name = "school_id")
+    private Long schoolId;
 } 

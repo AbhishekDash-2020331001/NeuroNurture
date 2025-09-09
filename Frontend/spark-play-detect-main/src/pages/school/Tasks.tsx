@@ -1,23 +1,22 @@
-import React, { useState } from 'react';
 import { useSchoolAuth } from '@/contexts/school/SchoolAuthContext';
-import { useNavigate } from 'react-router-dom';
-import { 
-  BookOpen, 
-  Plus, 
-  Search, 
-  Filter,
-  Calendar,
-  Users,
-  Target,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  XCircle,
-  Edit,
-  Trash2,
-  Eye,
-  X
+import { childrenService, SchoolChild } from '@/services/childrenService';
+import { TaskCreateRequest, TaskResponse, taskService } from '@/services/taskService';
+import {
+    AlertCircle,
+    BookOpen,
+    Calendar,
+    CheckCircle,
+    Clock,
+    Eye,
+    Loader2,
+    Plus,
+    Search,
+    Trash2,
+    Users,
+    X
 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface Child {
   id: string;
@@ -53,36 +52,37 @@ interface Task {
   startDate: string;
   endDate: string;
   status: 'active' | 'completed' | 'expired';
-  assignedTo: 'all' | 'grade_1' | 'grade_2' | 'grade_3' | 'grade_4' | string[];
+  assignedTo: 'all' | 'Gentle Bloom' | 'Rising Star' | 'Bright Light' | string[];
   games: TaskGame[];
   totalAssigned: number;
   completedCount: number;
 }
 
+// Game mapping matching backend bit-mapping system
 const availableGames: Game[] = [
-  { id: 'gaze-tracking', name: 'Gaze Tracking', description: 'Follow moving objects with your eyes', icon: '👁️', category: 'Cognitive' },
-  { id: 'gesture-control', name: 'Gesture Control', description: 'Control games with hand movements', icon: '✋', category: 'Motor Skills' },
-  { id: 'mirror-posture', name: 'Mirror Posture', description: 'Copy and maintain correct posture', icon: '🧍', category: 'Physical' },
-  { id: 'repeat-with-me', name: 'Repeat With Me', description: 'Follow audio and visual patterns', icon: '🔄', category: 'Memory' },
-  { id: 'dance-doodle', name: 'Dance Doodle', description: 'Create art through movement', icon: '💃', category: 'Creative' }
+  { id: 'Dance Doodle', name: 'Dance Doodle', description: 'Create art through movement', icon: '💃', category: 'Creative' },
+  { id: 'Gaze Game', name: 'Gaze Game', description: 'Follow moving objects with your eyes', icon: '👁️', category: 'Cognitive' },
+  { id: 'Gesture Game', name: 'Gesture Game', description: 'Control games with hand movements', icon: '✋', category: 'Motor Skills' },
+  { id: 'Mirror Posture Game', name: 'Mirror Posture Game', description: 'Copy and maintain correct posture', icon: '🧍', category: 'Physical' },
+  { id: 'Repeat With Me Game', name: 'Repeat With Me Game', description: 'Follow audio and visual patterns', icon: '🔄', category: 'Memory' }
 ];
 
 const mockChildren: Child[] = [
-  { id: '1', name: 'Emma Johnson', grade: 'grade_1', age: 6, parentName: 'Sarah Johnson', enrollmentDate: '2023-09-01' },
-  { id: '2', name: 'Liam Smith', grade: 'grade_1', age: 6, parentName: 'Michael Smith', enrollmentDate: '2023-09-01' },
-  { id: '3', name: 'Olivia Davis', grade: 'grade_1', age: 6, parentName: 'Jennifer Davis', enrollmentDate: '2023-09-01' },
-  { id: '4', name: 'Noah Wilson', grade: 'grade_2', age: 7, parentName: 'Robert Wilson', enrollmentDate: '2023-09-01' },
-  { id: '5', name: 'Ava Brown', grade: 'grade_2', age: 7, parentName: 'Lisa Brown', enrollmentDate: '2023-09-01' },
-  { id: '6', name: 'William Taylor', grade: 'grade_2', age: 7, parentName: 'David Taylor', enrollmentDate: '2023-09-01' },
-  { id: '7', name: 'Sophia Anderson', grade: 'grade_2', age: 7, parentName: 'Maria Anderson', enrollmentDate: '2023-09-01' },
-  { id: '8', name: 'James Martinez', grade: 'grade_3', age: 8, parentName: 'Carlos Martinez', enrollmentDate: '2023-09-01' },
-  { id: '9', name: 'Isabella Garcia', grade: 'grade_3', age: 8, parentName: 'Ana Garcia', enrollmentDate: '2023-09-01' },
-  { id: '10', name: 'Benjamin Rodriguez', grade: 'grade_3', age: 8, parentName: 'Jose Rodriguez', enrollmentDate: '2023-09-01' },
-  { id: '11', name: 'Mia Lopez', grade: 'grade_4', age: 9, parentName: 'Carmen Lopez', enrollmentDate: '2023-09-01' },
-  { id: '12', name: 'Lucas Gonzalez', grade: 'grade_4', age: 9, parentName: 'Manuel Gonzalez', enrollmentDate: '2023-09-01' },
-  { id: '13', name: 'Charlotte Perez', grade: 'grade_4', age: 9, parentName: 'Rosa Perez', enrollmentDate: '2023-09-01' },
-  { id: '14', name: 'Mason Torres', grade: 'grade_4', age: 9, parentName: 'Juan Torres', enrollmentDate: '2023-09-01' },
-  { id: '15', name: 'Amelia Flores', grade: 'grade_4', age: 9, parentName: 'Elena Flores', enrollmentDate: '2023-09-01' }
+  { id: '1', name: 'Emma Johnson', grade: 'Gentle Bloom', age: 6, parentName: 'Sarah Johnson', enrollmentDate: '2023-09-01' },
+  { id: '2', name: 'Liam Smith', grade: 'Gentle Bloom', age: 6, parentName: 'Michael Smith', enrollmentDate: '2023-09-01' },
+  { id: '3', name: 'Olivia Davis', grade: 'Gentle Bloom', age: 6, parentName: 'Jennifer Davis', enrollmentDate: '2023-09-01' },
+  { id: '4', name: 'Noah Wilson', grade: 'Rising Star', age: 7, parentName: 'Robert Wilson', enrollmentDate: '2023-09-01' },
+  { id: '5', name: 'Ava Brown', grade: 'Rising Star', age: 7, parentName: 'Lisa Brown', enrollmentDate: '2023-09-01' },
+  { id: '6', name: 'William Taylor', grade: 'Rising Star', age: 7, parentName: 'David Taylor', enrollmentDate: '2023-09-01' },
+  { id: '7', name: 'Sophia Anderson', grade: 'Rising Star', age: 7, parentName: 'Maria Anderson', enrollmentDate: '2023-09-01' },
+  { id: '8', name: 'James Martinez', grade: 'Bright Light', age: 8, parentName: 'Carlos Martinez', enrollmentDate: '2023-09-01' },
+  { id: '9', name: 'Isabella Garcia', grade: 'Bright Light', age: 8, parentName: 'Ana Garcia', enrollmentDate: '2023-09-01' },
+  { id: '10', name: 'Benjamin Rodriguez', grade: 'Bright Light', age: 8, parentName: 'Jose Rodriguez', enrollmentDate: '2023-09-01' },
+  { id: '11', name: 'Mia Lopez', grade: 'Bright Light', age: 9, parentName: 'Carmen Lopez', enrollmentDate: '2023-09-01' },
+  { id: '12', name: 'Lucas Gonzalez', grade: 'Bright Light', age: 9, parentName: 'Manuel Gonzalez', enrollmentDate: '2023-09-01' },
+  { id: '13', name: 'Charlotte Perez', grade: 'Bright Light', age: 9, parentName: 'Rosa Perez', enrollmentDate: '2023-09-01' },
+  { id: '14', name: 'Mason Torres', grade: 'Bright Light', age: 9, parentName: 'Juan Torres', enrollmentDate: '2023-09-01' },
+  { id: '15', name: 'Amelia Flores', grade: 'Bright Light', age: 9, parentName: 'Elena Flores', enrollmentDate: '2023-09-01' }
 ];
 
 const mockTasks: Task[] = [
@@ -94,7 +94,7 @@ const mockTasks: Task[] = [
     startDate: '2024-01-20',
     endDate: '2024-01-27',
     status: 'active',
-    assignedTo: 'grade_2',
+    assignedTo: 'Rising Star',
     games: [
       { gameId: 'gaze-tracking', gameName: 'Gaze Tracking', isCompleted: true, bestScore: 85, playCount: 3, lastPlayed: '2024-01-22' },
       { gameId: 'gesture-control', gameName: 'Gesture Control', isCompleted: true, bestScore: 92, playCount: 2, lastPlayed: '2024-01-23' },
@@ -111,7 +111,7 @@ const mockTasks: Task[] = [
     startDate: '2024-01-21',
     endDate: '2024-01-28',
     status: 'active',
-    assignedTo: 'grade_3',
+    assignedTo: 'Bright Light',
     games: [
       { gameId: 'repeat-with-me', gameName: 'Repeat With Me', isCompleted: false, playCount: 0 },
       { gameId: 'dance-doodle', gameName: 'Dance Doodle', isCompleted: false, playCount: 0 }
@@ -127,7 +127,7 @@ const mockTasks: Task[] = [
     startDate: '2024-01-18',
     endDate: '2024-01-25',
     status: 'completed',
-    assignedTo: 'grade_4',
+    assignedTo: 'Bright Light',
     games: [
       { gameId: 'mirror-posture', gameName: 'Mirror Posture', isCompleted: true, bestScore: 78, playCount: 4, lastPlayed: '2024-01-24' },
       { gameId: 'dance-doodle', gameName: 'Dance Doodle', isCompleted: true, bestScore: 88, playCount: 3, lastPlayed: '2024-01-24' },
@@ -144,7 +144,7 @@ const mockTasks: Task[] = [
     startDate: '2024-01-19',
     endDate: '2024-01-26',
     status: 'expired',
-    assignedTo: 'grade_3',
+    assignedTo: 'Bright Light',
     games: [
       { gameId: 'gaze-tracking', gameName: 'Gaze Tracking', isCompleted: true, bestScore: 72, playCount: 2, lastPlayed: '2024-01-21' },
       { gameId: 'repeat-with-me', gameName: 'Repeat With Me', isCompleted: false, playCount: 1, lastPlayed: '2024-01-20' }
@@ -162,13 +162,20 @@ const Tasks: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [childSearchTerm, setChildSearchTerm] = useState('');
   
+  // Real data state
+  const [tasks, setTasks] = useState<TaskResponse[]>([]);
+  const [children, setChildren] = useState<SchoolChild[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
+  const [deletingTaskId, setDeletingTaskId] = useState<number | null>(null);
+  
   // Task creation form state
   const [taskForm, setTaskForm] = useState({
     title: '',
     description: '',
     assignmentType: 'grade',
     gradeLevel: '',
-    selectedChildren: [] as string[],
+    selectedChildren: [] as number[],
     selectedGames: [] as string[],
     startDate: '',
     endDate: '',
@@ -177,33 +184,77 @@ const Tasks: React.FC = () => {
   
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  const filteredTasks = mockTasks.filter(task => {
-    const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         task.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+  // Fetch data on component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!school?.id) return;
+      
+      setIsLoading(true);
+      try {
+        console.log('Fetching data for school ID:', school.id);
+        
+        const [tasksData, childrenData] = await Promise.all([
+          taskService.getTasksBySchool(parseInt(school.id)).catch(err => {
+            console.error('Error fetching tasks:', err);
+            return [];
+          }),
+          childrenService.getChildrenBySchool(parseInt(school.id)).catch(err => {
+            console.error('Error fetching children:', err);
+            // Return mock children for testing if API fails
+            return [
+              { id: 1, name: 'Emma Johnson', grade: 'Gentle Bloom', age: 6, parentName: 'Sarah Johnson', parentEmail: 'sarah@email.com', parentAddress: '123 Main St', enrollmentDate: '2023-09-01', lastActive: '2024-01-15', overallScore: 85, gamesPlayed: 15, tasksCompleted: 8, height: 120, weight: 25, gender: 'Female', dateOfBirth: '2018-03-15' },
+              { id: 2, name: 'Liam Smith', grade: 'Rising Star', age: 7, parentName: 'Michael Smith', parentEmail: 'michael@email.com', parentAddress: '456 Oak Ave', enrollmentDate: '2023-09-01', lastActive: '2024-01-14', overallScore: 92, gamesPlayed: 18, tasksCompleted: 12, height: 125, weight: 28, gender: 'Male', dateOfBirth: '2017-05-20' },
+              { id: 3, name: 'Olivia Davis', grade: 'Bright Light', age: 8, parentName: 'Jennifer Davis', parentEmail: 'jennifer@email.com', parentAddress: '789 Pine St', enrollmentDate: '2023-09-01', lastActive: '2024-01-16', overallScore: 78, gamesPlayed: 12, tasksCompleted: 6, height: 130, weight: 30, gender: 'Female', dateOfBirth: '2016-08-10' }
+            ];
+          })
+        ]);
+        
+        console.log('Tasks data:', tasksData);
+        console.log('Children data:', childrenData);
+        
+        setTasks(tasksData);
+        setChildren(childrenData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [school?.id]);
+
+  const filteredTasks = tasks.filter(task => {
+    const matchesSearch = task.taskTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         task.taskDescription.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         task.taskId.toString().includes(searchTerm);
+    
+    let matchesStatus = true;
+    if (statusFilter === 'active') {
+      matchesStatus = new Date(task.endTime) > new Date();
+    } else if (statusFilter === 'ended') {
+      matchesStatus = new Date(task.endTime) <= new Date();
+    }
+    
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'text-green-600 bg-green-100';
-      case 'in_progress': return 'text-blue-600 bg-blue-100';
-      case 'pending': return 'text-yellow-600 bg-yellow-100';
-      case 'overdue': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
+  const getTaskStatus = (endTime: string) => {
+    return new Date(endTime) > new Date() ? 'active' : 'ended';
   };
 
+  const getStatusColor = (endTime: string) => {
+    const status = getTaskStatus(endTime);
+    return status === 'active' 
+      ? 'text-green-600 bg-green-100' 
+      : 'text-gray-600 bg-gray-100';
+  };
 
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed': return <CheckCircle className="h-4 w-4" />;
-      case 'in_progress': return <Clock className="h-4 w-4" />;
-      case 'pending': return <AlertCircle className="h-4 w-4" />;
-      case 'overdue': return <XCircle className="h-4 w-4" />;
-      default: return <AlertCircle className="h-4 w-4" />;
-    }
+  const getStatusIcon = (endTime: string) => {
+    const status = getTaskStatus(endTime);
+    return status === 'active' 
+      ? <Clock className="h-4 w-4" />
+      : <CheckCircle className="h-4 w-4" />;
   };
 
   const formatDate = (dateString: string) => {
@@ -251,43 +302,57 @@ const Tasks: React.FC = () => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (validateForm()) {
-      // Create new task logic here
-      console.log('Creating task:', taskForm);
+    if (!validateForm() || !school?.id) return;
+    
+    setIsCreating(true);
+    try {
+      // Prepare child IDs based on assignment type
+      let childIds: number[] = [];
       
-                    // Add to mock tasks (in real app, this would be an API call)
-       const newTask: Task = {
-         id: Date.now().toString(),
-         title: taskForm.title,
-         description: taskForm.description,
-         assignedDate: new Date().toISOString().split('T')[0],
-         startDate: taskForm.startDate,
-         endDate: taskForm.endDate,
-         status: 'active',
-         assignedTo: taskForm.assignmentType === 'grade' ? taskForm.gradeLevel : taskForm.selectedChildren,
-         games: taskForm.selectedGames.map(gameId => {
-           const game = availableGames.find(g => g.id === gameId);
-           return {
-             gameId: gameId,
-             gameName: game?.name || 'Unknown Game',
-             isCompleted: false,
-             playCount: 0
-           };
-         }),
-         totalAssigned: getAssignmentCount(),
-         completedCount: 0
-       };
+      if (taskForm.assignmentType === 'grade') {
+        // Get children by grade
+        const gradeChildren = children.filter(child => {
+          return child.grade === taskForm.gradeLevel;
+        });
+        childIds = gradeChildren.map(child => child.id);
+      } else {
+        childIds = taskForm.selectedChildren;
+      }
       
-      // In a real app, you'd add this to your tasks array
-      console.log('New task created:', newTask);
+      if (childIds.length === 0) {
+        setFormErrors({ assignmentType: 'No children found for the selected criteria' });
+        return;
+      }
       
-             // Close modal and reset form
-       setShowCreateModal(false);
-       resetForm();
+      // Create task request
+      const taskRequest: TaskCreateRequest = {
+        taskTitle: taskForm.title,
+        taskDescription: taskForm.description,
+        startTime: new Date(taskForm.startDate).toISOString(),
+        endTime: new Date(taskForm.endDate).toISOString(),
+        childIds: childIds,
+        selectedGames: taskForm.selectedGames
+      };
+      
+      // Create tasks via API
+      const createdTasks = await taskService.createTasks(taskRequest, parseInt(school.id));
+      
+      // Update local state
+      setTasks(prev => [...prev, ...createdTasks]);
+      
+      // Close modal and reset form
+      setShowCreateModal(false);
+      resetForm();
       setFormErrors({});
+      
+    } catch (error) {
+      console.error('Error creating tasks:', error);
+      setFormErrors({ submit: 'Failed to create tasks. Please try again.' });
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -308,7 +373,7 @@ const Tasks: React.FC = () => {
 
   // Helper functions for assignment calculations
   const getChildrenByGrade = (grade: string) => {
-    return mockChildren.filter(child => child.grade === grade);
+    return children.filter(child => child.grade === grade);
   };
 
   const getAssignmentCount = () => {
@@ -322,8 +387,8 @@ const Tasks: React.FC = () => {
 
   const getAssignmentPreview = () => {
     if (taskForm.assignmentType === 'grade' && taskForm.gradeLevel) {
-      const children = getChildrenByGrade(taskForm.gradeLevel);
-      return children.map(child => ({
+      const gradeChildren = getChildrenByGrade(taskForm.gradeLevel);
+      return gradeChildren.map(child => ({
         id: child.id,
         name: child.name,
         grade: child.grade,
@@ -331,7 +396,7 @@ const Tasks: React.FC = () => {
       }));
     } else if (taskForm.assignmentType === 'individual') {
       return taskForm.selectedChildren.map(childId => {
-        const child = mockChildren.find(c => c.id === childId);
+        const child = children.find(c => c.id === childId);
         return child ? {
           id: child.id,
           name: child.name,
@@ -345,11 +410,16 @@ const Tasks: React.FC = () => {
 
   // Filter children based on search term
   const getFilteredChildren = () => {
-    if (!childSearchTerm.trim()) return mockChildren;
-    return mockChildren.filter(child => 
-      child.name.toLowerCase().includes(childSearchTerm.toLowerCase()) ||
-      child.parentName.toLowerCase().includes(childSearchTerm.toLowerCase()) ||
-      child.grade.replace('grade_', 'Grade ').toLowerCase().includes(childSearchTerm.toLowerCase())
+    console.log('Available children for filtering:', children);
+    if (!childSearchTerm.trim()) return children;
+    
+    const searchTerm = childSearchTerm.toLowerCase().trim();
+    
+    return children.filter(child => 
+      child.name.toLowerCase().includes(searchTerm) ||
+      child.parentName.toLowerCase().includes(searchTerm) ||
+      child.grade.toLowerCase().includes(searchTerm) ||
+      child.id.toString().includes(searchTerm) // Search by child ID
     );
   };
 
@@ -363,211 +433,240 @@ const Tasks: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Task Management</h1>
-          <p className="text-gray-600">
-            Create, assign, and track tasks for {school.currentChildren} children
-          </p>
-        </div>
-        <div className="mt-4 sm:mt-0">
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Create New Task
-          </button>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-blue-500 text-white">
-              <BookOpen className="h-6 w-6" />
+    <div className="min-h-screen bg-gray-50">
+      <div className="space-y-6 p-4">
+        {/* Professional Header */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">Task Management</h1>
+              <p className="text-gray-600 text-sm mt-1">
+                Create, assign, and track tasks for {school.currentChildren} children
+              </p>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Tasks</p>
-              <p className="text-2xl font-bold text-gray-900">{mockTasks.length}</p>
+            <div className="mt-4 sm:mt-0">
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex items-center px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-all duration-200"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Task
+              </button>
             </div>
           </div>
         </div>
-        
-                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-           <div className="flex items-center">
-             <div className="p-3 rounded-lg bg-green-500 text-white">
-               <CheckCircle className="h-6 w-6" />
-             </div>
-             <div className="ml-4">
-               <p className="text-sm font-medium text-gray-600">Completed</p>
-               <p className="text-2xl font-bold text-gray-900">
-                 {mockTasks.filter(t => t.status === 'completed').length}
-               </p>
-             </div>
-           </div>
-         </div>
-         
-         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-           <div className="flex items-center">
-             <div className="p-3 rounded-lg bg-blue-500 text-white">
-               <Clock className="h-6 w-6" />
-             </div>
-             <div className="ml-4">
-               <p className="text-sm font-medium text-gray-600">Active</p>
-               <p className="text-2xl font-bold text-gray-900">
-                 {mockTasks.filter(t => t.status === 'active').length}
-               </p>
-             </div>
-           </div>
-         </div>
-         
-         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-           <div className="flex items-center">
-             <div className="p-3 rounded-lg bg-red-500 text-white">
-               <XCircle className="h-6 w-6" />
-             </div>
-             <div className="ml-4">
-               <p className="text-sm font-medium text-gray-600">Expired</p>
-               <p className="text-2xl font-bold text-gray-900">
-                 {mockTasks.filter(t => t.status === 'expired').length}
-               </p>
-             </div>
-           </div>
-         </div>
-      </div>
 
-      {/* Filters and Search */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search tasks..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-          </div>
-          
-          <div className="flex gap-3">
-                         <select
-               value={statusFilter}
-               onChange={(e) => setStatusFilter(e.target.value)}
-               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-             >
-               <option value="all">All Status</option>
-               <option value="active">Active</option>
-               <option value="completed">Completed</option>
-               <option value="expired">Expired</option>
-             </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Tasks List */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">
-            Tasks ({filteredTasks.length})
-          </h2>
-        </div>
-        
-        <div className="divide-y divide-gray-200">
-          {filteredTasks.map((task) => (
-            <div key={task.id} className="p-6 hover:bg-gray-50 transition-colors">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <h3 className="text-lg font-medium text-gray-900">{task.title}</h3>
-                                         <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(task.status)}`}>
-                       <div className="flex items-center space-x-1">
-                         {getStatusIcon(task.status)}
-                         <span>{task.status.replace('_', ' ')}</span>
-                       </div>
-                     </div>
+        {/* Stats Cards and Search */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div className="flex flex-col lg:flex-row gap-4 items-center">
+            {/* Stats Cards */}
+            <div className="flex gap-4">
+              <div className="bg-green-100 border border-green-200 rounded-lg p-3 min-w-[140px]">
+                <div className="flex items-center">
+                  <div className="p-1.5 bg-green-200 rounded">
+                    <Clock className="h-4 w-4 text-green-700" />
                   </div>
-                  
-                  <p className="text-sm text-gray-600 mb-3">{task.description}</p>
-                  
-                                                         {/* Games List */}
+                  <div className="ml-2">
+                    <p className="text-xs font-semibold text-green-700">Active</p>
+                    <p className="text-lg font-bold text-green-800">{tasks.filter(t => new Date(t.endTime) > new Date()).length}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gray-100 border border-gray-200 rounded-lg p-3 min-w-[140px]">
+                <div className="flex items-center">
+                  <div className="p-1.5 bg-gray-200 rounded">
+                    <CheckCircle className="h-4 w-4 text-gray-700" />
+                  </div>
+                  <div className="ml-2">
+                    <p className="text-xs font-semibold text-gray-700">Ended</p>
+                    <p className="text-lg font-bold text-gray-800">
+                      {tasks.filter(t => new Date(t.endTime) <= new Date()).length}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Search and Filter */}
+            <div className="flex-1 flex gap-3">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by task title or ID..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+              
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">All Tasks</option>
+                <option value="active">Active Tasks</option>
+                <option value="ended">Ended Tasks</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+
+        {/* Tasks List */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white border-b border-gray-200 px-4 py-3">
+            <h2 className="text-lg font-bold text-gray-900">
+              Tasks ({filteredTasks.length})
+            </h2>
+          </div>
+        
+          <div className="divide-y divide-gray-100">
+            {isLoading ? (
+              <div className="p-6 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                <p className="text-gray-500">Loading tasks...</p>
+              </div>
+            ) : filteredTasks.length === 0 ? (
+              <div className="p-6 text-center">
+                <div className="mx-auto w-16 h-16 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full flex items-center justify-center mb-3">
+                  <BookOpen className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-1">No tasks found</h3>
+                <p className="text-gray-500 text-sm">Create your first task to get started</p>
+              </div>
+            ) : (
+              filteredTasks.map((task, index) => (
+                <div key={task.taskId} className={`p-4 hover:bg-gray-50 transition-all duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h3 className="text-lg font-bold text-gray-900">{task.taskTitle}</h3>
+                        <div className={`px-3 py-1 rounded text-xs font-bold ${getStatusColor(task.endTime)}`}>
+                          <div className="flex items-center space-x-1">
+                            {getStatusIcon(task.endTime)}
+                            <span>{getTaskStatus(task.endTime).charAt(0).toUpperCase() + getTaskStatus(task.endTime).slice(1)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    
+                      <p className="text-sm text-gray-600 mb-3">{task.taskDescription}</p>
+                    
+                    {/* Games List */}
                     <div className="mt-3">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Games in this task:</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {task.games.map((game) => {
-                          // Calculate completion stats for this game
-                          const totalAssigned = task.totalAssigned;
-                          const completedCount = Math.floor(Math.random() * totalAssigned) + 1; // Mock data - in real app this would come from API
-                          
+                      <p className="text-sm font-bold text-gray-700 mb-2">Games in this task:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {task.selectedGames.map((gameName) => {
+                          const game = availableGames.find(g => g.name === gameName);
                           return (
-                            <div key={game.gameId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                              <div className="flex items-center space-x-2">
-                                <span className="text-lg">{availableGames.find(g => g.id === game.gameId)?.icon || '🎮'}</span>
-                                <div>
-                                  <p className="text-sm font-medium text-gray-900">{game.gameName}</p>
-                                  <p className="text-xs text-gray-500">
-                                    {completedCount}/{totalAssigned} children completed
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-xs text-gray-500 mb-1">
-                                  {Math.round((completedCount / totalAssigned) * 100)}% completion
-                                </div>
-                                <div className="w-16 bg-gray-200 rounded-full h-1.5">
-                                  <div 
-                                    className="bg-green-500 h-1.5 rounded-full"
-                                    style={{ width: `${(completedCount / totalAssigned) * 100}%` }}
-                                  ></div>
-                                </div>
-                              </div>
+                            <div key={gameName} className="flex items-center space-x-2 px-3 py-2 bg-gray-100 rounded border border-gray-200">
+                              <span className="text-lg">{game?.icon || '🎮'}</span>
+                              <span className="text-sm font-bold text-gray-900">{gameName}</span>
                             </div>
                           );
                         })}
                       </div>
                     </div>
                    
-                   <div className="flex items-center space-x-6 text-sm text-gray-500 mt-3">
-                     <span className="flex items-center">
-                       <Calendar className="h-4 w-4 mr-1" />
-                       Period: {formatDate(task.startDate)} - {formatDate(task.endDate)}
-                     </span>
-                     <span className="flex items-center">
-                       <Users className="h-4 w-4 mr-1" />
-                       {task.completedCount}/{task.totalAssigned} children completed
-                     </span>
-                   </div>
-                </div>
-                
-                                 <div className="flex space-x-2 ml-4">
-                   <button 
-                     onClick={() => navigate(`/school/tasks/${task.id}`)}
-                     className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" 
-                     title="View Details"
-                   >
-                     <Eye className="h-4 w-4" />
-                   </button>
-                  <button className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Edit Task">
-                    <Edit className="h-4 w-4" />
-                  </button>
-                  <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete Task">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
+                    <div className="flex items-center space-x-6 text-sm text-gray-600 mt-3">
+                      <span className="flex items-center px-3 py-1 bg-gray-100 rounded border border-gray-200">
+                        <Calendar className="h-4 w-4 mr-2 text-gray-600" />
+                        <span className="font-medium">Period: {formatDate(task.startTime)} - {formatDate(task.endTime)}</span>
+                      </span>
+                      <span className="flex items-center px-3 py-1 bg-gray-100 rounded border border-gray-200">
+                        <Users className="h-4 w-4 mr-2 text-gray-600" />
+                        <span className="font-medium">
+                          {task.assignedChildren ? (
+                            `${task.completedCount || 0}/${task.totalAssigned || 0} children completed`
+                          ) : (
+                            `Assigned to: ${task.childName}`
+                          )}
+                        </span>
+                      </span>
+                    </div>
+                   
+                    {/* Assigned Children List for Grouped Tasks */}
+                    {task.assignedChildren && task.assignedChildren.length > 0 && (
+                      <div className="mt-4 p-4 bg-gray-50 rounded border border-gray-200">
+                        <h5 className="text-sm font-bold text-gray-700 mb-3">Assigned Children:</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                          {task.assignedChildren.map((child) => (
+                            <div key={child.childId} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-sm font-bold text-gray-900">{child.childName}</span>
+                                <span className="px-2 py-1 bg-indigo-100 text-indigo-800 text-xs font-bold rounded-full">
+                                  ID: {child.childId}
+                                </span>
+                              </div>
+                              <span className={`px-2 py-1 text-xs font-bold rounded-full ${
+                                child.status === 'COMPLETED' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : child.status === 'IN_PROGRESS'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {child.status.replace('_', ' ')}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex space-x-3 ml-4">
+                    <button 
+                      onClick={() => navigate(`/school/tasks/${task.taskId}`)}
+                      className="px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded hover:bg-gray-900 transition-all duration-200 flex items-center space-x-2" 
+                      title="View Details"
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span>View</span>
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        if (confirm('Are you sure you want to delete this task? This will remove all task assignments for this task ID.')) {
+                          setDeletingTaskId(task.taskId);
+                          try {
+                            await taskService.deleteTask(task.taskId);
+                            setTasks(prev => prev.filter(t => t.taskId !== task.taskId));
+                          } catch (error) {
+                            console.error('Error deleting task:', error);
+                            alert('Failed to delete task. Please try again.');
+                          } finally {
+                            setDeletingTaskId(null);
+                          }
+                        }
+                      }}
+                      disabled={deletingTaskId === task.taskId}
+                      className={`px-4 py-2 text-white text-sm font-medium rounded transition-all duration-200 flex items-center space-x-2 ${
+                        deletingTaskId === task.taskId 
+                          ? 'bg-gray-400 cursor-not-allowed' 
+                          : 'bg-red-600 hover:bg-red-700'
+                      }`}
+                      title={deletingTaskId === task.taskId ? "Deleting task..." : "Delete Task"}
+                    >
+                      {deletingTaskId === task.taskId ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                      <span>{deletingTaskId === task.taskId ? 'Deleting...' : 'Delete'}</span>
+                    </button>
+                  </div>
               </div>
             </div>
-          ))}
+          ))
+        )}
+          </div>
         </div>
-      </div>
 
-             {/* Create Task Modal */}
-       {showCreateModal && (
+        {/* Create Task Modal */}
+        {showCreateModal && (
          <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden">
                            {/* Professional Header */}
@@ -766,10 +865,9 @@ const Tasks: React.FC = () => {
                           }`}
                         >
                           <option value="">Select grade</option>
-                          <option value="grade_1">Grade 1</option>
-                          <option value="grade_2">Grade 2</option>
-                          <option value="grade_3">Grade 3</option>
-                          <option value="grade_4">Grade 4</option>
+                          <option value="Gentle Bloom">Gentle Bloom 🌱</option>
+                          <option value="Rising Star">Rising Star ⭐</option>
+                          <option value="Bright Light">Bright Light ✨</option>
                         </select>
                         {formErrors.gradeLevel && (
                           <p className="mt-2 text-sm text-red-600 flex items-center">
@@ -792,39 +890,65 @@ const Tasks: React.FC = () => {
                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                          <input
                            type="text"
-                           placeholder="Search children by name, parent, or grade..."
+                           placeholder="Search children by name, parent, grade, or child ID..."
                            value={childSearchTerm}
                            onChange={(e) => setChildSearchTerm(e.target.value)}
                            className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200"
                          />
                        </div>
                        
+                       {/* Search Hint */}
+                       <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                         <p className="text-xs text-blue-700">
+                           💡 <strong>Search tip:</strong> You can search by child name, parent name, grade, or child ID. 
+                           For example, try typing "1" to find child with ID 1, or "Emma" to find by name.
+                         </p>
+                       </div>
+                       
                        {/* Children List */}
                        <div className="border-2 border-gray-200 rounded-xl p-4 max-h-64 overflow-y-auto bg-white">
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                           {getFilteredChildren().map((child) => (
-                                                            <label key={child.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
-                               <input
-                                 type="checkbox"
-                                 checked={taskForm.selectedChildren.includes(child.id)}
-                                 onChange={(e) => {
-                                   if (e.target.checked) {
-                                     handleInputChange('selectedChildren', [...taskForm.selectedChildren, child.id]);
-                                   } else {
-                                     handleInputChange('selectedChildren', taskForm.selectedChildren.filter(id => id !== child.id));
-                                   }
-                                 }}
-                                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                               />
-                               <div className="flex-1">
-                                 <p className="text-sm font-semibold text-gray-900">{child.name}</p>
-                                 <p className="text-xs text-gray-500">{child.grade.replace('grade_', 'Grade ')} • {child.parentName}</p>
-                               </div>
-                             </label>
-                           ))}
-                         </div>
+                         {isLoading ? (
+                           <div className="text-center py-8 text-gray-500">
+                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                             <p>Loading children...</p>
+                           </div>
+                         ) : children.length === 0 ? (
+                           <div className="text-center py-8 text-gray-500">
+                             <Users className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                             <p>No children enrolled in this school</p>
+                             <p className="text-xs text-gray-400 mt-1">Contact the school administrator to enroll children</p>
+                           </div>
+                         ) : (
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                             {getFilteredChildren().map((child) => (
+                               <label key={child.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
+                                 <input
+                                   type="checkbox"
+                                   checked={taskForm.selectedChildren.includes(child.id)}
+                                   onChange={(e) => {
+                                     if (e.target.checked) {
+                                       handleInputChange('selectedChildren', [...taskForm.selectedChildren, child.id]);
+                                     } else {
+                                       handleInputChange('selectedChildren', taskForm.selectedChildren.filter(id => id !== child.id));
+                                     }
+                                   }}
+                                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                 />
+                                 <div className="flex-1">
+                                   <div className="flex items-center space-x-2">
+                                     <p className="text-sm font-semibold text-gray-900">{child.name}</p>
+                                     <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                                       ID: {child.id}
+                                     </span>
+                                   </div>
+                                   <p className="text-xs text-gray-500">{child.grade} • {child.parentName}</p>
+                                 </div>
+                               </label>
+                             ))}
+                           </div>
+                         )}
                          
-                         {getFilteredChildren().length === 0 && (
+                         {!isLoading && children.length > 0 && getFilteredChildren().length === 0 && (
                            <div className="text-center py-8 text-gray-500">
                              <Search className="h-12 w-12 mx-auto mb-2 text-gray-300" />
                              <p>No children found matching your search</p>
@@ -1013,10 +1137,20 @@ const Tasks: React.FC = () => {
                    </button>
                    <button
                      type="submit"
-                     className="px-8 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                     disabled={isCreating}
+                     className="px-8 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                    >
-                     <Plus className="h-4 w-4 mr-2 inline" />
-                     Create Task
+                     {isCreating ? (
+                       <>
+                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline"></div>
+                         Creating...
+                       </>
+                     ) : (
+                       <>
+                         <Plus className="h-4 w-4 mr-2 inline" />
+                         Create Task
+                       </>
+                     )}
                    </button>
                  </div>
                </div>
@@ -1025,6 +1159,27 @@ const Tasks: React.FC = () => {
          </div>
        </div>
      )}
+
+      {/* Global Loading Overlay for Task Deletion */}
+      {deletingTaskId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md mx-4">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Deleting Task</h3>
+                <p className="text-gray-600 text-sm">
+                  Removing task and all associated game sessions...
+                </p>
+                <p className="text-gray-500 text-xs mt-2">
+                  This may take a few moments
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      </div>
     </div>
   );
 };

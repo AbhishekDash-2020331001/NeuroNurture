@@ -4,11 +4,15 @@ import { Button } from "@/components/ui/button";
 import { stopAllCameraStreams } from "@/utils/cameraUtils";
 import { ArrowLeft, Headphones, Mic, Repeat } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const RepeatWithMeGamePage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [authChecked, setAuthChecked] = useState(false);
+  
+  // Extract taskId from URL query parameters
+  const taskId = searchParams.get('taskId');
 
   useEffect(() => {
     fetch('http://localhost:8080/auth/session', { credentials: 'include' })
@@ -82,7 +86,7 @@ const RepeatWithMeGamePage = () => {
       {/* Game Component - Standard Size */}
       <div className="flex-1 flex items-center justify-center px-4 overflow-hidden">
         <div className="w-full max-w-4xl h-full">
-          <RepeatWithMeGame />
+          <RepeatWithMeGame taskId={taskId} />
         </div>
       </div>
 

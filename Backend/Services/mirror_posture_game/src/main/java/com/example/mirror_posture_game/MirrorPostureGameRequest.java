@@ -12,6 +12,9 @@ public class MirrorPostureGameRequest {
     private String childId;
     private Integer age;
     
+    // School task tracking
+    private String schoolTaskId;
+    
     // Posture completion times
     private Integer lookingSideways;
     private Integer mouthOpen;

@@ -28,7 +28,11 @@ interface GestureGameSession {
   consentData?: any;
 }
 
-const GestureRecognizerComponent: React.FC = () => {
+interface GestureRecognizerComponentProps {
+  taskId?: string | null;
+}
+
+const GestureRecognizerComponent: React.FC<GestureRecognizerComponentProps> = ({ taskId }) => {
     const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const [webcamRunning, setWebcamRunning] = useState(false)
@@ -190,6 +194,7 @@ const GestureRecognizerComponent: React.FC = () => {
                  dateTime: gameSession.startTime,
                  childId: childData?.id?.toString() || '1',
                  age: gameSession.consentData?.childAge ? parseInt(gameSession.consentData.childAge) : (childData?.dateOfBirth ? calculateAge(childData.dateOfBirth) : 8),
+                 schoolTaskId: taskId, // Include school task ID if available
                  ...gestureTimes,
                  videoURL: "https://example.com/dummy-video.mp4", // Dummy URL for now
                  isTrainingAllowed: gameSession.consentData?.dataConsent === true,

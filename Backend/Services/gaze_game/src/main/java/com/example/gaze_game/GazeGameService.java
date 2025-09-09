@@ -30,6 +30,7 @@ public class GazeGameService {
             gazeGame.setSessionId(request.getSessionId());
             gazeGame.setChildId(request.getChildId());
             gazeGame.setAge(request.getAge());
+            gazeGame.setSchoolTaskId(request.getSchoolTaskId());
             gazeGame.setDateTime(LocalDateTime.now());
             
             // Set round-specific data
@@ -423,6 +424,33 @@ public class GazeGameService {
         } catch (Exception e) {
             log.error("Error retrieving game history for child ID {}: {}", childId, e.getMessage(), e);
             throw new RuntimeException("Failed to retrieve game history", e);
+        }
+    }
+    
+    /**
+     * Get sessions by task ID and child ID
+     */
+    public List<GazeGame> getSessionsByTaskAndChild(String taskId, String childId) {
+        try {
+            List<GazeGame> sessions = gazeGameRepository.findBySchoolTaskIdAndChildId(taskId, childId);
+            log.info("Retrieved {} sessions for task ID {} and child ID {}", sessions.size(), taskId, childId);
+            return sessions;
+        } catch (Exception e) {
+            log.error("Error retrieving sessions for task ID {} and child ID {}: {}", taskId, childId, e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve sessions", e);
+        }
+    }
+    
+    /**
+     * Delete all sessions by task ID
+     */
+    public void deleteSessionsByTaskId(String taskId) {
+        try {
+            gazeGameRepository.deleteBySchoolTaskId(taskId);
+            log.info("Successfully deleted all sessions for task ID: {}", taskId);
+        } catch (Exception e) {
+            log.error("Error deleting sessions for task ID {}: {}", taskId, e.getMessage(), e);
+            throw new RuntimeException("Failed to delete sessions", e);
         }
     }
 }

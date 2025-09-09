@@ -24,6 +24,7 @@ public class RepeatWithMeGameService {
         gameRecord.setSessionId(request.getSessionId());
         gameRecord.setChildId(request.getChildId());
         gameRecord.setAge(request.getAge());
+        gameRecord.setSchoolTaskId(request.getSchoolTaskId());
         
         // Set all 12 round scores
         gameRecord.setRound1Score(request.getRound1Score());
@@ -87,6 +88,16 @@ public class RepeatWithMeGameService {
     
     public List<RepeatWithMeGame> getRecordsByChildId(String childId) {
         return repository.findByChildId(childId);
+    }
+    
+    // Get sessions by task ID and child ID
+    public List<RepeatWithMeGame> getSessionsByTaskAndChild(String taskId, String childId) {
+        return repository.findBySchoolTaskIdAndChildId(taskId, childId);
+    }
+    
+    // Delete all sessions by task ID
+    public void deleteSessionsByTaskId(String taskId) {
+        repository.deleteBySchoolTaskId(taskId);
     }
     
     public List<RepeatWithMeGame> getTrainingData() {
