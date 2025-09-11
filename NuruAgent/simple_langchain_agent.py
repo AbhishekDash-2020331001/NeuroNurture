@@ -1,0 +1,451 @@
+#!/usr/bin/env python3
+"""
+Simplified LangChain-based AI Agent for NeuroNurture with DuckDuckGo search
+"""
+
+import os
+import json
+import logging
+import psycopg2
+from typing import Dict, List, Any, Optional
+from dotenv import load_dotenv
+
+import anthropic
+import re
+
+from config import settings
+
+load_dotenv()
+logger = logging.getLogger(__name__)
+class SimpleLangChainAgent:
+    def __init__(self):
+        """Initialize the simplified AI agent"""
+        # Initialize Anthropic Claude client
+        self.claude_client = anthropic.Anthropic(
+            api_key=settings.ANTHROPIC_API_KEY,
+            timeout=30.0
+        )
+        
+        # Initialize database connection
+        self.db_connection = None
+        self._connect_database()
+        
+    def _connect_database(self):
+        """Connect to PostgreSQL database"""
+        try:
+            self.db_connection = psycopg2.connect(settings.DATABASE_URL)
+            logger.info("Database connected successfully")
+        except Exception as e:
+            logger.error(f"Database connection failed: {e}")
+            self.db_connection = None
+    
+    def _web_search(self, query: str) -> str:
+        """Search the web using Claude Sonnet 4's built-in web search"""
+        try:
+            search_prompt = f"""Please search the web for current information about: {query}
+
+Provide a comprehensive summary of the latest information, including recent developments, trends, and relevant details. Focus on factual, up-to-date information.
+
+IMPORTANT: Format your response in PLAIN TEXT only. Do not use markdown, HTML, bold text, bullet points, or special formatting characters. Use simple text with line breaks for readability."""
+            
+            response = self.claude_client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=1000,
+                temperature=0.3,
+                messages=[{"role": "user", "content": search_prompt}]
+            )
+            
+            return f"Web search results for '{query}':\n{response.content[0].text}"
+            
+        except Exception as e:
+            logger.error(f"Web search error: {e}")
+            return f"Search error: {str(e)}"
+    
+    def _execute_database_query(self, query: str) -> str:
+        """Execute database query"""
+        if not self.db_connection:
+            return "Database not connected"
+        
+        try:
+            # Ensure it's a SELECT query for safety
+            if not query.strip().upper().startswith('SELECT'):
+                return "Only SELECT queries are allowed"
+            
+            cursor = self.db_connection.cursor()
+            cursor.execute(query)
+            
+            results = cursor.fetchall()
+            columns = [desc[0] for desc in cursor.description] if cursor.description else []
+            
+            # Convert to list of dictionaries
+            data = []
+            for row in results:
+                data.append(dict(zip(columns, row)))
+            
+            cursor.close()
+            
+            if not data:
+                return "No data found"
+            
+            # Format results for display
+            result_text = f"Found {len(data)} records:\n"
+            for i, record in enumerate(data[:5]):  # Show first 5 records
+                result_text += f"Record {i+1}: {record}\n"
+            
+            if len(data) > 5:
+                result_text += f"... and {len(data) - 5} more records"
+            
+            return result_text
+            
+        except Exception as e:
+            logger.error(f"Database query error: {e}")
+            return f"Database error: {str(e)}"
+    
+    def _get_database_schema(self) -> str:
+        """Get database schema information"""
+        if not self.db_connection:
+            return "Database not connected"
+        
+        try:
+            cursor = self.db_connection.cursor()
+            cursor.execute("""
+                SELECT 
+                    t.table_name,
+                    c.column_name,
+                    c.data_type,
+                    c.is_nullable
+                FROM information_schema.tables t
+                LEFT JOIN information_schema.columns c ON t.table_name = c.table_name
+                WHERE t.table_schema = 'public'
+                ORDER BY t.table_name, c.ordinal_position
+            """)
+            
+            results = cursor.fetchall()
+            cursor.close()
+            
+            # Group by table
+            tables = {}
+            for row in results:
+                table_name, column_name, data_type, is_nullable = row
+                if table_name not in tables:
+                    tables[table_name] = []
+                if column_name:
+                    tables[table_name].append({
+                        'column': column_name,
+                        'type': data_type,
+                        'nullable': is_nullable
+                    })
+            
+            # Format schema
+            schema_text = "Database Schema:\n"
+            for table_name, columns in tables.items():
+                schema_text += f"\nTable: {table_name}\n"
+                for col in columns:
+                    schema_text += f"  - {col['column']}: {col['type']} {'(nullable)' if col['nullable'] == 'YES' else '(not null)'}\n"
+
+            
+            return schema_text
+            
+        except Exception as e:
+            logger.error(f"Error getting database schema: {e}")
+            return f"Error getting schema: {str(e)}"
+    
+    def _build_user_context(self, user_type: str, user_id: int = None) -> str:
+        """Build user-specific context for prompts"""
+        if user_type == "parent" and user_id:
+            try:
+                # Get parent's children information
+                cursor = self.db_connection.cursor()
+                cursor.execute("""
+                    SELECT c.id, c.name, c.date_of_birth, c.gender 
+                    FROM child c 
+                    WHERE c.parent_id = %s
+                """, (user_id,))
+                children = cursor.fetchall()
+                cursor.close()
+                
+                if children:
+                    children_info = "\n".join([f"- Child ID: {child[0]}, Name: {child[1]}, DOB: {child[2]}, Gender: {child[3]}" for child in children])
+                    return f"Parent ID: {user_id}\nYour Children:\n{children_info}"
+                else:
+                    return f"Parent ID: {user_id}\nNo children found in system."
+            except Exception as e:
+                logger.error(f"Error getting parent context: {e}")
+                return f"Parent ID: {user_id}"
+        elif user_type == "school" and user_id:
+            try:
+                # Get school information and enrolled children
+                cursor = self.db_connection.cursor()
+                cursor.execute("""
+                    SELECT s.school_name, s.city, s.state, s.student_count
+                    FROM schools s 
+                    WHERE s.id = %s
+                """, (user_id,))
+                school_info = cursor.fetchone()
+                
+                cursor.execute("""
+                    SELECT c.id, c.name, c.date_of_birth, c.gender, c.parent_id
+                    FROM child c 
+                    WHERE c.school_id = %s
+                """, (user_id,))
+                children = cursor.fetchall()
+                cursor.close()
+                
+                if school_info:
+                    school_context = f"School ID: {user_id}\nSchool Name: {school_info[0]}\nLocation: {school_info[1]}, {school_info[2]}\nStudent Count: {school_info[3]}"
+                    if children:
+                        children_info = "\n".join([f"- Child ID: {child[0]}, Name: {child[1]}, DOB: {child[2]}, Gender: {child[3]}, Parent ID: {child[4]}" for child in children])
+                        return f"{school_context}\n\nEnrolled Children:\n{children_info}"
+                    else:
+                        return f"{school_context}\n\nNo children enrolled in this school."
+                else:
+                    return f"School ID: {user_id}\nSchool not found in system."
+            except Exception as e:
+                logger.error(f"Error getting school context: {e}")
+                return f"School ID: {user_id}"
+        elif user_type == "admin":
+            return "Full system administrator access"
+        else:
+            return f"User Type: {user_type}"
+    
+    def _get_access_rules(self, user_type: str) -> str:
+        """Get access rules based on user type"""
+        if user_type == "parent":
+            return """
+ACCESS RESTRICTIONS FOR PARENT:
+- You can ONLY access data about YOUR OWN CHILDREN
+- You CANNOT access other children's data, school information, or system-wide statistics
+- You CANNOT access other parents' information
+- You CAN compare your children's progress with general benchmarks (not specific other children)
+- You CAN get educational advice and general information
+- All database queries MUST include WHERE parent_id = [parent_id] or child_id IN (SELECT id FROM child WHERE parent_id = [parent_id])
+- If user asks about other children or schools, politely decline and redirect to their own children
+"""
+        elif user_type == "school":
+            return """
+ACCESS RESTRICTIONS FOR SCHOOL:
+- You can ONLY access data about YOUR OWN SCHOOL and CHILDREN ENROLLED IN YOUR SCHOOL
+- You CANNOT access other schools' data or children from other schools
+- You CANNOT access parent information (except parent_id for enrolled children)
+- You CANNOT access children who are connected to doctors but not enrolled in your school
+- You CAN access educational game data for children enrolled in your school
+- You CAN get school-specific statistics and progress reports for your enrolled children
+- All database queries MUST include WHERE school_id = [school_id] or child_id IN (SELECT id FROM child WHERE school_id = [school_id])
+- If user asks about other schools or children not enrolled, politely decline and redirect to your school's data
+"""
+        else:  # admin
+            return """
+ACCESS RULES FOR ADMIN:
+- Full access to all data in the system
+- Can access any child, parent, school, or game data
+- Can provide system-wide statistics and comparisons
+- Can access all educational games and progress data
+"""
+    
+    def _analyze_intent(self, message: str, user_type: str = "admin", user_id: int = None) -> Dict[str, Any]:
+        """Analyze user intent using Claude with user type restrictions"""
+        try:
+            # Build user-specific context
+            user_context = self._build_user_context(user_type, user_id)
+            
+            analysis_prompt = f"""You are an AI assistant for the NeuroNurture educational platform. Analyze this user message and determine what tools to use:
+
+User Type: {user_type.upper()}
+{user_context}
+
+Message: "{message}"
+
+Available tools:
+1. web_search - for current information, news, general knowledge
+2. database_query - for specific data from NeuroNurture system
+3. database_schema - for database structure information
+
+{self._get_access_rules(user_type)}
+
+Respond with the following JSON schema exactly:
+{{
+    "needs_web_search": true/false,
+    "needs_database": true/false,
+    "needs_schema": true/false,
+    "reasoning": "brief explanation"
+}}
+"""
+
+            response = self.claude_client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=200,
+                temperature=0.1,
+                messages=[{"role": "user", "content": analysis_prompt}]
+            )
+            
+            response_text = response.content[0].text
+            cleaned_text = re.sub(r'```json\n|```', '', response_text).strip()
+            
+            result = json.loads(cleaned_text)
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error analyzing intent: {e}")
+            return {
+                "needs_web_search": False,
+                "needs_database": False,
+                "needs_schema": False,
+                "reasoning": "Analysis failed"
+            }
+    
+    def _generate_database_query(self, message: str, user_type: str = "admin", user_id: int = None) -> str:
+        """Generate SQL query using LLM"""
+        try:
+            schema = self._get_database_schema()
+            user_context = self._build_user_context(user_type, user_id)
+            access_rules = self._get_access_rules(user_type)
+            
+            query_prompt = f"""Generate a SQL query for this request:
+
+User Type: {user_type.upper()}
+{user_context}
+
+User request: "{message}"
+
+Database schema:
+{schema}
+
+{access_rules}
+
+SQL Generation Rules:
+1. Use only SELECT queries
+2. Use proper table and column names
+3. Add LIMIT clause for large results
+4. For PARENT users: ALL queries MUST include WHERE clauses to restrict to their children only
+5. For PARENT users: Use WHERE parent_id = {user_id} or WHERE child_id IN (SELECT id FROM child WHERE parent_id = {user_id})
+6. For SCHOOL users: ALL queries MUST include WHERE clauses to restrict to their school and enrolled children only
+7. For SCHOOL users: Use WHERE school_id = {user_id} or WHERE child_id IN (SELECT id FROM child WHERE school_id = {user_id})
+8. Return only the SQL query, nothing else
+
+Example for Admin: SELECT * FROM child LIMIT 10
+Example for Parent: SELECT * FROM child WHERE parent_id = {user_id}
+Example for School: SELECT * FROM child WHERE school_id = {user_id}"""
+
+            response = self.claude_client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=300,
+                temperature=0.1,
+                messages=[{"role": "user", "content": query_prompt}]
+            )
+            
+            response_text = response.content[0].text
+            
+            # Clean up the response
+            sql_query = response_text.strip()
+            sql_query = sql_query.replace("```sql", "").replace("```", "").strip()
+            
+            return sql_query
+            
+        except Exception as e:
+            logger.error(f"Error generating SQL: {e}")
+            return ""
+    
+    def process_message(self, message: str, user_type: str = "admin", user_id: int = None) -> Dict[str, Any]:
+        """Process user message with tool selection and user type restrictions"""
+        try:
+            # Analyze intent with user type context
+            intent = self._analyze_intent(message, user_type, user_id)
+            logger.info(f"Intent analysis: {intent}")
+            
+            # Collect information from tools
+            tool_results = []
+            
+            if intent.get("needs_schema", False):
+                schema_info = self._get_database_schema()
+                tool_results.append(f"Database Schema:\n{schema_info}")
+            
+            if intent.get("needs_database", False):
+                sql_query = self._generate_database_query(message, user_type, user_id)
+                if sql_query:
+                    db_result = self._execute_database_query(sql_query)
+                    tool_results.append(f"Database Query Result:\n{db_result}")
+                    logger.info(f"Executed SQL: {sql_query}")
+            
+            if intent.get("needs_web_search", False):
+                search_result = self._web_search(message)
+                tool_results.append(f"Web Search Results:\n{search_result}")
+            
+            # Generate final response
+            if tool_results:
+                context = "\n\n".join(tool_results)
+                user_context = self._build_user_context(user_type, user_id)
+                access_rules = self._get_access_rules(user_type)
+                
+                final_prompt = f"""You are an AI assistant for the NeuroNurture educational platform. Based on the following information, provide a direct, helpful response to the user's question:
+
+User Type: {user_type.upper()}
+{user_context}
+
+User question: "{message}"
+
+Context information:
+{context}
+
+{access_rules}
+
+IMPORTANT: Provide your response in PLAIN TEXT format only. Do not use any markdown formatting, HTML tags, bold text, bullet points, or special characters. Use simple text with line breaks for readability. Remember to respect the access restrictions for this user type."""
+            else:
+                user_context = self._build_user_context(user_type, user_id)
+                access_rules = self._get_access_rules(user_type)
+                
+                final_prompt = f"""You are an AI assistant for the NeuroNurture educational platform. Answer this question directly and helpfully:
+
+User Type: {user_type.upper()}
+{user_context}
+
+User question: "{message}"
+
+{access_rules}
+
+IMPORTANT: Provide your response in PLAIN TEXT format only. Do not use any markdown formatting, HTML tags, bold text, bullet points, or special characters. Use simple text with line breaks for readability. Be direct and helpful in your response while respecting the access restrictions for this user type."""
+            
+            response = self.claude_client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=1000,
+                temperature=0.7,
+                messages=[{"role": "user", "content": final_prompt}]
+            )
+            
+            response_text = response.content[0].text
+            
+            return {
+                "response": response_text,
+                "database_accessed": intent.get("needs_database", False),
+                "web_searched": intent.get("needs_web_search", False),
+                "tools_used": sum([intent.get("needs_database", False), intent.get("needs_web_search", False), intent.get("needs_schema", False)])
+            }
+            
+        except Exception as e:
+            logger.error(f"Error processing message: {e}")
+            return {
+                "response": f"I encountered an error while processing your request: {str(e)}",
+                "error": True
+            }
+    
+    def get_ai_response(self, message: str) -> str:
+        """Get direct AI response without tools"""
+        try:
+            plain_text_prompt = f"""{message}
+
+IMPORTANT: Provide your response in PLAIN TEXT format only. Do not use any markdown formatting, HTML tags, bold text, bullet points, or special characters. Use simple text with line breaks for readability."""
+            
+            response = self.claude_client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=1000,
+                temperature=0.7,
+                messages=[{"role": "user", "content": plain_text_prompt}]
+            )
+            
+            return response.content[0].text
+                
+        except Exception as e:
+            logger.error(f"Error getting AI response: {e}")
+            return "I'm having trouble connecting to the AI service. Please try again later."
+
+# Create global instance
+simple_langchain_agent = SimpleLangChainAgent()

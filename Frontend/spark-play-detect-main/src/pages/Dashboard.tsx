@@ -3,19 +3,18 @@ import { getCurrentChild } from '@/utils/childUtils';
 import { performLogout } from '@/utils/logoutUtils';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import FloatingGeminiButton from '../components/FloatingGeminiButton';
-import GeminiChat from '../components/GeminiChat';
 import ChildDoctorPage from './child/ChildDoctorPage';
 import ChildPlaygroundPage from './child/ChildPlaygroundPage';
 import ChildSchoolPage from './child/ChildSchoolPage';
+import { Assistant } from './assistant';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [username, setUsername] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [selectedChild, setSelectedChild] = useState<any>(null);
-  const [isGeminiOpen, setIsGeminiOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'playground' | 'school' | 'doctor'>('playground');
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
   useEffect(() => {
     fetch('http://localhost:8080/auth/session', { credentials: 'include' })
@@ -89,14 +88,10 @@ export default function Dashboard() {
         </div>
       )}
       
-      {/* Gemini Chat Components */}
-      <FloatingGeminiButton 
-        onClick={() => setIsGeminiOpen(true)}
-        isOpen={isGeminiOpen}
-      />
-      <GeminiChat 
-        isOpen={isGeminiOpen}
-        onClose={() => setIsGeminiOpen(false)}
+      {/* AI Assistant */}
+      <Assistant 
+        isOpen={isAssistantOpen}
+        onToggle={() => setIsAssistantOpen(!isAssistantOpen)}
       />
     </div>
   );

@@ -432,29 +432,57 @@ export default function ChildPlaygroundPage({ username }: ChildPlaygroundPagePro
           <span className="mr-2">🤖</span>
           Message from Ella
         </h2>
-        <Card className="card-playful p-6 backdrop-blur-sm bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200">
+        <Card className="card-playful p-6 backdrop-blur-sm bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200">
           <div className="flex items-start space-x-4">
+            {/* Ella's Avatar */}
             <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-xl">
-                🤖
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center shadow-lg">
+                <span className="text-2xl">🤖</span>
               </div>
             </div>
+            
+            {/* Message Content */}
             <div className="flex-1">
-              <div className="flex items-center space-x-2 mb-2">
-                <h3 className="font-bold text-lg text-primary">Ella</h3>
-                <span className="text-sm text-muted-foreground font-comic">AI Assistant</span>
+              <div className="flex items-center space-x-2 mb-3">
+                <h3 className="text-lg font-bold text-purple-700">Ella - Your AI Learning Assistant</h3>
+                <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full">
+                  Online
+                </span>
               </div>
-              <p className="text-gray-700 leading-relaxed font-comic">
-                {isLoadingHeatmap ? (
-                  "Loading your progress data..."
-                ) : gameStats.totalDaysPracticed > 0 ? (
-                  `"Wow! I've been watching your progress and I'm so impressed! 🎉 You've practiced for ${gameStats.totalDaysPracticed} days total, with a current streak of ${gameStats.currentStreak} days - that's amazing! You've spent ${Math.round(gameStats.totalTimeMinutes / 60)} hours learning and growing. Keep up the fantastic work! Remember, every little practice session counts. You're doing great! 🌟"`
-                ) : (
-                  "Hi there! I'm Ella, your AI learning assistant! 🤖 I'm here to help you track your learning journey. Start playing some games and I'll be able to give you personalized feedback and encouragement! Let's begin this amazing learning adventure together! 🚀"
-                )}
-              </p>
-              <div className="mt-3 text-xs text-muted-foreground">
-                <span className="font-comic">Last updated: 2 hours ago</span>
+              
+              <div className="bg-white/80 p-4 rounded-lg shadow-sm border border-purple-100">
+                <p className="text-gray-700 leading-relaxed mb-3">
+                  Hi there! I'm Ella, your personal learning assistant! 🌟 I've been watching your amazing progress, and I'm so proud of how hard you've been working!
+                </p>
+                
+                <p className="text-gray-700 leading-relaxed mb-3">
+                  I noticed you've been doing really well with the <strong className="text-purple-600">Gesture Game</strong> and <strong className="text-blue-600">Eye Gaze Tracking</strong>! Your focus and concentration have improved so much! 🎯
+                </p>
+                
+                <p className="text-gray-700 leading-relaxed mb-3">
+                  Here's a special tip for you: Try to practice for at least 15 minutes every day. Even if you feel tired, just 5 minutes can make a big difference! Remember, every small step counts! 💪
+                </p>
+                
+                <p className="text-gray-700 leading-relaxed">
+                  Keep up the fantastic work! I believe in you, and I know you can achieve anything you set your mind to! 🌈✨
+                </p>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex space-x-3 mt-4">
+                <Button 
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105"
+                  onClick={() => console.log('Chat with Ella clicked')}
+                >
+                  💬 Chat with Ella
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="border-purple-300 text-purple-700 hover:bg-purple-50 font-bold px-4 py-2 rounded-lg transition-all duration-300"
+                  onClick={() => console.log('View progress clicked')}
+                >
+                  📊 View My Progress
+                </Button>
               </div>
             </div>
           </div>

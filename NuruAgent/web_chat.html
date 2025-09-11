@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroNurture AI Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .chat-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .user-selector {
+            padding: 20px;
+            background: #e9ecef;
+            border-bottom: 1px solid #ddd;
+        }
+        .user-selector h3 {
+            margin: 0 0 15px 0;
+            color: #495057;
+            text-align: center;
+        }
+        .selector-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .selector-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .selector-group label {
+            font-weight: bold;
+            color: #495057;
+            font-size: 14px;
+        }
+        .selector-group select, .selector-group input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            min-width: 200px;
+        }
+        .user-info {
+            padding: 10px 20px;
+            background: #d4edda;
+            border-bottom: 1px solid #c3e6cb;
+            text-align: center;
+            font-weight: bold;
+            color: #155724;
+        }
+        .user-info.admin {
+            background: #cce5ff;
+            border-bottom: 1px solid #b3d9ff;
+            color: #004085;
+        }
+        .user-info.parent {
+            background: #fff3cd;
+            border-bottom: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .user-info.school {
+            background: #d1ecf1;
+            border-bottom: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .chat-messages {
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 18px;
+            max-width: 70%;
+        }
+        .user-message {
+            background: #007bff;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+        .bot-message {
+            background: #f1f3f4;
+            color: #333;
+        }
+        .chat-input {
+            display: flex;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            font-size: 16px;
+        }
+        .chat-input button {
+            margin-left: 10px;
+            padding: 12px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .chat-input button:hover {
+            background: #0056b3;
+        }
+        .chat-input button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 10px;
+            color: #666;
+        }
+        .restriction-notice {
+            padding: 10px 20px;
+            background: #f8d7da;
+            border-bottom: 1px solid #f5c6cb;
+            color: #721c24;
+            font-size: 14px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>🎯 NeuroNurture AI Chatbot</h1>
+            <p>Your intelligent educational companion</p>
+        </div>
+        
+        <div class="user-selector">
+            <h3>🔐 Select Your Access Level</h3>
+            <div class="selector-row">
+                <div class="selector-group">
+                    <label for="userType">User Type:</label>
+                    <select id="userType" onchange="updateUserInterface()">
+                        <option value="admin">Admin</option>
+                        <option value="parent">Parent</option>
+                        <option value="school">School</option>
+                    </select>
+                </div>
+                <div class="selector-group" id="userIdGroup" style="display: none;">
+                    <label for="userId" id="userIdLabel">Select User:</label>
+                    <select id="userId">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="user-info" id="userInfo">
+            🔐 Admin Access - Full Database Access
+        </div>
+        
+        <div class="restriction-notice" id="restrictionNotice" style="display: none;">
+            ⚠️ Parent Access: You can only view information about your own children. Privacy and security are our top priorities.
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot-message">
+                <strong>🤖 AI:</strong> Hello! Welcome to NeuroNurture. I can help you with educational insights, child development information, and system data based on your access level. What would you like to explore?
+            </div>
+        </div>
+        
+        <div class="loading" id="loading">
+            🤖 AI is thinking...
+        </div>
+        
+        <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="Type your message here..." onkeypress="handleKeyPress(event)">
+            <button onclick="sendMessage()" id="sendButton">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let currentUserType = 'admin';
+        let currentUserId = null;
+        
+        async function loadParents() {
+            try {
+                const response = await fetch(`${API_BASE}/parents`);
+                const data = await response.json();
+                
+                const select = document.getElementById('userId');
+                select.innerHTML = '<option value="">Select a parent...</option>';
+                
+                if (data.parents && data.parents.length > 0) {
+                    data.parents.forEach(parent => {
+                        const option = document.createElement('option');
+                        option.value = parent.id;
+                        option.textContent = `${parent.name} (${parent.children_count} children)`;
+                        select.appendChild(option);
+                    });
+                } else {
+                    select.innerHTML = '<option value="">No parents found</option>';
+                }
+            } catch (error) {
+                console.error('Error loading parents:', error);
+                const select = document.getElementById('userId');
+                select.innerHTML = '<option value="">Error loading parents</option>';
+            }
+        }
+        
+        async function loadSchools() {
+            try {
+                const response = await fetch(`${API_BASE}/schools`);
+                const data = await response.json();
+                
+                const select = document.getElementById('userId');
+                select.innerHTML = '<option value="">Select a school...</option>';
+                
+                if (data.schools && data.schools.length > 0) {
+                    data.schools.forEach(school => {
+                        const option = document.createElement('option');
+                        option.value = school.id;
+                        option.textContent = `${school.name} (${school.enrolled_children} enrolled)`;
+                        select.appendChild(option);
+                    });
+                } else {
+                    select.innerHTML = '<option value="">No schools found</option>';
+                }
+            } catch (error) {
+                console.error('Error loading schools:', error);
+                const select = document.getElementById('userId');
+                select.innerHTML = '<option value="">Error loading schools</option>';
+            }
+        }
+        
+        function updateUserInterface() {
+            const userType = document.getElementById('userType').value;
+            const userIdGroup = document.getElementById('userIdGroup');
+            const userIdLabel = document.getElementById('userIdLabel');
+            const userInfo = document.getElementById('userInfo');
+            const restrictionNotice = document.getElementById('restrictionNotice');
+            const sendButton = document.getElementById('sendButton');
+            
+            currentUserType = userType;
+            
+            if (userType === 'parent') {
+                userIdGroup.style.display = 'flex';
+                userIdLabel.textContent = 'Select Parent:';
+                userInfo.className = 'user-info parent';
+                userInfo.innerHTML = '👨‍👩‍👧‍👦 Parent Access - Your Children Only';
+                restrictionNotice.style.display = 'block';
+                restrictionNotice.innerHTML = '⚠️ Parent Access: You can only view information about your own children. Privacy and security are our top priorities.';
+                sendButton.disabled = true;
+                loadParents(); // Load parents when switching to parent mode
+            } else if (userType === 'school') {
+                userIdGroup.style.display = 'flex';
+                userIdLabel.textContent = 'Select School:';
+                userInfo.className = 'user-info school';
+                userInfo.innerHTML = '🏫 School Access - Your School & Enrolled Children Only';
+                restrictionNotice.style.display = 'block';
+                restrictionNotice.innerHTML = '⚠️ School Access: You can only view information about your school and children enrolled in your school. You cannot access children from other schools or parent information.';
+                sendButton.disabled = true;
+                loadSchools(); // Load schools when switching to school mode
+            } else {
+                userIdGroup.style.display = 'none';
+                userInfo.className = 'user-info admin';
+                userInfo.innerHTML = '🔐 Admin Access - Full Database Access';
+                restrictionNotice.style.display = 'none';
+                sendButton.disabled = false;
+                currentUserId = null;
+            }
+            
+            // Clear chat messages and show new welcome
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = '';
+            
+            if (userType === 'admin') {
+                addMessage('Hello! Welcome to NeuroNurture Admin Panel. I have full access to the database and can help you with any information about users, games, progress, and system data. What would you like to explore?', false);
+            } else if (userType === 'parent') {
+                addMessage('Hello! Welcome to NeuroNurture Parent Portal. I can help you with information about your children\'s progress, educational activities, and development insights. Please select your name from the dropdown to get started.', false);
+            } else if (userType === 'school') {
+                addMessage('Hello! Welcome to NeuroNurture School Portal. I can help you with information about your school and children enrolled in your school, including their educational progress and game performance. Please select your school from the dropdown to get started.', false);
+            }
+        }
+        
+        function validateUserAccess() {
+            if (currentUserType === 'parent' || currentUserType === 'school') {
+                const userId = document.getElementById('userId').value;
+                if (!userId) {
+                    const userTypeLabel = currentUserType === 'parent' ? 'parent' : 'school';
+                    alert(`Please select a ${userTypeLabel} from the dropdown to continue.`);
+                    return false;
+                }
+                currentUserId = parseInt(userId);
+                document.getElementById('sendButton').disabled = false;
+                return true;
+            }
+            return true;
+        }
+        
+        function addMessage(content, isUser = false) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            
+            const prefix = isUser ? '👤 You:' : '🤖 AI:';
+            messageDiv.innerHTML = `<strong>${prefix}</strong> ${content}`;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function showLoading(show = true) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+        
+        async function sendMessage() {
+            if (!validateUserAccess()) return;
+            
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message
+            addMessage(message, true);
+            input.value = '';
+            
+            // Show loading
+            showLoading(true);
+            
+            try {
+                const requestBody = {
+                    message: message,
+                    user_type: currentUserType
+                };
+                
+                if ((currentUserType === 'parent' || currentUserType === 'school') && currentUserId) {
+                    requestBody.user_id = currentUserId;
+                }
+                
+                const response = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                const data = await response.json();
+                
+                // Add bot response
+                addMessage(data.response || 'Sorry, I encountered an error.');
+                
+            } catch (error) {
+                addMessage('Sorry, I cannot connect to the server. Make sure the backend is running.');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        // Focus on input when page loads
+        window.onload = function() {
+            document.getElementById('messageInput').focus();
+            updateUserInterface();
+        };
+        
+        // Enable send button when user is selected
+        document.getElementById('userId').addEventListener('change', function() {
+            if (currentUserType === 'parent' || currentUserType === 'school') {
+                const userId = this.value;
+                const sendButton = document.getElementById('sendButton');
+                sendButton.disabled = !userId;
+                
+                // Update welcome message with selected user info
+                if (userId) {
+                    const selectedOption = this.options[this.selectedIndex];
+                    const userName = selectedOption.textContent.split(' (')[0];
+                    const chatMessages = document.getElementById('chatMessages');
+                    chatMessages.innerHTML = '';
+                    
+                    if (currentUserType === 'parent') {
+                        addMessage(`Hello ${userName}! I can help you with information about your children's progress, educational activities, and development insights. What would you like to know about your children?`, false);
+                    } else if (currentUserType === 'school') {
+                        addMessage(`Hello ${userName}! I can help you with information about your school and children enrolled in your school, including their educational progress and game performance. What would you like to know about your school or enrolled children?`, false);
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

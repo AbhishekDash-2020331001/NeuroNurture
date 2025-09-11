@@ -1,0 +1,10 @@
+fastapi==0.115.0           # latest stable with full Pydantic v2 support
+uvicorn[standard]==0.30.6  # latest stable, works fine with FastAPI
+psycopg2-binary==2.9.9     # ✅ keep, stable
+pydantic==2.11.0           # latest stable v2
+python-dotenv==1.0.1       # latest stable
+anthropic==0.34.2          # latest stable Claude API client
+python-multipart==0.0.9    # latest stable, works with FastAPI
+langchain==0.3.7           # latest stable, requires langchain-core>=0.3.15
+langchain-community==0.3.7 # must match langchain version
+langchain-anthropic==0.2.1 # Claude integration for LangChain
