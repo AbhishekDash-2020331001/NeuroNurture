@@ -39,6 +39,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             requestPath.startsWith("/api/school/admin/") ||
             requestPath.startsWith("/api/school/verify-email") ||
             requestPath.startsWith("/api/school/tasks/") ||
+            requestPath.startsWith("/api/school/tournaments/") ||
             requestPath.startsWith("/api/school/task-performance/") ||
             requestPath.startsWith("/api/school/schools/") ||
             requestPath.startsWith("/api/school/children/")) {

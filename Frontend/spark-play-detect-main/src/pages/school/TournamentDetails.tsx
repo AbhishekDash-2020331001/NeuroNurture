@@ -1,237 +1,85 @@
-import React, { useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import { useSchoolAuth } from '@/contexts/school/SchoolAuthContext';
+import { LeaderboardEntry, tournamentDetailsService, type TournamentDetails } from '@/services/tournamentDetailsService';
 import {
     ArrowLeft,
-    Trophy,
-    Medal,
     Award,
-    Users,
-    Calendar,
-    Target,
     BarChart3,
-    TrendingUp,
-    Star,
+    Calendar,
     Crown,
+    Filter,
     Gamepad2,
-    Clock,
-    CheckCircle,
-    Eye,
-    Filter
+    Loader2,
+    Medal,
+    Target,
+    TrendingUp,
+    Trophy,
+    Users
 } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 
-interface Child {
-    id: string;
-    name: string;
-    avatar: string;
-    grade: string;
-    gamesPlayed: number;
-    averageScore: number;
-    totalScore: number;
-    rank: number;
-    gameScores: {
-        [gameId: string]: {
-            score: number;
-            attempts: number;
-            bestScore: number;
-            lastPlayed: string;
-        };
-    };
-}
+// Use the imported interfaces from the service
 
-interface Tournament {
-    id: string;
-    name: string;
-    description: string;
-    startDate: string;
-    endDate: string;
-    status: 'upcoming' | 'active' | 'completed' | 'cancelled';
-    games: string[];
-    grade: string;
-    participants: number;
-    prizes: string;
-    createdAt: string;
-}
-
-interface Game {
-    id: string;
-    name: string;
-    icon: string;
-    category: string;
-}
-
-// Available games
-const availableGames: Game[] = [
-    { id: 'gaze-tracking', name: 'Gaze Tracking', icon: '👁️', category: 'Cognitive' },
-    { id: 'gesture-control', name: 'Gesture Control', icon: '✋', category: 'Motor Skills' },
-    { id: 'mirror-posture', name: 'Mirror Posture', icon: '🧍', category: 'Physical' },
-    { id: 'repeat-with-me', name: 'Repeat With Me', icon: '🔄', category: 'Memory' },
+// Available games mapping
+const availableGames = [
+    { id: 'gaze-game', name: 'Gaze Tracking', icon: '👁️', category: 'Cognitive' },
+    { id: 'gesture-game', name: 'Gesture Control', icon: '✋', category: 'Motor Skills' },
+    { id: 'mirror-posture-game', name: 'Mirror Posture', icon: '🧍', category: 'Physical' },
+    { id: 'repeat-with-me-game', name: 'Repeat With Me', icon: '🔄', category: 'Memory' },
     { id: 'dance-doodle', name: 'Dance Doodle', icon: '💃', category: 'Creative' }
 ];
 
-// Mock tournament data
-const mockTournament: Tournament = {
-    id: '1',
-    name: 'Spring Cognitive Challenge',
-    description: 'A comprehensive tournament focusing on cognitive development and memory skills',
-    startDate: '2024-03-01',
-    endDate: '2024-03-15',
-    status: 'active',
-    games: ['gaze-tracking', 'repeat-with-me', 'dance-doodle'],
-    grade: '3rd Grade',
-    participants: 24,
-    prizes: '1st Place: $100 Gift Card, 2nd Place: $50 Gift Card, 3rd Place: $25 Gift Card',
-    createdAt: '2024-02-15'
-};
-
-// Mock leaderboard data with realistic scores
-const mockLeaderboard: Child[] = [
-    {
-        id: '1',
-        name: 'Emma Johnson',
-        avatar: '👧',
-        grade: '3rd Grade',
-        gamesPlayed: 3,
-        averageScore: 92.5,
-        totalScore: 277.5,
-        rank: 1,
-        gameScores: {
-            'gaze-tracking': { score: 95, attempts: 3, bestScore: 95, lastPlayed: '2024-03-10' },
-            'repeat-with-me': { score: 90, attempts: 2, bestScore: 90, lastPlayed: '2024-03-12' },
-            'dance-doodle': { score: 92.5, attempts: 4, bestScore: 92.5, lastPlayed: '2024-03-14' }
-        }
-    },
-    {
-        id: '2',
-        name: 'Liam Chen',
-        avatar: '👦',
-        grade: '3rd Grade',
-        gamesPlayed: 3,
-        averageScore: 88.3,
-        totalScore: 265,
-        rank: 2,
-        gameScores: {
-            'gaze-tracking': { score: 85, attempts: 2, bestScore: 85, lastPlayed: '2024-03-09' },
-            'repeat-with-me': { score: 92, attempts: 3, bestScore: 92, lastPlayed: '2024-03-11' },
-            'dance-doodle': { score: 88, attempts: 2, bestScore: 88, lastPlayed: '2024-03-13' }
-        }
-    },
-    {
-        id: '3',
-        name: 'Sophia Rodriguez',
-        avatar: '👧',
-        grade: '3rd Grade',
-        gamesPlayed: 2,
-        averageScore: 91.0,
-        totalScore: 182,
-        rank: 3,
-        gameScores: {
-            'gaze-tracking': { score: 89, attempts: 2, bestScore: 89, lastPlayed: '2024-03-08' },
-            'repeat-with-me': { score: 93, attempts: 1, bestScore: 93, lastPlayed: '2024-03-10' }
-        }
-    },
-    {
-        id: '4',
-        name: 'Noah Williams',
-        avatar: '👦',
-        grade: '3rd Grade',
-        gamesPlayed: 2,
-        averageScore: 91.0,
-        totalScore: 182,
-        rank: 3,
-        gameScores: {
-            'gaze-tracking': { score: 88, attempts: 3, bestScore: 88, lastPlayed: '2024-03-09' },
-            'dance-doodle': { score: 94, attempts: 2, bestScore: 94, lastPlayed: '2024-03-12' }
-        }
-    },
-    {
-        id: '5',
-        name: 'Ava Thompson',
-        avatar: '👧',
-        grade: '3rd Grade',
-        gamesPlayed: 1,
-        averageScore: 87.0,
-        totalScore: 87,
-        rank: 5,
-        gameScores: {
-            'repeat-with-me': { score: 87, attempts: 1, bestScore: 87, lastPlayed: '2024-03-11' }
-        }
-    },
-    {
-        id: '6',
-        name: 'Mason Davis',
-        avatar: '👦',
-        grade: '3rd Grade',
-        gamesPlayed: 1,
-        averageScore: 85.0,
-        totalScore: 85,
-        rank: 6,
-        gameScores: {
-            'gaze-tracking': { score: 85, attempts: 1, bestScore: 85, lastPlayed: '2024-03-13' }
-        }
-    },
-    {
-        id: '7',
-        name: 'Isabella Martinez',
-        avatar: '👧',
-        grade: '3rd Grade',
-        gamesPlayed: 1,
-        averageScore: 85.0,
-        totalScore: 85,
-        rank: 6,
-        gameScores: {
-            'dance-doodle': { score: 85, attempts: 1, bestScore: 85, lastPlayed: '2024-03-12' }
-        }
-    }
-];
 
 const TournamentDetails: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { school } = useSchoolAuth();
-    const [selectedGame, setSelectedGame] = useState<string>('all');
-    const [showGameDetails, setShowGameDetails] = useState<{ child: Child; gameId: string } | null>(null);
+    const [selectedGame, setSelectedGame] = useState<string>('');
+    const [showGameDetails, setShowGameDetails] = useState<{ child: LeaderboardEntry; gameId: string } | null>(null);
+    const [tournamentDetails, setTournamentDetails] = useState<TournamentDetails | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    // Sort leaderboard based on the specified criteria
-    const sortedLeaderboard = useMemo(() => {
-        const sorted = [...mockLeaderboard].sort((a, b) => {
-            // First priority: Number of games played (descending)
-            if (a.gamesPlayed !== b.gamesPlayed) {
-                return b.gamesPlayed - a.gamesPlayed;
-            }
-            
-            // Second priority: Average score (descending)
-            if (a.averageScore !== b.averageScore) {
-                return b.averageScore - a.averageScore;
-            }
-            
-            // If tied, maintain original order (same rank)
-            return 0;
-        });
+    // Set first game as selected when tournament data loads
+    useEffect(() => {
+        if (tournamentDetails?.tournament?.selectedGames && tournamentDetails.tournament.selectedGames.length > 0 && !selectedGame) {
+            setSelectedGame(tournamentDetails.tournament.selectedGames[0]);
+        }
+    }, [tournamentDetails, selectedGame]);
 
-        // Calculate ranks with proper tie handling
-        return sorted.map((child, index) => {
-            let rank = index + 1;
-            if (index > 0) {
-                const prevChild = sorted[index - 1];
-                if (prevChild.gamesPlayed === child.gamesPlayed && 
-                    prevChild.averageScore === child.averageScore) {
-                    rank = sorted[index - 1].rank || (index);
-                }
+    // Fetch tournament details
+    useEffect(() => {
+        const fetchTournamentDetails = async () => {
+            if (!id) return;
+            
+            try {
+                setIsLoading(true);
+                setError(null);
+                
+                const details = await tournamentDetailsService.getTournamentDetails(parseInt(id));
+                setTournamentDetails(details);
+            } catch (error) {
+                console.error('Error fetching tournament details:', error);
+                setError(`Failed to load tournament details: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            } finally {
+                setIsLoading(false);
             }
-            return { ...child, rank };
-        });
-    }, []);
+        };
+
+        fetchTournamentDetails();
+    }, [id]);
 
     // Filter leaderboard by selected game
     const filteredLeaderboard = useMemo(() => {
+        if (!tournamentDetails?.leaderboard) return [];
+        
         if (selectedGame === 'all') {
-            return sortedLeaderboard;
+            return tournamentDetails.leaderboard;
         }
-        return sortedLeaderboard.filter(child => 
-            child.gameScores[selectedGame] && child.gameScores[selectedGame].score > 0
+        return tournamentDetails.leaderboard.filter(child => 
+            child.gameType === selectedGame
         );
-    }, [sortedLeaderboard, selectedGame]);
+    }, [tournamentDetails?.leaderboard, selectedGame]);
 
     const getRankIcon = (rank: number) => {
         switch (rank) {
@@ -279,6 +127,65 @@ const TournamentDetails: React.FC = () => {
         return game ? game.name : 'Unknown Game';
     };
 
+    const getScoreIndicator = (gameType: string) => {
+        switch (gameType) {
+            case 'mirror-posture-game':
+                return 'Total time (lower is better)';
+            case 'gesture-game':
+                return 'Total time (lower is better)';
+            case 'dance-doodle':
+                return 'Total time (lower is better)';
+            case 'gaze-game':
+                return 'Balloons popped (higher is better)';
+            case 'repeat-with-me-game':
+                return 'Similarity % (higher is better)';
+            default:
+                return 'Score';
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="flex items-center space-x-2">
+                    <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                    <span className="text-gray-600">Loading tournament details...</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                    <div className="text-red-600 mb-2">⚠️</div>
+                    <p className="text-gray-600 mb-4">{error}</p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                        Try Again
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (!tournamentDetails) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                    <div className="text-gray-400 mb-2">📊</div>
+                    <p className="text-gray-600">No tournament data available</p>
+                </div>
+            </div>
+        );
+    }
+
+    const tournament = tournamentDetails.tournament;
+    const statistics = tournamentDetails.statistics;
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -291,13 +198,13 @@ const TournamentDetails: React.FC = () => {
                         <ArrowLeft className="h-5 w-5 text-gray-600" />
                     </button>
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Tournament Leaderboard</h1>
-                        <p className="text-gray-600 mt-1">Track performance and rankings</p>
+                        <h1 className="text-3xl font-bold text-gray-900">{tournament.tournamentTitle}</h1>
+                        <p className="text-gray-600 mt-1">{tournament.tournamentDescription}</p>
                     </div>
                 </div>
                 <div className="flex items-center space-x-3">
-                    <span className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(mockTournament.status)}`}>
-                        <span className="capitalize">{mockTournament.status}</span>
+                    <span className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(tournament.status.toLowerCase())}`}>
+                        <span className="capitalize">{tournament.status.toLowerCase()}</span>
                     </span>
                 </div>
             </div>
@@ -310,20 +217,20 @@ const TournamentDetails: React.FC = () => {
                             <Trophy className="h-8 w-8 text-white" />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold text-gray-900">{mockTournament.name}</h2>
-                            <p className="text-gray-600 mt-1">{mockTournament.description}</p>
+                            <h2 className="text-2xl font-bold text-gray-900">{tournament.tournamentTitle}</h2>
+                            <p className="text-gray-600 mt-1">{tournament.tournamentDescription}</p>
                             <div className="flex items-center space-x-6 mt-3">
                                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                                     <Calendar className="h-4 w-4" />
-                                    <span>{formatDate(mockTournament.startDate)} - {formatDate(mockTournament.endDate)}</span>
+                                    <span>{tournamentDetailsService.formatDate(tournament.startTime)} - {tournamentDetailsService.formatDate(tournament.endTime)}</span>
                                 </div>
                                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                                     <Users className="h-4 w-4" />
-                                    <span>{mockTournament.participants} Children</span>
+                                    <span>{statistics.totalParticipants} Children</span>
                                 </div>
                                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                                     <Target className="h-4 w-4" />
-                                    <span>{mockTournament.grade}</span>
+                                    <span>{tournament.gradeLevel}</span>
                                 </div>
                             </div>
                         </div>
@@ -340,7 +247,7 @@ const TournamentDetails: React.FC = () => {
                         </div>
                         <div>
                             <p className="text-sm font-medium text-gray-600">Total Participants</p>
-                            <p className="text-2xl font-bold text-gray-900">{mockTournament.participants}</p>
+                            <p className="text-2xl font-bold text-gray-900">{statistics.totalParticipants}</p>
                         </div>
                     </div>
                 </div>
@@ -352,7 +259,7 @@ const TournamentDetails: React.FC = () => {
                         </div>
                         <div>
                             <p className="text-sm font-medium text-gray-600">Games Available</p>
-                            <p className="text-2xl font-bold text-gray-900">{mockTournament.games.length}</p>
+                            <p className="text-2xl font-bold text-gray-900">{tournament.selectedGames.length}</p>
                         </div>
                     </div>
                 </div>
@@ -363,9 +270,9 @@ const TournamentDetails: React.FC = () => {
                             <BarChart3 className="h-6 w-6 text-purple-600" />
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-gray-600">Avg. Score</p>
+                            <p className="text-sm font-medium text-gray-600">Completion Rate</p>
                             <p className="text-2xl font-bold text-gray-900">
-                                {Math.round(mockLeaderboard.reduce((sum, child) => sum + child.averageScore, 0) / mockLeaderboard.length)}
+                                {Math.round(statistics.completionRate)}%
                             </p>
                         </div>
                     </div>
@@ -379,7 +286,7 @@ const TournamentDetails: React.FC = () => {
                         <div>
                             <p className="text-sm font-medium text-gray-600">Active Players</p>
                             <p className="text-2xl font-bold text-gray-900">
-                                {mockLeaderboard.filter(child => child.gamesPlayed > 0).length}
+                                {filteredLeaderboard.filter(child => child.sessionsPlayed > 0).length}
                             </p>
                         </div>
                     </div>
@@ -398,8 +305,7 @@ const TournamentDetails: React.FC = () => {
                             onChange={(e) => setSelectedGame(e.target.value)}
                             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                         >
-                            <option value="all">All Games</option>
-                            {mockTournament.games.map(gameId => {
+                            {tournament.selectedGames.map(gameId => {
                                 const game = availableGames.find(g => g.id === gameId);
                                 return game ? (
                                     <option key={gameId} value={gameId}>
@@ -420,28 +326,22 @@ const TournamentDetails: React.FC = () => {
                                     Rank
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Child
+                                    Name
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Games Played
+                                    Game
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Average Score
+                                    Sessions
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Total Score
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Performance
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Actions
+                                    Best Score
                                 </th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {filteredLeaderboard.map((child) => (
-                                <tr key={child.id} className={`hover:bg-gray-50 transition-colors ${getRankColor(child.rank)}`}>
+                                <tr key={`${child.childId}-${child.gameType || 'default'}`} className={`hover:bg-gray-50 transition-colors ${getRankColor(child.rank)}`}>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center justify-center">
                                             {getRankIcon(child.rank)}
@@ -452,57 +352,26 @@ const TournamentDetails: React.FC = () => {
                                             <div className="text-2xl">{child.avatar}</div>
                                             <div>
                                                 <div className="text-sm font-semibold text-gray-900">{child.name}</div>
-                                                <div className="text-sm text-gray-500">{child.grade}</div>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center space-x-2">
-                                            <span className="text-sm font-medium text-gray-900">{child.gamesPlayed}</span>
-                                            <span className="text-xs text-gray-500">/ {mockTournament.games.length}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="flex items-center space-x-2">
-                                            <span className="text-sm font-semibold text-gray-900">{child.averageScore.toFixed(1)}</span>
-                                            <div className="flex">
-                                                {[...Array(5)].map((_, i) => (
-                                                    <Star
-                                                        key={i}
-                                                        className={`h-3 w-3 ${
-                                                            i < Math.floor(child.averageScore / 20)
-                                                                ? 'text-yellow-400 fill-current'
-                                                                : 'text-gray-300'
-                                                        }`}
-                                                    />
-                                                ))}
+                                            <span className="text-2xl">{getGameIcon(child.gameType || 'default')}</span>
+                                            <div>
+                                                <div className="text-sm font-medium text-gray-900">{child.gameDisplayName || child.gameType}</div>
+                                                <div className="text-xs text-gray-500">{child.performanceMetric}</div>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className="text-sm font-medium text-gray-900">{child.totalScore.toFixed(1)}</span>
+                                        <span className="text-sm font-medium text-gray-900">{child.sessionsPlayed || 0}</span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="flex items-center space-x-2">
-                                            <div className="w-16 bg-gray-200 rounded-full h-2">
-                                                <div
-                                                    className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full transition-all duration-300"
-                                                    style={{ width: `${(child.averageScore / 100) * 100}%` }}
-                                                ></div>
-                                            </div>
-                                            <span className="text-xs text-gray-500">
-                                                {Math.round((child.averageScore / 100) * 100)}%
-                                            </span>
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-semibold text-gray-900">{child.bestScore.toFixed(1)}</span>
+                                            <span className="text-xs text-gray-500">{getScoreIndicator(child.gameType || 'default')}</span>
                                         </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <button
-                                            onClick={() => setShowGameDetails({ child, gameId: 'all' })}
-                                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                            title="View Game Details"
-                                        >
-                                            <Eye className="h-4 w-4" />
-                                        </button>
                                     </td>
                                 </tr>
                             ))}
@@ -526,7 +395,7 @@ const TournamentDetails: React.FC = () => {
                     </div>
                     <h3 className="text-lg font-semibold text-gray-900">Tournament Prizes</h3>
                 </div>
-                <p className="text-gray-700">{mockTournament.prizes}</p>
+                <p className="text-gray-700">Prizes will be announced soon!</p>
             </div>
 
             {/* Game Details Modal */}
@@ -563,21 +432,13 @@ const TournamentDetails: React.FC = () => {
                                             <span className="text-2xl">{getGameIcon(gameId)}</span>
                                             <div>
                                                 <h4 className="font-semibold text-gray-900">{getGameName(gameId)}</h4>
-                                                <p className="text-sm text-gray-500">Best Score: {scores.bestScore}</p>
+                                                <p className="text-sm text-gray-500">Score: {scores}</p>
                                             </div>
                                         </div>
                                         <div className="space-y-2">
                                             <div className="flex justify-between text-sm">
-                                                <span className="text-gray-600">Average Score:</span>
-                                                <span className="font-medium">{scores.score}</span>
-                                            </div>
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-gray-600">Attempts:</span>
-                                                <span className="font-medium">{scores.attempts}</span>
-                                            </div>
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-gray-600">Last Played:</span>
-                                                <span className="font-medium">{formatDate(scores.lastPlayed)}</span>
+                                                <span className="text-gray-600">Score:</span>
+                                                <span className="font-medium">{scores}</span>
                                             </div>
                                         </div>
                                     </div>

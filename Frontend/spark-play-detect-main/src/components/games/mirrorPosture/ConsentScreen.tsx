@@ -95,8 +95,13 @@ const ConsentScreen: React.FC<ConsentScreenProps> = ({ onConsentSubmit, onBack }
   };
 
   const handleSubmit = () => {
+    console.log('Consent form submitted with data:', formData);
+    console.log('Form validation result:', validateForm());
     if (validateForm()) {
+      console.log('Validation passed, calling onConsentSubmit');
       onConsentSubmit(formData);
+    } else {
+      console.log('Validation failed, errors:', errors);
     }
   };
 

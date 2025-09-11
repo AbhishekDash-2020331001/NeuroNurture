@@ -15,6 +15,9 @@ public class GestureGameRequest {
     // School task tracking
     private String schoolTaskId;
     
+    // Tournament tracking
+    private Long tournamentId;
+    
     // Gesture completion times
     private Integer thumbs_up;
     private Integer thumbs_down;

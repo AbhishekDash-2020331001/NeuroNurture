@@ -12,6 +12,9 @@ public class GazeGameRequest {
     // School task tracking
     private String schoolTaskId;
     
+    // Tournament tracking
+    private Long tournamentId;
+    
     // Round-specific data
     private Integer round1Count;
     private Integer round2Count;

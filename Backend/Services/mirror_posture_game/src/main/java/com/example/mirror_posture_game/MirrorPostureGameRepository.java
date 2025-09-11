@@ -21,6 +21,12 @@ public interface MirrorPostureGameRepository extends JpaRepository<MirrorPosture
     // Find by school task ID and child ID
     List<MirrorPostureGame> findBySchoolTaskIdAndChildId(String schoolTaskId, String childId);
     
+    // Find by tournament ID and child ID
+    List<MirrorPostureGame> findByTournamentIdAndChildId(Long tournamentId, String childId);
+    
+    // Find all sessions by tournament ID
+    List<MirrorPostureGame> findByTournamentId(Long tournamentId);
+    
     // Delete all sessions by school task ID
     void deleteBySchoolTaskId(String schoolTaskId);
     

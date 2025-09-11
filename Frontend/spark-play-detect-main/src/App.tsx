@@ -64,7 +64,9 @@ import DoctorDashboard from "./pages/doctor/DoctorDashboard";
 import EnrolledChildren from "./pages/doctor/EnrolledChildren";
 import TaskHistory from "./pages/doctor/TaskHistory";
 import TaskManagement from "./pages/doctor/TaskManagement";
+// Child frontend imports
 const queryClient = new QueryClient();
+
 
 // Component to handle global camera cleanup
 const CameraCleanupHandler = () => {
@@ -251,6 +253,7 @@ const App = () => (
             <Route path="chat" element={<DoctorChat />} />
             {/* Additional doctor routes will be added here */}
           </Route>
+          
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

@@ -36,6 +36,10 @@ public class DanceDoodleGame {
     @Column
     private String schoolTaskId;
     
+    // Tournament tracking
+    @Column
+    private Long tournamentId;
+    
     // Dance pose completion times
     private Integer cool_arms;
     private Integer open_wings;

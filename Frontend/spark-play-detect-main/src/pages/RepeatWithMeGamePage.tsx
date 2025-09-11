@@ -11,8 +11,9 @@ const RepeatWithMeGamePage = () => {
   const [searchParams] = useSearchParams();
   const [authChecked, setAuthChecked] = useState(false);
   
-  // Extract taskId from URL query parameters
+  // Extract taskId and tournamentId from URL query parameters
   const taskId = searchParams.get('taskId');
+  const tournamentId = searchParams.get('tournamentId');
 
   useEffect(() => {
     fetch('http://localhost:8080/auth/session', { credentials: 'include' })
@@ -86,7 +87,7 @@ const RepeatWithMeGamePage = () => {
       {/* Game Component - Standard Size */}
       <div className="flex-1 flex items-center justify-center px-4 overflow-hidden">
         <div className="w-full max-w-4xl h-full">
-          <RepeatWithMeGame taskId={taskId} />
+          <RepeatWithMeGame taskId={taskId} tournamentId={tournamentId} />
         </div>
       </div>
 

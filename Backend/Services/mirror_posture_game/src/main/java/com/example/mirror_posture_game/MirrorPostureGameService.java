@@ -24,6 +24,7 @@ public class MirrorPostureGameService {
         gameRecord.setChildId(request.getChildId());
         gameRecord.setAge(request.getAge());
         gameRecord.setSchoolTaskId(request.getSchoolTaskId());
+        gameRecord.setTournamentId(request.getTournamentId());
         gameRecord.setLookingSideways(request.getLookingSideways());
         gameRecord.setMouthOpen(request.getMouthOpen());
         gameRecord.setShowingTeeth(request.getShowingTeeth());
@@ -59,6 +60,16 @@ public class MirrorPostureGameService {
     // Get sessions by task ID and child ID
     public List<MirrorPostureGame> getSessionsByTaskAndChild(String taskId, String childId) {
         return repository.findBySchoolTaskIdAndChildId(taskId, childId);
+    }
+    
+    // Get sessions by tournament ID and child ID
+    public List<MirrorPostureGame> getSessionsByTournamentAndChild(Long tournamentId, String childId) {
+        return repository.findByTournamentIdAndChildId(tournamentId, childId);
+    }
+    
+    // Get all sessions by tournament ID
+    public List<MirrorPostureGame> getSessionsByTournament(Long tournamentId) {
+        return repository.findByTournamentId(tournamentId);
     }
     
     // Delete all sessions by task ID

@@ -14,8 +14,9 @@ const GazeTrackingGame = () => {
   const [authChecked, setAuthChecked] = useState(false);
   const [currentGameScreen, setCurrentGameScreen] = useState<GameScreen>('instructions');
   
-  // Extract taskId from URL query parameters
+  // Extract taskId and tournamentId from URL query parameters
   const taskId = searchParams.get('taskId');
+  const tournamentId = searchParams.get('tournamentId');
 
   useEffect(() => {
     fetch('http://localhost:8080/auth/session', { credentials: 'include' })

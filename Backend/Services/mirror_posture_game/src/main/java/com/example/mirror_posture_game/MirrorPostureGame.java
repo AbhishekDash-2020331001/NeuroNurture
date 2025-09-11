@@ -36,6 +36,10 @@ public class MirrorPostureGame {
     @Column
     private String schoolTaskId;
     
+    // Tournament tracking
+    @Column
+    private Long tournamentId;
+    
     // Posture completion times
     private Integer lookingSideways;
     private Integer mouthOpen;

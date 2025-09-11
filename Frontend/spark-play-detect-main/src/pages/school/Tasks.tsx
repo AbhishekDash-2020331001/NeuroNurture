@@ -231,7 +231,9 @@ const Tasks: React.FC = () => {
     
     let matchesStatus = true;
     if (statusFilter === 'active') {
-      matchesStatus = new Date(task.endTime) > new Date();
+      matchesStatus = new Date(task.startTime) <= new Date() && new Date(task.endTime) > new Date();
+    } else if (statusFilter === 'upcoming') {
+      matchesStatus = new Date(task.startTime) > new Date();
     } else if (statusFilter === 'ended') {
       matchesStatus = new Date(task.endTime) <= new Date();
     }
@@ -343,9 +345,9 @@ const Tasks: React.FC = () => {
       // Update local state
       setTasks(prev => [...prev, ...createdTasks]);
       
-      // Close modal and reset form
-      setShowCreateModal(false);
-      resetForm();
+             // Close modal and reset form
+       setShowCreateModal(false);
+       resetForm();
       setFormErrors({});
       
     } catch (error) {
@@ -437,95 +439,110 @@ const Tasks: React.FC = () => {
       <div className="space-y-6 p-4">
         {/* Professional Header */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
               <h1 className="text-xl font-bold text-gray-900">Task Management</h1>
               <p className="text-gray-600 text-sm mt-1">
-                Create, assign, and track tasks for {school.currentChildren} children
-              </p>
-            </div>
-            <div className="mt-4 sm:mt-0">
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="inline-flex items-center px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-all duration-200"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create New Task
-              </button>
-            </div>
-          </div>
+            Create, assign, and track tasks for {school.currentChildren} children
+          </p>
         </div>
+        <div className="mt-4 sm:mt-0">
+          <button
+            onClick={() => setShowCreateModal(true)}
+                className="inline-flex items-center px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-all duration-200"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create New Task
+          </button>
+            </div>
+        </div>
+      </div>
 
         {/* Stats Cards and Search */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex flex-col lg:flex-row gap-4 items-center">
-            {/* Stats Cards */}
-            <div className="flex gap-4">
-              <div className="bg-green-100 border border-green-200 rounded-lg p-3 min-w-[140px]">
-                <div className="flex items-center">
-                  <div className="p-1.5 bg-green-200 rounded">
-                    <Clock className="h-4 w-4 text-green-700" />
-                  </div>
-                  <div className="ml-2">
-                    <p className="text-xs font-semibold text-green-700">Active</p>
-                    <p className="text-lg font-bold text-green-800">{tasks.filter(t => new Date(t.endTime) > new Date()).length}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-gray-100 border border-gray-200 rounded-lg p-3 min-w-[140px]">
-                <div className="flex items-center">
-                  <div className="p-1.5 bg-gray-200 rounded">
-                    <CheckCircle className="h-4 w-4 text-gray-700" />
-                  </div>
-                  <div className="ml-2">
-                    <p className="text-xs font-semibold text-gray-700">Ended</p>
-                    <p className="text-lg font-bold text-gray-800">
-                      {tasks.filter(t => new Date(t.endTime) <= new Date()).length}
-                    </p>
-                  </div>
-                </div>
-              </div>
+      {/* Stats Cards */}
+                        <div className="flex gap-4">
+                            <div className="bg-green-100 border border-green-200 rounded-lg p-3 min-w-[140px]">
+          <div className="flex items-center">
+                                    <div className="p-1.5 bg-green-200 rounded">
+                                        <Clock className="h-4 w-4 text-green-700" />
             </div>
-            
-            {/* Search and Filter */}
-            <div className="flex-1 flex gap-3">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search by task title or ID..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-              
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All Tasks</option>
-                <option value="active">Active Tasks</option>
-                <option value="ended">Ended Tasks</option>
-              </select>
+                                    <div className="ml-2">
+                                        <p className="text-xs font-semibold text-green-700">Active</p>
+                                        <p className="text-lg font-bold text-green-800">{tasks.filter(t => new Date(t.startTime) <= new Date() && new Date(t.endTime) > new Date()).length}</p>
             </div>
           </div>
         </div>
+        
+                            <div className="bg-blue-100 border border-blue-200 rounded-lg p-3 min-w-[140px]">
+           <div className="flex items-center">
+                                    <div className="p-1.5 bg-blue-200 rounded">
+                                        <Calendar className="h-4 w-4 text-blue-700" />
+             </div>
+                                    <div className="ml-2">
+                                        <p className="text-xs font-semibold text-blue-700">Upcoming</p>
+                                        <p className="text-lg font-bold text-blue-800">
+                                            {tasks.filter(t => new Date(t.startTime) > new Date()).length}
+               </p>
+             </div>
+           </div>
+         </div>
+         
+                            <div className="bg-gray-100 border border-gray-200 rounded-lg p-3 min-w-[140px]">
+           <div className="flex items-center">
+                                    <div className="p-1.5 bg-gray-200 rounded">
+                                        <CheckCircle className="h-4 w-4 text-gray-700" />
+             </div>
+                                    <div className="ml-2">
+                                        <p className="text-xs font-semibold text-gray-700">Ended</p>
+                                        <p className="text-lg font-bold text-gray-800">
+                                            {tasks.filter(t => new Date(t.endTime) <= new Date()).length}
+               </p>
+             </div>
+           </div>
+         </div>
+      </div>
+
+            {/* Search and Filter */}
+            <div className="flex-1 flex gap-3">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                    placeholder="Search by task title or ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+          
+                         <select
+               value={statusFilter}
+               onChange={(e) => setStatusFilter(e.target.value)}
+               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+             >
+                <option value="all">All Tasks</option>
+                <option value="active">Active Tasks</option>
+                <option value="upcoming">Upcoming Tasks</option>
+                <option value="ended">Ended Tasks</option>
+             </select>
+          </div>
+        </div>
+      </div>
 
 
-        {/* Tasks List */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      {/* Tasks List */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="bg-white border-b border-gray-200 px-4 py-3">
             <h2 className="text-lg font-bold text-gray-900">
-              Tasks ({filteredTasks.length})
-            </h2>
-          </div>
+            Tasks ({filteredTasks.length})
+          </h2>
+        </div>
         
-          <div className="divide-y divide-gray-100">
+                    <div className="divide-y divide-gray-100 space-y-2">
             {isLoading ? (
               <div className="p-6 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
@@ -542,21 +559,21 @@ const Tasks: React.FC = () => {
             ) : (
               filteredTasks.map((task, index) => (
                 <div key={task.taskId} className={`p-4 hover:bg-gray-50 transition-all duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
                         <h3 className="text-lg font-bold text-gray-900">{task.taskTitle}</h3>
                         <div className={`px-3 py-1 rounded text-xs font-bold ${getStatusColor(task.endTime)}`}>
-                          <div className="flex items-center space-x-1">
+                       <div className="flex items-center space-x-1">
                             {getStatusIcon(task.endTime)}
                             <span>{getTaskStatus(task.endTime).charAt(0).toUpperCase() + getTaskStatus(task.endTime).slice(1)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    
+                       </div>
+                     </div>
+                  </div>
+                  
                       <p className="text-sm text-gray-600 mb-3">{task.taskDescription}</p>
-                    
-                    {/* Games List */}
+                  
+                                                         {/* Games List */}
                     <div className="mt-3">
                       <p className="text-sm font-bold text-gray-700 mb-2">Games in this task:</p>
                       <div className="flex flex-wrap gap-2">
@@ -576,7 +593,7 @@ const Tasks: React.FC = () => {
                       <span className="flex items-center px-3 py-1 bg-gray-100 rounded border border-gray-200">
                         <Calendar className="h-4 w-4 mr-2 text-gray-600" />
                         <span className="font-medium">Period: {formatDate(task.startTime)} - {formatDate(task.endTime)}</span>
-                      </span>
+                     </span>
                       <span className="flex items-center px-3 py-1 bg-gray-100 rounded border border-gray-200">
                         <Users className="h-4 w-4 mr-2 text-gray-600" />
                         <span className="font-medium">
@@ -586,8 +603,8 @@ const Tasks: React.FC = () => {
                             `Assigned to: ${task.childName}`
                           )}
                         </span>
-                      </span>
-                    </div>
+                     </span>
+                   </div>
                    
                     {/* Assigned Children List for Grouped Tasks */}
                     {task.assignedChildren && task.assignedChildren.length > 0 && (
@@ -616,17 +633,17 @@ const Tasks: React.FC = () => {
                         </div>
                       </div>
                     )}
-                  </div>
-                  
+                </div>
+                
                   <div className="flex space-x-3 ml-4">
-                    <button 
+                   <button 
                       onClick={() => navigate(`/school/tasks/${task.taskId}`)}
                       className="px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded hover:bg-gray-900 transition-all duration-200 flex items-center space-x-2" 
-                      title="View Details"
-                    >
-                      <Eye className="h-4 w-4" />
+                     title="View Details"
+                   >
+                     <Eye className="h-4 w-4" />
                       <span>View</span>
-                    </button>
+                   </button>
                     <button 
                       onClick={async () => {
                         if (confirm('Are you sure you want to delete this task? This will remove all task assignments for this task ID.')) {
@@ -653,20 +670,20 @@ const Tasks: React.FC = () => {
                       {deletingTaskId === task.taskId ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" />
                       )}
                       <span>{deletingTaskId === task.taskId ? 'Deleting...' : 'Delete'}</span>
-                    </button>
-                  </div>
+                  </button>
+                </div>
               </div>
             </div>
           ))
         )}
-          </div>
         </div>
+      </div>
 
-        {/* Create Task Modal */}
-        {showCreateModal && (
+             {/* Create Task Modal */}
+       {showCreateModal && (
          <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden">
                            {/* Professional Header */}
@@ -919,33 +936,33 @@ const Tasks: React.FC = () => {
                              <p className="text-xs text-gray-400 mt-1">Contact the school administrator to enroll children</p>
                            </div>
                          ) : (
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                             {getFilteredChildren().map((child) => (
-                               <label key={child.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
-                                 <input
-                                   type="checkbox"
-                                   checked={taskForm.selectedChildren.includes(child.id)}
-                                   onChange={(e) => {
-                                     if (e.target.checked) {
-                                       handleInputChange('selectedChildren', [...taskForm.selectedChildren, child.id]);
-                                     } else {
-                                       handleInputChange('selectedChildren', taskForm.selectedChildren.filter(id => id !== child.id));
-                                     }
-                                   }}
-                                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                 />
-                                 <div className="flex-1">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                           {getFilteredChildren().map((child) => (
+                                                            <label key={child.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
+                               <input
+                                 type="checkbox"
+                                 checked={taskForm.selectedChildren.includes(child.id)}
+                                 onChange={(e) => {
+                                   if (e.target.checked) {
+                                     handleInputChange('selectedChildren', [...taskForm.selectedChildren, child.id]);
+                                   } else {
+                                     handleInputChange('selectedChildren', taskForm.selectedChildren.filter(id => id !== child.id));
+                                   }
+                                 }}
+                                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                               />
+                               <div className="flex-1">
                                    <div className="flex items-center space-x-2">
-                                     <p className="text-sm font-semibold text-gray-900">{child.name}</p>
+                                 <p className="text-sm font-semibold text-gray-900">{child.name}</p>
                                      <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
                                        ID: {child.id}
                                      </span>
                                    </div>
                                    <p className="text-xs text-gray-500">{child.grade} • {child.parentName}</p>
-                                 </div>
-                               </label>
-                             ))}
-                           </div>
+                               </div>
+                             </label>
+                           ))}
+                         </div>
                          )}
                          
                          {!isLoading && children.length > 0 && getFilteredChildren().length === 0 && (
@@ -983,6 +1000,7 @@ const Tasks: React.FC = () => {
                        type="date"
                        value={taskForm.startDate}
                        onChange={(e) => handleInputChange('startDate', e.target.value)}
+                       min={new Date().toISOString().split('T')[0]}
                                                 className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200 ${
                            formErrors.startDate ? 'border-red-300 bg-red-50' : 'border-gray-200 hover:border-gray-300'
                          }`}
@@ -1004,7 +1022,7 @@ const Tasks: React.FC = () => {
                         type="date"
                         value={taskForm.endDate}
                         onChange={(e) => handleInputChange('endDate', e.target.value)}
-                        min={getMinEndDate()}
+                        min={getMinEndDate() || new Date().toISOString().split('T')[0]}
                         className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-200 ${
                           formErrors.endDate ? 'border-red-300 bg-red-50' : 'border-gray-200 hover:border-gray-300'
                         }`}
@@ -1147,8 +1165,8 @@ const Tasks: React.FC = () => {
                        </>
                      ) : (
                        <>
-                         <Plus className="h-4 w-4 mr-2 inline" />
-                         Create Task
+                     <Plus className="h-4 w-4 mr-2 inline" />
+                     Create Task
                        </>
                      )}
                    </button>

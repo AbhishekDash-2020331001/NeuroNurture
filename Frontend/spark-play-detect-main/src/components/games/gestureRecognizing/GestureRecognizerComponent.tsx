@@ -30,9 +30,10 @@ interface GestureGameSession {
 
 interface GestureRecognizerComponentProps {
   taskId?: string | null;
+  tournamentId?: string | null;
 }
 
-const GestureRecognizerComponent: React.FC<GestureRecognizerComponentProps> = ({ taskId }) => {
+const GestureRecognizerComponent: React.FC<GestureRecognizerComponentProps> = ({ taskId, tournamentId }) => {
     const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const [webcamRunning, setWebcamRunning] = useState(false)
@@ -105,9 +106,27 @@ const GestureRecognizerComponent: React.FC<GestureRecognizerComponentProps> = ({
      // Save game data to backend
      const saveGameDataToBackend = useCallback(async (gameSession: GestureGameSession) => {
          try {
-             // Extract child data from localStorage
+             // Extract child data from localStorage or fetch from API
+             let childData = null;
              const selectedChild = localStorage.getItem('selectedChild');
-             const childData = selectedChild ? JSON.parse(selectedChild) : null;
+             
+             if (selectedChild) {
+                 childData = JSON.parse(selectedChild);
+             } else {
+                 // If no child data in localStorage, try to fetch from API using childId from URL
+                 const urlParams = new URLSearchParams(window.location.search);
+                 const childId = urlParams.get('childId');
+                 if (childId) {
+                     try {
+                         const response = await fetch(`http://localhost:8082/api/parents/children/${childId}/details`);
+                         if (response.ok) {
+                             childData = await response.json();
+                         }
+                     } catch (error) {
+                         console.error('Error fetching child data:', error);
+                     }
+                 }
+             }
              
              // Calculate age from date of birth
              const calculateAge = (dateOfBirth: string) => {
@@ -195,6 +214,7 @@ const GestureRecognizerComponent: React.FC<GestureRecognizerComponentProps> = ({
                  childId: childData?.id?.toString() || '1',
                  age: gameSession.consentData?.childAge ? parseInt(gameSession.consentData.childAge) : (childData?.dateOfBirth ? calculateAge(childData.dateOfBirth) : 8),
                  schoolTaskId: taskId, // Include school task ID if available
+                 tournamentId: tournamentId, // Include tournament ID if available
                  ...gestureTimes,
                  videoURL: "https://example.com/dummy-video.mp4", // Dummy URL for now
                  isTrainingAllowed: gameSession.consentData?.dataConsent === true,

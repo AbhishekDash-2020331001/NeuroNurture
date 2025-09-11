@@ -21,6 +21,12 @@ public interface GestureGameRepository extends JpaRepository<GestureGame, Long> 
     // Find by school task ID and child ID
     List<GestureGame> findBySchoolTaskIdAndChildId(String schoolTaskId, String childId);
     
+    // Find by tournament ID and child ID
+    List<GestureGame> findByTournamentIdAndChildId(Long tournamentId, String childId);
+    
+    // Find all sessions by tournament ID
+    List<GestureGame> findByTournamentId(Long tournamentId);
+    
     // Delete all sessions by school task ID
     void deleteBySchoolTaskId(String schoolTaskId);
     

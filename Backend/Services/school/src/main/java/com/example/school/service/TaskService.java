@@ -57,7 +57,8 @@ public class TaskService {
         Integer gameId = calculateGameId(request.getSelectedGames());
         
         // Generate a unique task_id for this task assignment
-        Long taskId = System.currentTimeMillis(); // Use timestamp as task_id
+        // Concatenate timestamp with school_id to ensure uniqueness across schools
+        Long taskId = Long.parseLong(System.currentTimeMillis() + "" + schoolId);
         
         List<SchoolTask> tasks = new ArrayList<>();
         LocalDateTime now = LocalDateTime.now();

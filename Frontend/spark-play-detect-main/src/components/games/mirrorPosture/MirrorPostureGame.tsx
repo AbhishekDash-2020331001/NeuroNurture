@@ -68,9 +68,10 @@ interface ConsentData {
 
 interface MirrorPostureGameProps {
   taskId?: string | null;
+  tournamentId?: string | null;
 }
 
-const MirrorPostureGame: React.FC<MirrorPostureGameProps> = ({ taskId }) => {
+const MirrorPostureGame: React.FC<MirrorPostureGameProps> = ({ taskId, tournamentId }) => {
   const [gameState, setGameState] = useState<GameState>('idle');
   const [currentScreen, setCurrentScreen] = useState<GameScreen>('instructions');
   const [countdown, setCountdown] = useState<number>(5);
@@ -518,9 +519,27 @@ const MirrorPostureGame: React.FC<MirrorPostureGameProps> = ({ taskId }) => {
   // Save game data to backend
   const saveGameDataToBackend = useCallback(async (gameSession: GameSession) => {
     try {
-      // Extract child data from localStorage
+      // Extract child data from localStorage or fetch from API
+      let childData = null;
       const selectedChild = localStorage.getItem('selectedChild');
-      const childData = selectedChild ? JSON.parse(selectedChild) : null;
+      
+      if (selectedChild) {
+        childData = JSON.parse(selectedChild);
+      } else {
+        // If no child data in localStorage, try to fetch from API using childId from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const childId = urlParams.get('childId');
+        if (childId) {
+          try {
+            const response = await fetch(`http://localhost:8082/api/parents/children/${childId}/details`);
+            if (response.ok) {
+              childData = await response.json();
+            }
+          } catch (error) {
+            console.error('Error fetching child data:', error);
+          }
+        }
+      }
       
       // Calculate age from date of birth
       const calculateAge = (dateOfBirth: string) => {
@@ -571,6 +590,7 @@ const MirrorPostureGame: React.FC<MirrorPostureGameProps> = ({ taskId }) => {
          childId: childData?.id?.toString() || '1',
          age: gameSession.consentData?.childAge ? parseInt(gameSession.consentData.childAge) : (childData?.dateOfBirth ? calculateAge(childData.dateOfBirth) : 8),
          schoolTaskId: taskId, // Include school task ID if available
+         tournamentId: tournamentId, // Include tournament ID if available
          ...postureTimes,
          videoURL: "https://example.com/dummy-video.mp4", // Dummy URL for now
          isTrainingAllowed: gameSession.consentData?.dataConsent === true,

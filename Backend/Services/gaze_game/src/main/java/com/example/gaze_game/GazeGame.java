@@ -36,6 +36,10 @@ public class GazeGame {
     @Column
     private String schoolTaskId;
     
+    // Tournament tracking
+    @Column
+    private Long tournamentId;
+    
     // Round-specific balloon counts
     private Integer round1Count;
     private Integer round2Count;

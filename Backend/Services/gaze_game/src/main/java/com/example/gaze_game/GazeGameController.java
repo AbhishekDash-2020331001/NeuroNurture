@@ -356,6 +356,38 @@ public class GazeGameController {
     }
     
     /**
+     * Get sessions by tournament ID and child ID
+     */
+    @GetMapping("/sessions/tournament/{tournamentId}/child/{childId}")
+    public ResponseEntity<?> getSessionsByTournamentAndChild(@PathVariable Long tournamentId, @PathVariable String childId) {
+        try {
+            log.info("Retrieving sessions for tournament ID: {} and child ID: {}", tournamentId, childId);
+            List<GazeGame> sessions = gazeGameService.getSessionsByTournamentAndChild(tournamentId, childId);
+            return ResponseEntity.ok(sessions);
+        } catch (Exception e) {
+            log.error("Error retrieving sessions for tournament ID {} and child ID {}: {}", tournamentId, childId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve sessions: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Get all sessions by tournament ID
+     */
+    @GetMapping("/sessions/tournament/{tournamentId}")
+    public ResponseEntity<?> getSessionsByTournament(@PathVariable Long tournamentId) {
+        try {
+            log.info("Retrieving all sessions for tournament ID: {}", tournamentId);
+            List<GazeGame> sessions = gazeGameService.getSessionsByTournament(tournamentId);
+            return ResponseEntity.ok(sessions);
+        } catch (Exception e) {
+            log.error("Error retrieving sessions for tournament ID {}: {}", tournamentId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve sessions: " + e.getMessage());
+        }
+    }
+    
+    /**
      * Delete all sessions by task ID
      */
     @DeleteMapping("/sessions/task/{taskId}")

@@ -31,6 +31,7 @@ public class GazeGameService {
             gazeGame.setChildId(request.getChildId());
             gazeGame.setAge(request.getAge());
             gazeGame.setSchoolTaskId(request.getSchoolTaskId());
+            gazeGame.setTournamentId(request.getTournamentId());
             gazeGame.setDateTime(LocalDateTime.now());
             
             // Set round-specific data
@@ -437,6 +438,34 @@ public class GazeGameService {
             return sessions;
         } catch (Exception e) {
             log.error("Error retrieving sessions for task ID {} and child ID {}: {}", taskId, childId, e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve sessions", e);
+        }
+    }
+    
+    /**
+     * Get sessions by tournament ID and child ID
+     */
+    public List<GazeGame> getSessionsByTournamentAndChild(Long tournamentId, String childId) {
+        try {
+            List<GazeGame> sessions = gazeGameRepository.findByTournamentIdAndChildId(tournamentId, childId);
+            log.info("Retrieved {} sessions for tournament ID {} and child ID {}", sessions.size(), tournamentId, childId);
+            return sessions;
+        } catch (Exception e) {
+            log.error("Error retrieving sessions for tournament ID {} and child ID {}: {}", tournamentId, childId, e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve sessions", e);
+        }
+    }
+    
+    /**
+     * Get all sessions by tournament ID
+     */
+    public List<GazeGame> getSessionsByTournament(Long tournamentId) {
+        try {
+            List<GazeGame> sessions = gazeGameRepository.findByTournamentId(tournamentId);
+            log.info("Retrieved {} sessions for tournament ID {}", sessions.size(), tournamentId);
+            return sessions;
+        } catch (Exception e) {
+            log.error("Error retrieving sessions for tournament ID {}: {}", tournamentId, e.getMessage(), e);
             throw new RuntimeException("Failed to retrieve sessions", e);
         }
     }

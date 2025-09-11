@@ -11,6 +11,9 @@ public class RepeatWithMeGameRequest {
     // School task tracking
     private String schoolTaskId;
     
+    // Tournament tracking
+    private Long tournamentId;
+    
     // Round scores - Support all 12 rounds
     private Double round1Score;
     private Double round2Score;

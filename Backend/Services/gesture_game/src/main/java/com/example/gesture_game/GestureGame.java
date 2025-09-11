@@ -36,6 +36,10 @@ public class GestureGame {
     @Column
     private String schoolTaskId;
     
+    // Tournament tracking
+    @Column
+    private Long tournamentId;
+    
     // Gesture completion times
     private Integer thumbs_up;
     private Integer thumbs_down;

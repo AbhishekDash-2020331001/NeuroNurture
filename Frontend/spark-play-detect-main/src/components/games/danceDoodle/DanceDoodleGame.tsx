@@ -27,9 +27,10 @@ interface DanceGameSession {
 
 interface DanceDoodleGameProps {
   taskId?: string | null;
+  tournamentId?: string | null;
 }
 
-const DanceDoodleGame: React.FC<DanceDoodleGameProps> = ({ taskId }) => {
+const DanceDoodleGame: React.FC<DanceDoodleGameProps> = ({ taskId, tournamentId }) => {
     const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const [webcamRunning, setWebcamRunning] = useState(false)
@@ -115,8 +116,27 @@ const DanceDoodleGame: React.FC<DanceDoodleGameProps> = ({ taskId }) => {
     // Save game data to backend
     const saveGameDataToBackend = useCallback(async (gameSession: DanceGameSession) => {
         try {
-            // Get child data from localStorage
-            const childData = JSON.parse(localStorage.getItem('selectedChild') || '{}');
+            // Get child data from localStorage or fetch from API
+            let childData = null;
+            const selectedChild = localStorage.getItem('selectedChild');
+            
+            if (selectedChild) {
+                childData = JSON.parse(selectedChild);
+            } else {
+                // If no child data in localStorage, try to fetch from API using childId from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const childId = urlParams.get('childId');
+                if (childId) {
+                    try {
+                        const response = await fetch(`http://localhost:8082/api/parents/children/${childId}/details`);
+                        if (response.ok) {
+                            childData = await response.json();
+                        }
+                    } catch (error) {
+                        console.error('Error fetching child data:', error);
+                    }
+                }
+            }
             
             // Calculate age from date of birth
             const calculateAge = (dateOfBirth: string) => {
@@ -181,6 +201,7 @@ const DanceDoodleGame: React.FC<DanceDoodleGameProps> = ({ taskId }) => {
                 childId: childData?.id?.toString() || '1',
                 age: gameSession.consentData?.childAge ? parseInt(gameSession.consentData.childAge) : (childData?.dateOfBirth ? calculateAge(childData.dateOfBirth) : 8),
                 schoolTaskId: taskId, // Include school task ID if available
+                tournamentId: tournamentId, // Include tournament ID if available
                 ...poseTimes,
                 videoURL: "https://example.com/dummy-video.mp4", // Dummy URL for now
                 isTrainingAllowed: gameSession.consentData?.dataConsent === true,
@@ -271,12 +292,35 @@ const DanceDoodleGame: React.FC<DanceDoodleGameProps> = ({ taskId }) => {
         testConnection();
     }, []);
 
-    // Load child information from localStorage
+    // Load child information from localStorage or fetch from API
     useEffect(() => {
-        const selectedChild = localStorage.getItem('selectedChild');
-        if (selectedChild) {
-            try {
-                const childData = JSON.parse(selectedChild);
+        const loadChildData = async () => {
+            let childData = null;
+            const selectedChild = localStorage.getItem('selectedChild');
+            
+            if (selectedChild) {
+                try {
+                    childData = JSON.parse(selectedChild);
+                } catch (error) {
+                    console.error('Error parsing child data from localStorage:', error);
+                }
+            } else {
+                // If no child data in localStorage, try to fetch from API using childId from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const childId = urlParams.get('childId');
+                if (childId) {
+                    try {
+                        const response = await fetch(`http://localhost:8082/api/parents/children/${childId}/details`);
+                        if (response.ok) {
+                            childData = await response.json();
+                        }
+                    } catch (error) {
+                        console.error('Error fetching child data:', error);
+                    }
+                }
+            }
+            
+            if (childData) {
                 setChildName(childData.name || "");
                 
                 if (childData.dateOfBirth) {
@@ -287,10 +331,10 @@ const DanceDoodleGame: React.FC<DanceDoodleGameProps> = ({ taskId }) => {
                     const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) ? age - 1 : age;
                     setChildAge(actualAge.toString());
                 }
-            } catch (error) {
-                console.error('Error parsing child data:', error);
             }
-        }
+        };
+        
+        loadChildData();
     }, []);
 
     // Webcam setup

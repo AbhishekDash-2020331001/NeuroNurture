@@ -1,6 +1,5 @@
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
 import { SchoolEnrollmentStatus, schoolEnrollmentService } from '@/services/schoolEnrollmentService';
 import { ChildSchoolInfo, schoolService } from '@/services/schoolService';
 import { getCurrentChild } from '@/utils/childUtils';
@@ -58,6 +57,7 @@ export default function ChildSchoolPage() {
     }
   };
 
+
   const loadSchoolData = async (childId: number) => {
     try {
       setIsLoading(true);
@@ -83,40 +83,79 @@ export default function ChildSchoolPage() {
   };
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-screen">
       {/* Left Sidebar Navigation - Only show if enrolled */}
       {enrollmentStatus?.enrolled && (
-        <div className="w-64 border-r border-gray-200">
-          <div className="p-4 space-y-1">
+        <div className="w-72 border-r border-gray-200 bg-gradient-to-b from-blue-50 via-indigo-50 to-purple-50 h-screen overflow-y-auto shadow-lg">
+          {/* Navigation Header */}
+          <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600">
+            <div className="flex items-center space-x-3">
+              <div className="bg-white/20 p-2 rounded-lg">
+                <span className="text-2xl">🏫</span>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">School Portal</h3>
+                <p className="text-blue-100 text-sm">{selectedChild?.name || 'Student'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation Menu */}
+          <div className="p-4 space-y-2">
             <Button
               variant={activeSchoolTab === 'overview' ? 'default' : 'ghost'}
               onClick={() => setActiveSchoolTab('overview')}
-              className="w-full justify-start font-medium"
+              className={`w-full justify-start font-semibold h-12 transition-all duration-200 ${
+                activeSchoolTab === 'overview' 
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md hover:from-blue-600 hover:to-indigo-700' 
+                  : 'text-gray-700 hover:bg-white/50 hover:text-blue-700 hover:shadow-sm'
+              }`}
             >
-              📊 Overview
+              <span className="text-xl mr-3">📊</span>
+              Overview
             </Button>
             
             <Button
               variant={activeSchoolTab === 'tasks' ? 'default' : 'ghost'}
               onClick={() => setActiveSchoolTab('tasks')}
-              className="w-full justify-start font-medium"
+              className={`w-full justify-start font-semibold h-12 transition-all duration-200 ${
+                activeSchoolTab === 'tasks' 
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md hover:from-blue-600 hover:to-indigo-700' 
+                  : 'text-gray-700 hover:bg-white/50 hover:text-blue-700 hover:shadow-sm'
+              }`}
             >
-              📝 Tasks
+              <span className="text-xl mr-3">📝</span>
+              Tasks
             </Button>
             
             <Button
               variant={activeSchoolTab === 'competition' ? 'default' : 'ghost'}
               onClick={() => setActiveSchoolTab('competition')}
-              className="w-full justify-start font-medium"
+              className={`w-full justify-start font-semibold h-12 transition-all duration-200 ${
+                activeSchoolTab === 'competition' 
+                  ? 'bg-gradient-to-r from-yellow-500 to-amber-600 text-white shadow-md hover:from-yellow-600 hover:to-amber-700' 
+                  : 'text-gray-700 hover:bg-white/50 hover:text-yellow-700 hover:shadow-sm'
+              }`}
             >
-              🏆 Competition
+              <span className="text-xl mr-3">🏆</span>
+              Competition
             </Button>
+          </div>
+
+          {/* Decorative Elements */}
+          <div className="absolute bottom-0 left-0 right-0 p-4">
+            <div className="bg-gradient-to-r from-blue-100 to-indigo-100 rounded-lg p-3 border border-blue-200">
+              <div className="flex items-center space-x-2">
+                <span className="text-lg">✨</span>
+                <p className="text-xs text-blue-700 font-medium">Keep learning and growing!</p>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 space-y-6 px-1 py-2">
+      <div className="flex-1 space-y-6 px-1 pb-2 overflow-y-auto">
         {/* Header - Only show if not enrolled or on overview tab */}
         {(!enrollmentStatus?.enrolled || activeSchoolTab === 'overview') && (
           <div className="text-center">
@@ -133,35 +172,39 @@ export default function ChildSchoolPage() {
         {/* Overview Tab Content - School Information */}
         {enrollmentStatus?.enrolled && activeSchoolTab === 'overview' && schoolInfo && (
           <div className="flex justify-center">
-            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 shadow-lg max-w-2xl w-full">
-              <CardHeader className="text-center pb-6">
-                <div className="flex items-center justify-center mb-4">
-                  <div className="bg-blue-100 p-4 rounded-full">
-                    <span className="text-3xl">🏫</span>
-                  </div>
-                </div>
-                <CardTitle className="text-3xl font-bold text-blue-800 mb-3">
-                  {schoolInfo.school.schoolName}
-                </CardTitle>
-                <div className="flex items-center justify-center space-x-2 text-gray-600 mb-6">
-                  <MapPin className="h-5 w-5" />
-                  <span className="text-base">{schoolInfo.school.address}</span>
-                </div>
-                
-                {/* Student Grade Section */}
-                <div className="bg-white/70 rounded-xl p-6 border border-blue-100">
+            <Card className="bg-gradient-to-br from-pink-50 to-purple-50 border-pink-200 shadow-lg max-w-2xl w-full">
+              <CardContent className="p-4">
+                <div className="text-center mb-4">
                   <div className="flex items-center justify-center mb-3">
-                    <div className="bg-emerald-100 p-2 rounded-full">
-                      <GraduationCap className="h-6 w-6 text-emerald-600" />
+                    <div className="bg-pink-100 p-3 rounded-full">
+                      <span className="text-2xl">🏫</span>
                     </div>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Current Grade</h3>
-                  <Badge className={`px-8 py-4 text-lg font-bold ${schoolService.getGradeColor(schoolInfo.grade)} shadow-md`}>
-                    {schoolService.formatGrade(schoolInfo.grade)}
-                  </Badge>
-                  <p className="text-sm text-gray-500 mt-3">Student ID: {schoolInfo.childId}</p>
+                  <h2 className="text-2xl font-bold text-pink-800 mb-2">
+                    {schoolInfo.school.name}
+                  </h2>
+                  <div className="flex items-center justify-center space-x-2 text-gray-600 mb-4">
+                    <MapPin className="h-4 w-4" />
+                    <span className="text-sm">{schoolInfo.school.address}</span>
+                  </div>
                 </div>
-              </CardHeader>
+                
+                {/* Student Grade Section - Compact */}
+                <div className="bg-white/70 rounded-lg p-4 border border-pink-100">
+                  <div className="flex items-center justify-center mb-2">
+                    <div className="bg-yellow-100 p-2 rounded-full">
+                      <GraduationCap className="h-5 w-5 text-yellow-600" />
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2 text-center">Current Grade</h3>
+                  <div className="text-center">
+                    <span className={`px-6 py-2 text-lg font-bold rounded-full ${schoolService.getGradeColor(schoolInfo.grade)} shadow-sm`}>
+                      {schoolService.formatGrade(schoolInfo.grade)}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2 text-center">Student ID: {schoolInfo.childId}</p>
+                </div>
+              </CardContent>
             </Card>
           </div>
         )}
@@ -175,7 +218,7 @@ export default function ChildSchoolPage() {
       ) : enrollmentStatus?.enrolled && activeSchoolTab === 'competition' ? (
         <ChildCompetitionPage 
           childId={selectedChild?.id?.toString() || ''} 
-          childName={selectedChild?.name || ''} 
+          childName={selectedChild?.name || ''}
         />
       ) : (
         <>

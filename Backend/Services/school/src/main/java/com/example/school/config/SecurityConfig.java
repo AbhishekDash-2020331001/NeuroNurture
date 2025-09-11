@@ -34,6 +34,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/school/admin/**").permitAll() // Allow admin service to access these endpoints
                 .requestMatchers("/api/school/verify-email").permitAll() // Allow email verification
                 .requestMatchers("/api/school/tasks/**").permitAll() // Allow task management endpoints
+                .requestMatchers("/api/school/tournaments/**").permitAll() // Allow tournament management endpoints
                 .requestMatchers("/api/school/task-performance/**").permitAll() // Allow task performance endpoints
                 .requestMatchers("/api/school/schools/**").permitAll() // Allow parent service to access school info
                 .requestMatchers("/api/school/children/**").permitAll() // Allow children endpoints for progress tracking

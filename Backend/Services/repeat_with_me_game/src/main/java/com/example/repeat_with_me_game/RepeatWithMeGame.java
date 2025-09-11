@@ -36,6 +36,10 @@ public class RepeatWithMeGame {
     @Column
     private String schoolTaskId;
     
+    // Tournament tracking
+    @Column
+    private Long tournamentId;
+    
     // Round scores (similarity scores for each round) - Support all 12 rounds
     @Column
     private Double round1Score;
