@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import FloatingAssistantButton from './FloatingAssistantButton';
 import ChatList, { Chat } from './ChatList';
 import ChatInterface, { Message } from './ChatInterface';
+import { NuruService } from '../../services/nuruService';
 import './assistant-animations.css';
 
 interface AssistantProps {
@@ -14,6 +15,38 @@ const Assistant: React.FC<AssistantProps> = ({ isOpen, onToggle }) => {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<{ [chatId: string]: Message[] }>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [role, setRole] = useState<string | null>(null);
+
+  // Fetch parent ID from JWT token
+  useEffect(() => {
+    const fetchParentId = async () => {
+      try {
+        // Get user data from JWT token with JSON format
+        const response = await fetch('http://localhost:8080/auth/me?format=json', { 
+          credentials: 'include' 
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          console.log('User data from JWT:', userData);
+          setUserId(userData.id);
+          setRole(userData.role);
+        } else {
+          // Fallback to manual ID for testing
+          setUserId(null);
+          setRole(null);
+        }
+      } catch (error) {
+        console.error('Error fetching parent ID from JWT:', error);
+        // Fallback to manual ID for testing
+        setUserId(null);
+        setRole(null);
+      }
+    };
+
+    fetchParentId();
+  }, []);
 
   // Load chats from localStorage on component mount
   useEffect(() => {
@@ -261,82 +294,110 @@ const Assistant: React.FC<AssistantProps> = ({ isOpen, onToggle }) => {
       [activeChatId]: [...(prev[activeChatId] || []), typingMessage]
     }));
 
-    // Simulate AI response with character-by-character typing effect
-    setTimeout(() => {
-      const fullResponse = generateAIResponse(content);
-      
-      // Remove typing message and add empty response message
-      const responseMessageId = (Date.now() + 2).toString();
-      const responseMessage: Message = {
-        id: responseMessageId,
-        content: '',
-        sender: 'assistant',
-        timestamp: new Date()
-      };
-
-      setMessages(prev => {
-        const currentMessages = prev[activeChatId] || [];
-        const messagesWithoutTyping = currentMessages.filter(msg => msg.id !== typingMessageId);
+    // Call NuruAgent API for real AI response
+    setTimeout(async () => {
+      try {
+        // Use the fetched parent ID or fallback
+        const user_Id = userId ? userId.toString() : 'default-parent-id';
+        const user_Role = role ? role : 'default-role';
         
-        return {
-          ...prev,
-          [activeChatId]: [...messagesWithoutTyping, responseMessage]
-        };
-      });
+        const apiResponse = await NuruService.sendMessage({
+          message: content,
+          user_type: user_Role,
+          user_id: user_Id
+        });
 
-      // Character-by-character typing effect
-      let currentText = '';
-      let charIndex = 0;
-      
-      const typeText = () => {
-        if (charIndex < fullResponse.length) {
-          currentText += fullResponse[charIndex];
-          charIndex++;
+        const fullResponse = apiResponse.response || "I'm sorry, I couldn't process your request right now.";
+        
+        const responseMessageId = (Date.now() + 2).toString();
+        const responseMessage: Message = {
+          id: responseMessageId,
+          content: '',
+          sender: 'assistant',
+          timestamp: new Date()
+        };
+
+        setMessages(prev => {
+          const currentMessages = prev[activeChatId] || [];
+          const messagesWithoutTyping = currentMessages.filter(msg => msg.id !== typingMessageId);
           
-          // Update the message with current text
-          setMessages(prev => ({
+          return {
             ...prev,
-            [activeChatId]: prev[activeChatId].map(msg => 
-              msg.id === responseMessageId 
-                ? { ...msg, content: currentText }
-                : msg
-            )
-          }));
+            [activeChatId]: [...messagesWithoutTyping, responseMessage]
+          };
+        });
+
+        // Character-by-character typing effect
+        let currentText = '';
+        let charIndex = 0;
+        
+        const typeText = () => {
+          if (charIndex < fullResponse.length) {
+            currentText += fullResponse[charIndex];
+            charIndex++;
+            
+            // Update the message with current text
+            setMessages(prev => ({
+              ...prev,
+              [activeChatId]: prev[activeChatId].map(msg => 
+                msg.id === responseMessageId 
+                  ? { ...msg, content: currentText }
+                  : msg
+              )
+            }));
+            
+            // Random delay between characters (5-15ms for very fast typing speed)
+            const delay = Math.random() * 10 + 5;
+            setTimeout(typeText, delay);
+          } else {
+            // Typing complete - update chat last message
+            setChats(prev => prev.map(chat => 
+              chat.id === activeChatId 
+                ? { ...chat, lastMessage: fullResponse, timestamp: new Date() }
+                : chat
+            ));
+            setIsLoading(false);
+          }
+        };
+        
+        // Start typing after a short delay
+        setTimeout(typeText, 30);
+      } catch (error) {
+        console.error('Error calling NuruAgent API:', error);
+        
+        // Fallback response
+        const fallbackResponse = "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.";
+        
+        // Remove typing message and add fallback response
+        const responseMessageId = (Date.now() + 2).toString();
+        const responseMessage: Message = {
+          id: responseMessageId,
+          content: fallbackResponse,
+          sender: 'assistant',
+          timestamp: new Date()
+        };
+
+        setMessages(prev => {
+          const currentMessages = prev[activeChatId] || [];
+          const messagesWithoutTyping = currentMessages.filter(msg => msg.id !== typingMessageId);
           
-          // Random delay between characters (5-15ms for very fast typing speed)
-          const delay = Math.random() * 10 + 5;
-          setTimeout(typeText, delay);
-        } else {
-          // Typing complete - update chat last message
-          setChats(prev => prev.map(chat => 
-            chat.id === activeChatId 
-              ? { ...chat, lastMessage: fullResponse, timestamp: new Date() }
-              : chat
-          ));
-          setIsLoading(false);
-        }
-      };
-      
-      // Start typing after a short delay
-      setTimeout(typeText, 30);
+          return {
+            ...prev,
+            [activeChatId]: [...messagesWithoutTyping, responseMessage]
+          };
+        });
+
+        // Update chat last message
+        setChats(prev => prev.map(chat => 
+          chat.id === activeChatId 
+            ? { ...chat, lastMessage: fallbackResponse, timestamp: new Date() }
+            : chat
+        ));
+        setIsLoading(false);
+      }
     }, 500);
   };
 
-  const generateAIResponse = (userMessage: string): string => {
-    // Simple response generation (replace with actual AI integration)
-    const responses = [
-      "That's a great question! Based on your child's profile, I'd recommend focusing on sensory-friendly activities that can help with their development.",
-      "I understand your concern. Many parents face similar challenges. Let me suggest some strategies that have worked well for other families.",
-      "That's an important observation. Early intervention and consistent support can make a significant difference in your child's progress.",
-      "I'm here to help you navigate this journey. Would you like me to provide more specific guidance based on your child's current needs?",
-      "Thank you for sharing that with me. It sounds like you're doing a wonderful job supporting your child's development.",
-      "Based on what you've shared, I can suggest some evidence-based approaches that have shown positive results for children with similar needs.",
-      "It's completely normal to have these concerns. Let me help you understand what to expect and how to best support your child.",
-      "I appreciate you reaching out. Your proactive approach to your child's development is commendable. Let's work together to find the best solutions."
-    ];
-    
-    return responses[Math.floor(Math.random() * responses.length)];
-  };
 
   const clearChat = () => {
     if (!activeChatId) return;

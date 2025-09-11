@@ -57,7 +57,7 @@ async def chat_endpoint(request: dict):
         user_type = request.get("user_type", "admin")  # Default to admin
         user_id = request.get("user_id", None)  # Optional user ID
         
-        logger.info(f"Received message from {user_type}: {message[:50]}...")
+        logger.info(f"Received message from {user_type} of user id {user_id}: {message[:50]}...")
         
         # Process the message with user type restrictions
         response = simple_langchain_agent.process_message(message, user_type, user_id)
