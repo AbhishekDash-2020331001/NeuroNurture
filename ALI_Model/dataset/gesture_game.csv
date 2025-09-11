@@ -1,0 +1,11 @@
+id,age,butterfly,child_id,closed_fist,date_time,dua,heart,isasd,is_training_allowed,open_palm,pointing_up,session_id,spectacle,suspectedasd,thumbs_down,thumbs_up,victory,videourl,iloveyou,type,school_task_id
+1,6,1,C001,2,2025-09-03 09:00:00,2,1,TRUE,TRUE,3,1,S001,1,TRUE,0,1,2,vid_g_1.mp4,0,practice,ST001
+2,7,2,C002,1,2025-09-03 09:10:00,1,2,FALSE,TRUE,2,2,S002,0,FALSE,1,0,1,vid_g_2.mp4,1,practice,ST002
+3,8,0,C003,3,2025-09-03 09:20:00,2,1,TRUE,TRUE,4,3,S003,1,TRUE,0,2,2,vid_g_3.mp4,2,practice,ST003
+4,6,3,C004,2,2025-09-03 09:30:00,1,0,FALSE,TRUE,3,1,S004,0,FALSE,1,1,0,vid_g_4.mp4,0,practice,ST004
+5,9,1,C005,0,2025-09-03 09:40:00,3,2,TRUE,TRUE,2,2,S005,1,TRUE,0,1,3,vid_g_5.mp4,1,practice,ST005
+6,6,2,C006,1,2025-09-03 09:50:00,1,2,FALSE,TRUE,2,2,S006,0,FALSE,1,0,1,vid_g_6.mp4,1,practice,ST006
+7,7,3,C007,2,2025-09-03 10:00:00,2,1,TRUE,TRUE,3,3,S007,1,TRUE,0,2,2,vid_g_7.mp4,2,practice,ST007
+8,8,0,C008,3,2025-09-03 10:10:00,1,0,FALSE,TRUE,4,1,S008,0,FALSE,1,1,0,vid_g_8.mp4,0,practice,ST008
+9,9,1,C009,0,2025-09-03 10:20:00,3,2,TRUE,TRUE,2,2,S009,1,TRUE,0,1,3,vid_g_9.mp4,1,practice,ST009
+10,10,2,C010,1,2025-09-03 10:30:00,1,2,FALSE,TRUE,2,2,S010,0,FALSE,1,0,1,vid_g_10.mp4,1,practice,ST010
