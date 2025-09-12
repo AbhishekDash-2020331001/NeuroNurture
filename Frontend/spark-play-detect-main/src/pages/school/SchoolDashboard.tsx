@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSchoolAuth } from '@/contexts/school/SchoolAuthContext';
+import SchoolAssistant from './SchoolAssistant';
 import { 
   Users, 
   BookOpen, 
@@ -14,6 +15,7 @@ import {
 
 const SchoolDashboard: React.FC = () => {
   const { school } = useSchoolAuth();
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
   // SchoolAuthGuard handles authentication, so we can assume school exists here
 
@@ -82,6 +84,13 @@ const SchoolDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Assistant */}
+      <SchoolAssistant 
+        isOpen={isAssistantOpen} 
+        onToggle={() => setIsAssistantOpen(!isAssistantOpen)} 
+      />
+
+
       {/* Welcome Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white">
         <h1 className="text-3xl font-bold mb-2">Welcome back, {school.name}!</h1>

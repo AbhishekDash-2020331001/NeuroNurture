@@ -56,11 +56,23 @@ async def chat_endpoint(request: dict):
         message = request.get("message", "")
         user_type = request.get("user_type", "admin")  # Default to admin
         user_id = request.get("user_id", None)  # Optional user ID
+        context = request.get("context", "")  # Optional conversation context
         
         logger.info(f"Received message from {user_type} of user id {user_id}: {message[:50]}...")
         
-        # Process the message with user type restrictions
-        response = simple_langchain_agent.process_message(message, user_type, user_id)
+        logger.info(f"=== CONTEXT DEBUG ===")
+        logger.info(f"Context is None: {context is None}")
+        logger.info(f"Context is empty: {context == ''}")
+        logger.info(f"Context length: {len(context) if context else 0}")
+        logger.info(f"Context content: '{context}'")
+        
+        if context and len(context) > 0:
+            logger.info(f"Context provided: {context[:200]}...")
+        else:
+            logger.warning("NO CONTEXT PROVIDED TO PYTHON AGENT!")
+        
+        # Process the message with user type restrictions and context
+        response = simple_langchain_agent.process_message(message, user_type, user_id, context)
         
         logger.info("AI response generated successfully")
         return response
@@ -68,6 +80,37 @@ async def chat_endpoint(request: dict):
     except Exception as e:
         logger.error(f"Error processing message: {e}")
         return {"response": "Sorry, I encountered an error. Please try again.", "error": True}
+
+@app.post("/ticket/classify")
+async def classify_ticket_priority(request: dict):
+    """Classify ticket priority and rewrite message for clarity"""
+    try:
+        message = request.get("message", "")
+        user_type = request.get("user_type", "user")  # Default to user
+        user_id = request.get("user_id", None)  # Optional user ID
+        
+        logger.info(f"Received ticket classification request from {user_type} user {user_id}: {message[:50]}...")
+        
+        if not message.strip():
+            return {
+                "priority": "LOW",
+                "rewritten_message": "No message provided",
+                "error": True
+            }
+        
+        # Process the ticket using the specialized ticket classifier
+        result = simple_langchain_agent.classify_ticket_priority(message, user_type, user_id)
+        
+        logger.info(f"Ticket classified as: {result.get('priority', 'Unknown')}")
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error classifying ticket: {e}")
+        return {
+            "priority": "MEDIUM",
+            "rewritten_message": "Error processing ticket. Please review manually.",
+            "error": True
+        }
 
 @app.get("/roles")
 async def get_available_roles():

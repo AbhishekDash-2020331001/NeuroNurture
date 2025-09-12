@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import FloatingAssistantButton from './FloatingAssistantButton';
 import ChatList, { Chat } from './ChatList';
 import ChatInterface, { Message } from './ChatInterface';
-import { NuruService } from '../../services/nuruService';
+import { NuruService, Conversation, Message as ServiceMessage } from '../../services/nuruService';
 import './assistant-animations.css';
 
 interface AssistantProps {
@@ -18,11 +18,10 @@ const Assistant: React.FC<AssistantProps> = ({ isOpen, onToggle }) => {
   const [userId, setUserId] = useState<number | null>(null);
   const [role, setRole] = useState<string | null>(null);
 
-  // Fetch parent ID from JWT token
+  // Fetch user data from JWT token
   useEffect(() => {
-    const fetchParentId = async () => {
+    const fetchUserData = async () => {
       try {
-        // Get user data from JWT token with JSON format
         const response = await fetch('http://localhost:8080/auth/me?format=json', { 
           credentials: 'include' 
         });
@@ -33,197 +32,79 @@ const Assistant: React.FC<AssistantProps> = ({ isOpen, onToggle }) => {
           setUserId(userData.id);
           setRole(userData.role);
         } else {
-          // Fallback to manual ID for testing
-          setUserId(null);
-          setRole(null);
+          // Fallback for testing
+          setUserId(2);
+          setRole('parent');
         }
       } catch (error) {
-        console.error('Error fetching parent ID from JWT:', error);
-        // Fallback to manual ID for testing
-        setUserId(null);
-        setRole(null);
+        console.error('Error fetching user data from JWT:', error);
+        // Fallback for testing
+        setUserId(2);
+        setRole('parent');
       }
     };
 
-    fetchParentId();
+    fetchUserData();
   }, []);
 
-  // Load chats from localStorage on component mount
+  // Load conversations from Spring Boot service
   useEffect(() => {
-    const savedChats = localStorage.getItem('assistant-chats');
-    const savedMessages = localStorage.getItem('assistant-messages');
-    
-    if (savedChats) {
-      const parsedChats = JSON.parse(savedChats).map((chat: any) => ({
-        ...chat,
-        timestamp: new Date(chat.timestamp)
-      }));
-      setChats(parsedChats);
-    } else {
-      // Add some dummy chats for demonstration
-      const dummyChats: Chat[] = [
-        {
-          id: '1',
-          title: 'Help with child development',
-          lastMessage: 'Thank you for the advice!',
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+    const loadConversations = async () => {
+      if (!userId || !role) return;
+      
+      try {
+        const response = await NuruService.getConversations(role, userId.toString());
+        console.log('Conversations response:', response);
+        
+        const conversationChats: Chat[] = response.conversations.map((conv: Conversation) => ({
+          id: conv.id,
+          title: conv.title,
+          lastMessage: conv.lastMessage,
+          timestamp: new Date(conv.lastMessageTime),
           unreadCount: 0,
           isActive: false
-        },
-        {
-          id: '2',
-          title: 'Autism support questions',
-          lastMessage: 'That makes sense, I\'ll try that approach.',
-          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-          unreadCount: 1,
-          isActive: false
-        },
-        {
-          id: '3',
-          title: 'Learning activities for 5-year-old',
-          lastMessage: 'Great suggestions!',
-          timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-          unreadCount: 0,
-          isActive: false
-        },
-        {
-          id: '4',
-          title: 'Behavior management tips',
-          lastMessage: 'I\'ll implement these strategies.',
-          timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 1 week ago
-          unreadCount: 0,
-          isActive: false
-        },
-        {
-          id: '5',
-          title: 'Speech therapy exercises',
-          lastMessage: 'The exercises are working well!',
-          timestamp: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
-          unreadCount: 0,
-          isActive: false
-        },
-        {
-          id: '6',
-          title: 'Sensory processing issues',
-          lastMessage: 'Thanks for the recommendations.',
-          timestamp: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 2 weeks ago
-          unreadCount: 0,
-          isActive: false
-        },
-        {
-          id: '7',
-          title: 'School preparation advice',
-          lastMessage: 'This is very helpful!',
-          timestamp: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000), // 3 weeks ago
-          unreadCount: 0,
-          isActive: false
-        },
-        {
-          id: '8',
-          title: 'Social skills development',
-          lastMessage: 'I\'ll try these activities.',
-          timestamp: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 1 month ago
-          unreadCount: 0,
-          isActive: false
-        },
-        {
-          id: '9',
-          title: 'Sleep routine problems',
-          lastMessage: 'The routine is much better now.',
-          timestamp: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000), // 45 days ago
-          unreadCount: 0,
-          isActive: false
-        },
-        {
-          id: '10',
-          title: 'Mealtime challenges',
-          lastMessage: 'Thank you for your help!',
-          timestamp: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), // 2 months ago
-          unreadCount: 0,
-          isActive: false
-        }
-      ];
-      setChats(dummyChats);
-    }
-    
-    if (savedMessages) {
-      const parsedMessages = JSON.parse(savedMessages);
-      const messagesWithDates = Object.keys(parsedMessages).reduce((acc, chatId) => {
-        acc[chatId] = parsedMessages[chatId].map((msg: any) => ({
-          ...msg,
-          timestamp: new Date(msg.timestamp)
         }));
-        return acc;
-      }, {} as { [chatId: string]: Message[] });
-      setMessages(messagesWithDates);
-    } else {
-      // Add some dummy messages for demonstration
-      const dummyMessages: { [chatId: string]: Message[] } = {
-        '1': [
-          {
-            id: '1-1',
-            content: 'Hi! I need help with my 4-year-old child\'s development. They seem to be behind in speech compared to other kids their age.',
-            sender: 'user',
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000)
-          },
-          {
-            id: '1-2',
-            content: 'I understand your concern about your child\'s speech development. Every child develops at their own pace, but there are some signs we can look for and strategies to support their language development.\n\nHere are some things you can try:\n\n1. **Read together daily** - Even 10-15 minutes can make a big difference\n2. **Talk about everything** - Describe what you\'re doing, what you see, etc.\n3. **Use simple, clear language** - Avoid baby talk\n4. **Give them time to respond** - Don\'t rush to fill silences\n5. **Celebrate attempts** - Even if words aren\'t perfect, acknowledge their effort\n\nWould you like me to suggest some specific activities or games that might help?',
-            sender: 'assistant',
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000 + 30000)
-          },
-          {
-            id: '1-3',
-            content: 'Thank you for the advice! I\'ll start implementing these strategies right away.',
-            sender: 'user',
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000 + 60000)
-          }
-        ],
-        '2': [
-          {
-            id: '2-1',
-            content: 'My child was recently diagnosed with autism. I\'m feeling overwhelmed and don\'t know where to start.',
-            sender: 'user',
-            timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000)
-          },
-          {
-            id: '2-2',
-            content: 'I can only imagine how overwhelming this must feel. Please know that you\'re not alone, and there are many resources and support systems available to help you and your child.\n\nHere are some immediate steps you can take:\n\n1. **Connect with support groups** - Other parents can be invaluable resources\n2. **Work with early intervention services** - They can provide specialized support\n3. **Create a structured routine** - Many children with autism thrive with predictability\n4. **Focus on your child\'s strengths** - Every child has unique abilities\n5. **Take care of yourself** - You can\'t pour from an empty cup\n\nRemember, this diagnosis doesn\'t change who your child is - they\'re still the same wonderful person you love.',
-            sender: 'assistant',
-            timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000 + 45000)
-          }
-        ]
-      };
-      setMessages(dummyMessages);
-    }
-  }, []);
-
-  // Save chats and messages to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('assistant-chats', JSON.stringify(chats));
-  }, [chats]);
-
-  useEffect(() => {
-    localStorage.setItem('assistant-messages', JSON.stringify(messages));
-  }, [messages]);
-
-  const createNewChat = () => {
-    const newChatId = Date.now().toString();
-    const newChat: Chat = {
-      id: newChatId,
-      title: `Chat ${chats.length + 1}`,
-      lastMessage: 'New conversation started',
-      timestamp: new Date(),
-      unreadCount: 0,
-      isActive: false
+        
+        setChats(conversationChats);
+      } catch (error) {
+        console.error('Error loading conversations:', error);
+      }
     };
 
-    setChats(prev => [newChat, ...prev]);
+    loadConversations();
+  }, [userId, role]);
+
+  // Load messages for a specific conversation
+  const loadMessages = async (conversationId: string) => {
+    if (!userId || !role) return;
+    
+    try {
+      const response = await NuruService.getMessages(role, userId.toString(), conversationId);
+      console.log('Messages response:', response);
+      
+      const frontendMessages: Message[] = response.messages.map((msg: ServiceMessage) => ({
+        id: msg.id,
+        content: msg.content,
+        sender: msg.sender as "user" | "assistant",
+        timestamp: new Date(msg.timestamp),
+        isTyping: msg.isTyping
+      }));
+      
+      setMessages(prev => ({
+        ...prev,
+        [conversationId]: frontendMessages
+      }));
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
+  const createNewChat = () => {
+    setActiveChatId(null); // Signal new chat creation
     setMessages(prev => ({
       ...prev,
-      [newChatId]: []
+      'new': []
     }));
-    setActiveChatId(newChatId);
   };
 
   const selectChat = (chatId: string) => {
@@ -233,18 +114,29 @@ const Assistant: React.FC<AssistantProps> = ({ isOpen, onToggle }) => {
       isActive: chat.id === chatId,
       unreadCount: chat.id === chatId ? 0 : chat.unreadCount
     })));
+    
+    // Load messages for this conversation
+    loadMessages(chatId);
   };
 
-  const deleteChat = (chatId: string) => {
-    setChats(prev => prev.filter(chat => chat.id !== chatId));
-    setMessages(prev => {
-      const newMessages = { ...prev };
-      delete newMessages[chatId];
-      return newMessages;
-    });
+  const deleteChat = async (chatId: string) => {
+    if (!userId || !role) return;
     
-    if (activeChatId === chatId) {
-      setActiveChatId(null);
+    try {
+      await NuruService.deleteConversation(role, userId.toString(), chatId);
+      
+      setChats(prev => prev.filter(chat => chat.id !== chatId));
+      setMessages(prev => {
+        const newMessages = { ...prev };
+        delete newMessages[chatId];
+        return newMessages;
+      });
+      
+      if (activeChatId === chatId) {
+        setActiveChatId(null);
+      }
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
     }
   };
 
@@ -255,7 +147,7 @@ const Assistant: React.FC<AssistantProps> = ({ isOpen, onToggle }) => {
   };
 
   const sendMessage = async (content: string) => {
-    if (!activeChatId) return;
+    if (!userId || !role) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -264,18 +156,14 @@ const Assistant: React.FC<AssistantProps> = ({ isOpen, onToggle }) => {
       timestamp: new Date()
     };
 
-    // Add user message
+    // Determine the chat ID to use
+    const currentChatId = activeChatId || 'new';
+    
+    // Add user message immediately
     setMessages(prev => ({
       ...prev,
-      [activeChatId]: [...(prev[activeChatId] || []), userMessage]
+      [currentChatId]: [...(prev[currentChatId] || []), userMessage]
     }));
-
-    // Update chat last message
-    setChats(prev => prev.map(chat => 
-      chat.id === activeChatId 
-        ? { ...chat, lastMessage: content, timestamp: new Date() }
-        : chat
-    ));
 
     setIsLoading(true);
 
@@ -291,23 +179,49 @@ const Assistant: React.FC<AssistantProps> = ({ isOpen, onToggle }) => {
 
     setMessages(prev => ({
       ...prev,
-      [activeChatId]: [...(prev[activeChatId] || []), typingMessage]
+      [currentChatId]: [...(prev[currentChatId] || []), typingMessage]
     }));
 
-    // Call NuruAgent API for real AI response
+    // Call Spring Boot Chat Service
     setTimeout(async () => {
       try {
-        // Use the fetched parent ID or fallback
-        const user_Id = userId ? userId.toString() : 'default-parent-id';
-        const user_Role = role ? role : 'default-role';
-        
         const apiResponse = await NuruService.sendMessage({
           message: content,
-          user_type: user_Role,
-          user_id: user_Id
+          userType: role,
+          userId: userId.toString(),
+          conversationId: activeChatId || undefined
         });
 
         const fullResponse = apiResponse.response || "I'm sorry, I couldn't process your request right now.";
+        
+        // If this is a new conversation, update activeChatId and move messages
+        if (!activeChatId && apiResponse.conversationId) {
+          const newChatId = apiResponse.conversationId;
+          
+          // Move messages from 'new' to the actual conversation ID
+          setMessages(prev => {
+            const newMessages = { ...prev };
+            if (newMessages['new']) {
+              newMessages[newChatId] = newMessages['new'];
+              delete newMessages['new'];
+            }
+            return newMessages;
+          });
+          
+          setActiveChatId(newChatId);
+          
+          // Add new conversation to chats list
+          const newChat: Chat = {
+            id: newChatId,
+            title: content.length > 50 ? content.substring(0, 50) + '...' : content,
+            lastMessage: fullResponse,
+            timestamp: new Date(),
+            unreadCount: 0,
+            isActive: true
+          };
+          
+          setChats(prev => [newChat, ...prev]);
+        }
         
         const responseMessageId = (Date.now() + 2).toString();
         const responseMessage: Message = {
@@ -317,13 +231,15 @@ const Assistant: React.FC<AssistantProps> = ({ isOpen, onToggle }) => {
           timestamp: new Date()
         };
 
+        const finalChatId = activeChatId || apiResponse.conversationId || currentChatId;
+        
         setMessages(prev => {
-          const currentMessages = prev[activeChatId] || [];
+          const currentMessages = prev[finalChatId] || [];
           const messagesWithoutTyping = currentMessages.filter(msg => msg.id !== typingMessageId);
           
           return {
             ...prev,
-            [activeChatId]: [...messagesWithoutTyping, responseMessage]
+            [finalChatId]: [...messagesWithoutTyping, responseMessage]
           };
         });
 
@@ -339,7 +255,7 @@ const Assistant: React.FC<AssistantProps> = ({ isOpen, onToggle }) => {
             // Update the message with current text
             setMessages(prev => ({
               ...prev,
-              [activeChatId]: prev[activeChatId].map(msg => 
+              [finalChatId]: prev[finalChatId].map(msg => 
                 msg.id === responseMessageId 
                   ? { ...msg, content: currentText }
                   : msg
@@ -352,7 +268,7 @@ const Assistant: React.FC<AssistantProps> = ({ isOpen, onToggle }) => {
           } else {
             // Typing complete - update chat last message
             setChats(prev => prev.map(chat => 
-              chat.id === activeChatId 
+              chat.id === finalChatId 
                 ? { ...chat, lastMessage: fullResponse, timestamp: new Date() }
                 : chat
             ));
@@ -363,7 +279,7 @@ const Assistant: React.FC<AssistantProps> = ({ isOpen, onToggle }) => {
         // Start typing after a short delay
         setTimeout(typeText, 30);
       } catch (error) {
-        console.error('Error calling NuruAgent API:', error);
+        console.error('Error calling Nuru Chat Service:', error);
         
         // Fallback response
         const fallbackResponse = "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.";
@@ -377,19 +293,21 @@ const Assistant: React.FC<AssistantProps> = ({ isOpen, onToggle }) => {
           timestamp: new Date()
         };
 
+        const errorChatId = activeChatId || 'new';
+        
         setMessages(prev => {
-          const currentMessages = prev[activeChatId] || [];
+          const currentMessages = prev[errorChatId] || [];
           const messagesWithoutTyping = currentMessages.filter(msg => msg.id !== typingMessageId);
           
           return {
             ...prev,
-            [activeChatId]: [...messagesWithoutTyping, responseMessage]
+            [errorChatId]: [...messagesWithoutTyping, responseMessage]
           };
         });
 
         // Update chat last message
         setChats(prev => prev.map(chat => 
-          chat.id === activeChatId 
+          chat.id === errorChatId 
             ? { ...chat, lastMessage: fallbackResponse, timestamp: new Date() }
             : chat
         ));
@@ -412,7 +330,7 @@ const Assistant: React.FC<AssistantProps> = ({ isOpen, onToggle }) => {
     return chats.reduce((total, chat) => total + chat.unreadCount, 0);
   };
 
-  const currentMessages = activeChatId ? messages[activeChatId] || [] : [];
+  const currentMessages = activeChatId ? messages[activeChatId] || [] : (activeChatId === null ? messages['new'] || [] : []);
   const currentChat = chats.find(chat => chat.id === activeChatId);
 
   return (
@@ -449,13 +367,13 @@ const Assistant: React.FC<AssistantProps> = ({ isOpen, onToggle }) => {
 
             {/* Chat Interface */}
             <div className="flex-1">
-              {activeChatId && currentChat ? (
+              {(activeChatId && currentChat) || activeChatId === null ? (
                 <ChatInterface
                   messages={currentMessages}
                   onSendMessage={sendMessage}
                   onClearChat={clearChat}
                   isLoading={isLoading}
-                  chatTitle={currentChat.title}
+                  chatTitle={currentChat?.title || "New Chat"}
                 />
               ) : (
                 <div className="flex items-center justify-center h-full bg-gray-50">

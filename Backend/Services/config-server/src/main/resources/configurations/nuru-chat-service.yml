@@ -1,0 +1,15 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb+srv://tarekahmad484:tarekahmad484@cluster0.w90x9.mongodb.net/NuruChat?retryWrites=true&w=majority&appName=Cluster0
+  webflux:
+    base-path: /api/v1
+
+server:
+  port: 8094
+
+
+
+
+
+

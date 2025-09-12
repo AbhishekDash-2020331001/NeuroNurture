@@ -345,7 +345,7 @@ Example for School: SELECT * FROM child WHERE school_id = {user_id}"""
             logger.error(f"Error generating SQL: {e}")
             return ""
     
-    def process_message(self, message: str, user_type: str = "admin", user_id: int = None) -> Dict[str, Any]:
+    def process_message(self, message: str, user_type: str = "admin", user_id: int = None, context: str = "") -> Dict[str, Any]:
         """Process user message with tool selection and user type restrictions"""
         try:
             # Analyze intent with user type context
@@ -357,6 +357,7 @@ Example for School: SELECT * FROM child WHERE school_id = {user_id}"""
             
             if intent.get("needs_schema", False):
                 schema_info = self._get_database_schema()
+                print(f"Database Schema:\n{schema_info}")
                 tool_results.append(f"Database Schema:\n{schema_info}")
             
             if intent.get("needs_database", False):
@@ -372,9 +373,14 @@ Example for School: SELECT * FROM child WHERE school_id = {user_id}"""
             
             # Generate final response
             if tool_results:
-                context = "\n\n".join(tool_results)
+                tool_context = "\n\n".join(tool_results)
                 user_context = self._build_user_context(user_type, user_id)
                 access_rules = self._get_access_rules(user_type)
+                
+                # Include conversation context if provided
+                conversation_context = ""
+                if context:
+                    conversation_context = f"\n\nPrevious conversation context:\n{context}"
                 
                 final_prompt = f"""You are an AI assistant for the NeuroNurture educational platform. Based on the following information, provide a direct, helpful response to the user's question:
 
@@ -384,7 +390,7 @@ User Type: {user_type.upper()}
 User question: "{message}"
 
 Context information:
-{context}
+{tool_context}{conversation_context}
 
 {access_rules}
 
@@ -393,12 +399,17 @@ IMPORTANT: Provide your response in PLAIN TEXT format only. Do not use any markd
                 user_context = self._build_user_context(user_type, user_id)
                 access_rules = self._get_access_rules(user_type)
                 
+                # Include conversation context if provided
+                conversation_context = ""
+                if context:
+                    conversation_context = f"\n\nPrevious conversation context:\n{context}"
+                
                 final_prompt = f"""You are an AI assistant for the NeuroNurture educational platform. Answer this question directly and helpfully:
 
 User Type: {user_type.upper()}
 {user_context}
 
-User question: "{message}"
+User question: "{message}"{conversation_context}
 
 {access_rules}
 
@@ -446,6 +457,111 @@ IMPORTANT: Provide your response in PLAIN TEXT format only. Do not use any markd
         except Exception as e:
             logger.error(f"Error getting AI response: {e}")
             return "I'm having trouble connecting to the AI service. Please try again later."
+
+    def classify_ticket_priority(self, message: str, user_type: str = "user", user_id: int = None):
+        """Classify ticket priority and rewrite message for clarity"""
+        try:
+            # Create a specialized prompt for ticket classification
+            classification_prompt = f"""You are an expert ticket classification system for a child development and educational platform. 
+
+Your task is to:
+1. Classify the priority of the user's issue/ticket
+2. Rewrite the message to be clear, grammatically correct, and professional for admin review
+
+PRIORITY CLASSIFICATION GUIDELINES:
+- URGENT: System crashes, security issues, data loss, payment failures, critical bugs affecting multiple users
+- HIGH: Major feature broken, significant user experience issues, important functionality not working
+- MEDIUM: Minor bugs, feature requests, general questions, moderate user experience issues
+- LOW: Cosmetic issues, minor suggestions, informational requests, non-critical improvements
+
+MESSAGE REWRITING GUIDELINES:
+- Fix grammar and spelling errors
+- Improve clarity and structure
+- Make it professional and concise
+- Preserve the original intent and details
+- Use proper technical terminology when appropriate
+
+User Type: {user_type}
+User ID: {user_id if user_id else 'Unknown'}
+
+Original Message:
+{message}
+
+Please respond in the following JSON format:
+{{
+    "priority": "LOW|MEDIUM|HIGH|URGENT",
+    "rewritten_message": "Clear, grammatically correct, and professional version of the message",
+    "reasoning": "Brief explanation of why this priority was chosen"
+}}"""
+
+            # Get AI response
+            response = self.get_ai_response(classification_prompt)
+            
+            # Try to parse JSON response
+            try:
+                import json
+                result = json.loads(response)
+                
+                # Validate priority
+                valid_priorities = ["LOW", "MEDIUM", "HIGH", "URGENT"]
+                if result.get("priority") not in valid_priorities:
+                    result["priority"] = "MEDIUM"  # Default fallback
+                
+                return {
+                    "priority": result["priority"],
+                    "rewritten_message": result.get("rewritten_message", message),
+                    "reasoning": result.get("reasoning", "Priority classified based on content analysis"),
+                    "error": False
+                }
+                
+            except json.JSONDecodeError:
+                # If JSON parsing fails, try to extract priority from text
+                priority = self._extract_priority_from_text(response)
+                rewritten_message = self._extract_rewritten_message(response, message)
+                
+                return {
+                    "priority": priority,
+                    "rewritten_message": rewritten_message,
+                    "reasoning": "Priority extracted from AI response text",
+                    "error": False
+                }
+                
+        except Exception as e:
+            logger.error(f"Error classifying ticket priority: {e}")
+            return {
+                "priority": "MEDIUM",
+                "rewritten_message": message,
+                "reasoning": "Error occurred during classification",
+                "error": True
+            }
+
+    def _extract_priority_from_text(self, response_text: str):
+        """Extract priority from AI response text if JSON parsing fails"""
+        response_lower = response_text.lower()
+        
+        if "urgent" in response_lower:
+            return "URGENT"
+        elif "high" in response_lower:
+            return "HIGH"
+        elif "low" in response_lower:
+            return "LOW"
+        else:
+            return "MEDIUM"  # Default fallback
+
+    def _extract_rewritten_message(self, response_text: str, original_message: str):
+        """Extract rewritten message from AI response text if JSON parsing fails"""
+        # Look for common patterns that might contain the rewritten message
+        lines = response_text.split('\n')
+        
+        for line in lines:
+            line = line.strip()
+            if line and not line.startswith('{') and not line.startswith('"priority') and not line.startswith('"reasoning'):
+                # This might be the rewritten message
+                if len(line) > 20:  # Reasonable length for a rewritten message
+                    return line
+        
+        # If no clear rewritten message found, return original
+        return original_message
 
 # Create global instance
 simple_langchain_agent = SimpleLangChainAgent()

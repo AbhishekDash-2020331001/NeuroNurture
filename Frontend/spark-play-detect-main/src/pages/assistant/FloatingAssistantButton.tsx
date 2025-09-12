@@ -13,10 +13,11 @@ const FloatingAssistantButton: React.FC<FloatingAssistantButtonProps> = ({
   unreadCount = 0 
 }) => {
   return (
-    <div className="fixed right-0 top-1/2 transform -translate-y-1/2 z-40">
+    <div className="fixed right-0 top-1/2 transform -translate-y-1/2 z-[60]">
       <button
+        type="button"
         onClick={onClick}
-        className={`group relative transition-all duration-500 ease-in-out transform ${
+        className={`group relative transition-all duration-500 ease-in-out transform cursor-pointer ${
           isOpen 
             ? 'translate-x-0 scale-100' 
             : 'translate-x-4 hover:translate-x-1 scale-100 hover:scale-105'
