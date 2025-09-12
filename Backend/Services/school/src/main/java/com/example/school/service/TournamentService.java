@@ -1,11 +1,13 @@
 package com.example.school.service;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -863,5 +865,169 @@ public class TournamentService {
             System.err.println("Error fetching child name for ID " + childId + ": " + e.getMessage());
         }
         return "Child " + childId; // Fallback name
+    }
+
+    /**
+     * Get all sessions for a specific child from all game services
+     */
+    public Map<String, Object> getChildSessionsFromAllGames(String childId) {
+        Map<String, Object> result = new HashMap<>();
+        List<Map<String, Object>> allSessions = new ArrayList<>();
+        
+        // Game service URLs
+        String[] gameServices = {
+            "http://localhost:8083/api/mirror-posture-game",
+            "http://localhost:8084/api/gesture-game", 
+            "http://localhost:8085/api/gaze-game",
+            "http://localhost:8086/api/repeat-with-me-game",
+            "http://localhost:8087/api/dance-doodle"
+        };
+        
+        String[] gameTypes = {
+            "mirror-posture-game",
+            "gesture-game",
+            "gaze-game", 
+            "repeat-with-me-game",
+            "dance-doodle"
+        };
+        
+        for (int i = 0; i < gameServices.length; i++) {
+            try {
+                String url = gameServices[i] + "/child/" + childId;
+                ResponseEntity<List> response = restTemplate.getForEntity(url, List.class);
+                
+                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                    List<Map<String, Object>> sessions = response.getBody();
+                    for (Map<String, Object> session : sessions) {
+                        session.put("gameType", gameTypes[i]);
+                        session.put("isCompleted", isSessionCompleted(session, gameTypes[i]));
+                        allSessions.add(session);
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Error fetching sessions from " + gameTypes[i] + ": " + e.getMessage());
+            }
+        }
+        
+        // Calculate statistics
+        int totalSessions = allSessions.size();
+        int completedSessions = (int) allSessions.stream().filter(session -> 
+            Boolean.TRUE.equals(session.get("isCompleted"))).count();
+        
+        // Calculate last played date
+        LocalDateTime lastPlayed = allSessions.stream()
+            .map(session -> {
+                Object dateTime = session.get("dateTime");
+                if (dateTime instanceof String) {
+                    try {
+                        return LocalDateTime.parse((String) dateTime);
+                    } catch (Exception e) {
+                        return null;
+                    }
+                }
+                return null;
+            })
+            .filter(Objects::nonNull)
+            .max(LocalDateTime::compareTo)
+            .orElse(null);
+        
+        long lastPlayedDaysAgo = 0;
+        if (lastPlayed != null) {
+            lastPlayedDaysAgo = ChronoUnit.DAYS.between(lastPlayed, LocalDateTime.now());
+        }
+        
+        // Calculate session completion rate
+        double completionRate = totalSessions > 0 ? (double) completedSessions / totalSessions * 100 : 0;
+        
+        // Calculate game session counts
+        Map<String, Integer> gameSessionCounts = new HashMap<>();
+        Map<String, Integer> completedSessionCounts = new HashMap<>();
+        
+        for (Map<String, Object> session : allSessions) {
+            String gameType = (String) session.get("gameType");
+            gameSessionCounts.put(gameType, gameSessionCounts.getOrDefault(gameType, 0) + 1);
+            if (Boolean.TRUE.equals(session.get("isCompleted"))) {
+                completedSessionCounts.put(gameType, completedSessionCounts.getOrDefault(gameType, 0) + 1);
+            }
+        }
+        
+        // Find most and least played games
+        String mostPlayedGame = gameSessionCounts.entrySet().stream()
+            .max(Map.Entry.comparingByValue())
+            .map(entry -> getGameDisplayName(entry.getKey()))
+            .orElse("None");
+            
+        String leastPlayedGame = gameSessionCounts.entrySet().stream()
+            .min(Map.Entry.comparingByValue())
+            .map(entry -> getGameDisplayName(entry.getKey()))
+            .orElse("None");
+        
+        result.put("totalGameSessions", totalSessions);
+        result.put("lastPlayedDaysAgo", lastPlayedDaysAgo);
+        result.put("sessionCompletionRate", Math.round(completionRate));
+        result.put("mostPlayedGame", mostPlayedGame);
+        result.put("leastPlayedGame", leastPlayedGame);
+        result.put("gameSessionCounts", gameSessionCounts);
+        result.put("completedSessionCounts", completedSessionCounts);
+        result.put("sessions", allSessions);
+        
+        return result;
+    }
+    
+    /**
+     * Check if a session is completed based on game type
+     */
+    private boolean isSessionCompleted(Map<String, Object> session, String gameType) {
+        switch (gameType) {
+            case "mirror-posture-game":
+                return session.get("lookingSideways") != null && 
+                       session.get("mouthOpen") != null && 
+                       session.get("showingTeeth") != null && 
+                       session.get("kiss") != null;
+
+            case "gesture-game":
+                return session.get("thumbs_up") != null && 
+                       session.get("thumbs_down") != null && 
+                       session.get("victory") != null && 
+                       session.get("butterfly") != null && 
+                       session.get("spectacle") != null && 
+                       session.get("heart") != null && 
+                       session.get("pointing_up") != null && 
+                       session.get("iloveyou") != null && 
+                       session.get("dua") != null && 
+                       session.get("closed_fist") != null && 
+                       session.get("open_palm") != null;
+
+            case "gaze-game":
+                return session.get("round1Count") != null && 
+                       session.get("round2Count") != null && 
+                       session.get("round3Count") != null;
+
+            case "repeat-with-me-game":
+                return session.get("round1Score") != null && 
+                       session.get("round2Score") != null && 
+                       session.get("round3Score") != null && 
+                       session.get("round4Score") != null && 
+                       session.get("round5Score") != null &&
+                       session.get("round6Score") != null &&
+                       session.get("round7Score") != null &&
+                       session.get("round8Score") != null &&
+                       session.get("round9Score") != null &&
+                       session.get("round10Score") != null &&
+                       session.get("round11Score") != null &&
+                       session.get("round12Score") != null;
+
+            case "dance-doodle":
+                return session.get("cool_arms") != null && 
+                       session.get("open_wings") != null && 
+                       session.get("silly_boxer") != null && 
+                       session.get("happy_stand") != null && 
+                       session.get("crossy_play") != null && 
+                       session.get("shh_fun") != null && 
+                       session.get("stretch") != null;
+
+            default:
+                return false;
+        }
     }
 }

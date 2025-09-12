@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -186,6 +187,20 @@ public class TournamentController {
     @GetMapping("/health")
     public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok("Tournament Service is running!");
+    }
+
+    /**
+     * Get all sessions for a specific child from all game services
+     */
+    @GetMapping("/child/{childId}/sessions")
+    public ResponseEntity<Map<String, Object>> getChildSessions(@PathVariable String childId) {
+        try {
+            Map<String, Object> result = tournamentService.getChildSessionsFromAllGames(childId);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to fetch child sessions: " + e.getMessage()));
+        }
     }
 }
 

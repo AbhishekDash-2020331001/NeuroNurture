@@ -3,7 +3,6 @@ import { LeaderboardEntry, tournamentDetailsService, type TournamentDetails } fr
 import {
     ArrowLeft,
     Award,
-    BarChart3,
     Calendar,
     Crown,
     Filter,
@@ -198,14 +197,8 @@ const TournamentDetails: React.FC = () => {
                         <ArrowLeft className="h-5 w-5 text-gray-600" />
                     </button>
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">{tournament.tournamentTitle}</h1>
-                        <p className="text-gray-600 mt-1">{tournament.tournamentDescription}</p>
+                        <h1 className="text-3xl font-bold text-gray-900">Tournament Details</h1>
                     </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                    <span className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(tournament.status.toLowerCase())}`}>
-                        <span className="capitalize">{tournament.status.toLowerCase()}</span>
-                    </span>
                 </div>
             </div>
 
@@ -239,7 +232,7 @@ const TournamentDetails: React.FC = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <div className="flex items-center space-x-3">
                         <div className="p-3 bg-blue-100 rounded-lg">
@@ -260,20 +253,6 @@ const TournamentDetails: React.FC = () => {
                         <div>
                             <p className="text-sm font-medium text-gray-600">Games Available</p>
                             <p className="text-2xl font-bold text-gray-900">{tournament.selectedGames.length}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <div className="flex items-center space-x-3">
-                        <div className="p-3 bg-purple-100 rounded-lg">
-                            <BarChart3 className="h-6 w-6 text-purple-600" />
-                        </div>
-                        <div>
-                            <p className="text-sm font-medium text-gray-600">Completion Rate</p>
-                            <p className="text-2xl font-bold text-gray-900">
-                                {Math.round(statistics.completionRate)}%
-                            </p>
                         </div>
                     </div>
                 </div>
