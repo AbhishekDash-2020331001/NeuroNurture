@@ -107,9 +107,13 @@ export const SchoolAuthProvider: React.FC<SchoolAuthProviderProps> = ({ children
         
         setSchool(schoolData);
         localStorage.setItem('schoolAuth', JSON.stringify(schoolData));
+        setSchool(schoolData);
+        localStorage.setItem('schoolAuth', JSON.stringify(schoolData));
         setIsLoading(false);
         return true;
       } else {
+        const errorText = await response.text();
+        console.error('Login failed:', errorText);
         const errorText = await response.text();
         console.error('Login failed:', errorText);
         setIsLoading(false);
