@@ -114,8 +114,6 @@ export const SchoolAuthProvider: React.FC<SchoolAuthProviderProps> = ({ children
       } else {
         const errorText = await response.text();
         console.error('Login failed:', errorText);
-        const errorText = await response.text();
-        console.error('Login failed:', errorText);
         setIsLoading(false);
         return false;
       }

@@ -17,6 +17,7 @@ from config import settings
 
 load_dotenv()
 logger = logging.getLogger(__name__)
+
 class SimpleLangChainAgent:
     def __init__(self):
         """Initialize the simplified AI agent"""
@@ -42,15 +43,15 @@ class SimpleLangChainAgent:
     def _web_search(self, query: str) -> str:
         """Search the web using Claude Sonnet 4's built-in web search"""
         try:
-            search_prompt = f"""Please search the web for current information about: {query}
+            search_prompt = f"""Search for current information about: {query}
 
-Provide a comprehensive summary of the latest information, including recent developments, trends, and relevant details. Focus on factual, up-to-date information.
+Provide a concise summary focusing only on the most relevant and recent information. Keep it brief and directly related to the query.
 
-IMPORTANT: Format your response in PLAIN TEXT only. Do not use markdown, HTML, bold text, bullet points, or special formatting characters. Use simple text with line breaks for readability."""
+IMPORTANT: Format your response in PLAIN TEXT only. No markdown, HTML, bold text, bullet points, or special formatting. Use simple text with line breaks for readability."""
             
             response = self.claude_client.messages.create(
                 model="claude-sonnet-4-20250514",
-                max_tokens=1000,
+                max_tokens=500,
                 temperature=0.3,
                 messages=[{"role": "user", "content": search_prompt}]
             )
@@ -87,13 +88,13 @@ IMPORTANT: Format your response in PLAIN TEXT only. Do not use markdown, HTML, b
             if not data:
                 return "No data found"
             
-            # Format results for display
+            # Format results concisely
             result_text = f"Found {len(data)} records:\n"
-            for i, record in enumerate(data[:5]):  # Show first 5 records
+            for i, record in enumerate(data[:3]):  # Show only first 3 records
                 result_text += f"Record {i+1}: {record}\n"
             
-            if len(data) > 5:
-                result_text += f"... and {len(data) - 5} more records"
+            if len(data) > 3:
+                result_text += f"... and {len(data) - 3} more records"
             
             return result_text
             
@@ -136,7 +137,7 @@ IMPORTANT: Format your response in PLAIN TEXT only. Do not use markdown, HTML, b
                         'nullable': is_nullable
                     })
             
-            # Format schema
+            # Format schema concisely
             schema_text = "Database Schema:\n"
             for table_name, columns in tables.items():
                 schema_text += f"\nTable: {table_name}\n"
@@ -268,8 +269,7 @@ Respond with the following JSON schema exactly:
     "needs_database": true/false,
     "needs_schema": true/false,
     "reasoning": "brief explanation"
-}}
-"""
+}}"""
 
             response = self.claude_client.messages.create(
                 model="claude-sonnet-4-20250514",
@@ -345,9 +345,43 @@ Example for School: SELECT * FROM child WHERE school_id = {user_id}"""
             logger.error(f"Error generating SQL: {e}")
             return ""
     
+    def _detect_response_type(self, message: str) -> str:
+        """Detect the type of response needed based on user message"""
+        message_lower = message.lower().strip()
+        
+        # Greeting patterns
+        greeting_patterns = [
+            'hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening',
+            'greetings', 'howdy', 'what\'s up', 'how are you', 'how do you do'
+        ]
+        
+        # Explanation request patterns
+        explanation_patterns = [
+            'explain', 'what is', 'how does', 'why', 'tell me about', 'describe',
+            'can you explain', 'what does', 'how do', 'what are', 'why is'
+        ]
+        
+        # Question patterns
+        question_patterns = [
+            'what', 'how', 'when', 'where', 'who', 'which', 'can you', 'do you',
+            'is there', 'are there', 'will you', 'could you', 'would you'
+        ]
+        
+        if any(pattern in message_lower for pattern in greeting_patterns):
+            return "greeting"
+        elif any(pattern in message_lower for pattern in explanation_patterns):
+            return "explanation"
+        elif any(pattern in message_lower for pattern in question_patterns) or message_lower.endswith('?'):
+            return "question"
+        else:
+            return "direct"
+    
     def process_message(self, message: str, user_type: str = "admin", user_id: int = None, context: str = "") -> Dict[str, Any]:
         """Process user message with tool selection and user type restrictions"""
         try:
+            # Detect response type first
+            response_type = self._detect_response_type(message)
+            
             # Analyze intent with user type context
             intent = self._analyze_intent(message, user_type, user_id)
             logger.info(f"Intent analysis: {intent}")
@@ -371,18 +405,27 @@ Example for School: SELECT * FROM child WHERE school_id = {user_id}"""
                 search_result = self._web_search(message)
                 tool_results.append(f"Web Search Results:\n{search_result}")
             
-            # Generate final response
-            if tool_results:
-                tool_context = "\n\n".join(tool_results)
-                user_context = self._build_user_context(user_type, user_id)
-                access_rules = self._get_access_rules(user_type)
+            # Generate response based on detected type
+            if response_type == "greeting":
+                # Simple greeting response
+                final_prompt = f"""Respond to this greeting with a brief, friendly greeting back. Keep it simple and conversational.
+
+User message: "{message}"
+
+Respond with just a greeting, nothing else."""
                 
-                # Include conversation context if provided
-                conversation_context = ""
-                if context:
-                    conversation_context = f"\n\nPrevious conversation context:\n{context}"
-                
-                final_prompt = f"""You are an AI assistant for the NeuroNurture educational platform. Based on the following information, provide a direct, helpful response to the user's question:
+            elif response_type == "explanation":
+                # Detailed explanation response
+                if tool_results:
+                    tool_context = "\n\n".join(tool_results)
+                    user_context = self._build_user_context(user_type, user_id)
+                    access_rules = self._get_access_rules(user_type)
+                    
+                    conversation_context = ""
+                    if context:
+                        conversation_context = f"\n\nPrevious conversation context:\n{context}"
+                    
+                    final_prompt = f"""You are an AI assistant for the NeuroNurture educational platform. Provide a detailed explanation to the user's question.
 
 User Type: {user_type.upper()}
 {user_context}
@@ -394,17 +437,16 @@ Context information:
 
 {access_rules}
 
-IMPORTANT: Provide your response in PLAIN TEXT format only. Do not use any markdown formatting, HTML tags, bold text, bullet points, or special characters. Use simple text with line breaks for readability. Remember to respect the access restrictions for this user type."""
-            else:
-                user_context = self._build_user_context(user_type, user_id)
-                access_rules = self._get_access_rules(user_type)
-                
-                # Include conversation context if provided
-                conversation_context = ""
-                if context:
-                    conversation_context = f"\n\nPrevious conversation context:\n{context}"
-                
-                final_prompt = f"""You are an AI assistant for the NeuroNurture educational platform. Answer this question directly and helpfully:
+Provide a comprehensive explanation that addresses the user's question thoroughly. Use clear, educational language and include relevant details."""
+                else:
+                    user_context = self._build_user_context(user_type, user_id)
+                    access_rules = self._get_access_rules(user_type)
+                    
+                    conversation_context = ""
+                    if context:
+                        conversation_context = f"\n\nPrevious conversation context:\n{context}"
+                    
+                    final_prompt = f"""You are an AI assistant for the NeuroNurture educational platform. Provide a detailed explanation to the user's question.
 
 User Type: {user_type.upper()}
 {user_context}
@@ -413,7 +455,50 @@ User question: "{message}"{conversation_context}
 
 {access_rules}
 
-IMPORTANT: Provide your response in PLAIN TEXT format only. Do not use any markdown formatting, HTML tags, bold text, bullet points, or special characters. Use simple text with line breaks for readability. Be direct and helpful in your response while respecting the access restrictions for this user type."""
+Provide a comprehensive explanation that addresses the user's question thoroughly. Use clear, educational language and include relevant details."""
+                    
+            else:
+                # Direct answer for questions and other queries
+                if tool_results:
+                    tool_context = "\n\n".join(tool_results)
+                    user_context = self._build_user_context(user_type, user_id)
+                    access_rules = self._get_access_rules(user_type)
+                    
+                    conversation_context = ""
+                    if context:
+                        conversation_context = f"\n\nPrevious conversation context:\n{context}"
+                    
+                    final_prompt = f"""You are an AI assistant for the NeuroNurture educational platform. Provide a direct, concise response to the user's question.
+
+User Type: {user_type.upper()}
+{user_context}
+
+User question: "{message}"
+
+Context information:
+{tool_context}{conversation_context}
+
+{access_rules}
+
+Provide a direct answer to the question. Be concise and focused on what was asked. No extra information unless relevant to the specific question."""
+                else:
+                    user_context = self._build_user_context(user_type, user_id)
+                    access_rules = self._get_access_rules(user_type)
+                    
+                    conversation_context = ""
+                    if context:
+                        conversation_context = f"\n\nPrevious conversation context:\n{context}"
+                    
+                    final_prompt = f"""You are an AI assistant for the NeuroNurture educational platform. Provide a direct, concise response to the user's question.
+
+User Type: {user_type.upper()}
+{user_context}
+
+User question: "{message}"{conversation_context}
+
+{access_rules}
+
+Provide a direct answer to the question. Be concise and focused on what was asked. No extra information unless relevant to the specific question."""
             
             response = self.claude_client.messages.create(
                 model="claude-sonnet-4-20250514",
@@ -428,7 +513,8 @@ IMPORTANT: Provide your response in PLAIN TEXT format only. Do not use any markd
                 "response": response_text,
                 "database_accessed": intent.get("needs_database", False),
                 "web_searched": intent.get("needs_web_search", False),
-                "tools_used": sum([intent.get("needs_database", False), intent.get("needs_web_search", False), intent.get("needs_schema", False)])
+                "tools_used": sum([intent.get("needs_database", False), intent.get("needs_web_search", False), intent.get("needs_schema", False)]),
+                "response_type": response_type
             }
             
         except Exception as e:
@@ -441,15 +527,33 @@ IMPORTANT: Provide your response in PLAIN TEXT format only. Do not use any markd
     def get_ai_response(self, message: str) -> str:
         """Get direct AI response without tools"""
         try:
-            plain_text_prompt = f"""{message}
+            # Detect response type
+            response_type = self._detect_response_type(message)
+            
+            if response_type == "greeting":
+                prompt = f"""Respond to this greeting with a brief, friendly greeting back.
 
-IMPORTANT: Provide your response in PLAIN TEXT format only. Do not use any markdown formatting, HTML tags, bold text, bullet points, or special characters. Use simple text with line breaks for readability."""
+User message: "{message}"
+
+Respond with just a greeting, nothing else."""
+            elif response_type == "explanation":
+                prompt = f"""Provide a detailed explanation for this question.
+
+User question: "{message}"
+
+Provide a comprehensive explanation that addresses the question thoroughly."""
+            else:
+                prompt = f"""Provide a direct answer to this question.
+
+User question: "{message}"
+
+Provide a direct, concise answer. No extra information unless relevant."""
             
             response = self.claude_client.messages.create(
                 model="claude-sonnet-4-20250514",
                 max_tokens=1000,
                 temperature=0.7,
-                messages=[{"role": "user", "content": plain_text_prompt}]
+                messages=[{"role": "user", "content": prompt}]
             )
             
             return response.content[0].text

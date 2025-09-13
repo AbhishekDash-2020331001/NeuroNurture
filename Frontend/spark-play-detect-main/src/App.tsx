@@ -138,9 +138,6 @@ const App = () => (
           <Route path="/school/register" element={<SchoolRegister />} />
           <Route path="/school/verify-email" element={<SchoolEmailVerification />} />
           <Route path="/school/pending-approval" element={<SchoolPendingApproval />} />
-          <Route path="/school/tickets" element={<SchoolTicketsPage />} />
-          <Route path="/school/tickets/new" element={<SchoolNewTicketPage />} />
-          <Route path="/school/tickets/:ticketId" element={<SchoolTicketChatPage />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <EmailVerificationGuard>
@@ -257,6 +254,9 @@ const App = () => (
             <Route path="tournaments" element={<Tournaments />} />
             <Route path="tournaments/:id" element={<TournamentDetails />} />
             <Route path="progress-comparison" element={<ChildProgressComparison />} />
+            <Route path="tickets" element={<SchoolTicketsPage />} />
+            <Route path="tickets/new" element={<SchoolNewTicketPage />} />
+            <Route path="tickets/:ticketId" element={<SchoolTicketChatPage />} />
             {/* Additional school routes will be added here */}
           </Route>
           

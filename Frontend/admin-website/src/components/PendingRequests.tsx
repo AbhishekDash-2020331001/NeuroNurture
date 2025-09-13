@@ -487,21 +487,6 @@ export default function PendingRequests() {
           ))}
         </div>
       )}
-                        {request.assignedAdminId && (
-                          <p><span className="font-medium">Assigned Admin ID:</span> {request.assignedAdminId}</p>
-                        )}
-                        {request.emailVerificationDate && (
-                          <p><span className="font-medium">Email Verified:</span> {formatDate(request.emailVerificationDate)}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              )}
-            </Card>
-          ))}
-        </div>
-      )}
     </div>
   )
 }

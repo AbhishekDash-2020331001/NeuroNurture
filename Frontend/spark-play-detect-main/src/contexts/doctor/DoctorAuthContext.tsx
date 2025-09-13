@@ -16,6 +16,9 @@ interface Doctor {
   zipCode: string;
   yearsOfExperience: number;
   subscriptionStatus: 'pending' | 'active' | 'expired';
+  subscriptionExpiry?: string;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
   patientLimit: number;
   currentPatients: number;
   // Computed properties
@@ -93,7 +96,7 @@ export const DoctorAuthProvider: React.FC<DoctorAuthProviderProps> = ({ children
     console.log('DoctorAuthContext: Checking saved data...');
     console.log('Saved doctor:', savedDoctor);
     console.log('Saved token:', savedToken);
-    
+
     if (savedDoctor) {
       try {
         const doctorData = JSON.parse(savedDoctor);
@@ -127,11 +130,11 @@ export const DoctorAuthProvider: React.FC<DoctorAuthProviderProps> = ({ children
         const data = await response.json();
         console.log('DoctorAuthContext login response:', data);
         console.log('JWT Token received:', data.token);
-        
+
         // Store token and doctor data
         localStorage.setItem('doctorToken', data.token);
         localStorage.setItem('doctorEmail', credentials.email);
-        
+
         const doctorData: Doctor = {
           id: data.doctor.id.toString(),
           username: data.doctor.username,
@@ -148,6 +151,9 @@ export const DoctorAuthProvider: React.FC<DoctorAuthProviderProps> = ({ children
           zipCode: data.doctor.zipCode,
           yearsOfExperience: data.doctor.yearsOfExperience,
           subscriptionStatus: data.doctor.subscriptionStatus,
+          subscriptionExpiry: data.doctor.subscriptionExpiry,
+          stripeCustomerId: data.doctor.stripeCustomerId,
+          stripeSubscriptionId: data.doctor.stripeSubscriptionId,
           patientLimit: data.doctor.patientLimit,
           currentPatients: data.doctor.currentPatients,
           // Computed properties
@@ -164,7 +170,7 @@ export const DoctorAuthProvider: React.FC<DoctorAuthProviderProps> = ({ children
             language: 'en'
           }
         };
-        
+
         setDoctor(doctorData);
         localStorage.setItem('doctorAuth', JSON.stringify(doctorData));
         setIsLoading(false);
@@ -204,17 +210,23 @@ export const DoctorAuthProvider: React.FC<DoctorAuthProviderProps> = ({ children
 
   const hasPermission = (permission: string): boolean => {
     if (!doctor) return false;
-    
+
+    // Check if subscription is active based on expiry date
+    const isSubscriptionActive = () => {
+      if (!doctor.subscriptionExpiry) return false;
+      return new Date(doctor.subscriptionExpiry) > new Date();
+    };
+
     // Define permission logic based on subscription and role
     const permissions = {
       'view_patients': true,
-      'add_patients': doctor.subscriptionStatus === 'paid' || doctor.currentChildrenCount < doctor.maxChildren,
+      'add_patients': isSubscriptionActive() || doctor.currentChildrenCount < doctor.maxChildren,
       'create_tasks': true,
-      'view_analytics': doctor.subscriptionStatus === 'paid',
-      'export_data': doctor.subscriptionStatus === 'paid',
+      'view_analytics': isSubscriptionActive(),
+      'export_data': isSubscriptionActive(),
       'manage_subscription': true
     };
-    
+
     return permissions[permission as keyof typeof permissions] || false;
   };
 
@@ -234,8 +246,14 @@ export const DoctorAuthProvider: React.FC<DoctorAuthProviderProps> = ({ children
       };
     }
 
+    // Check if subscription is active based on expiry date
+    const isSubscriptionActive = () => {
+      if (!doctor.subscriptionExpiry) return false;
+      return new Date(doctor.subscriptionExpiry) > new Date();
+    };
+
     return {
-      status: doctor.subscriptionStatus,
+      status: isSubscriptionActive() ? 'paid' as const : 'free' as const,
       maxPatients: doctor.maxChildren,
       currentPatients: doctor.currentChildrenCount,
       remainingSlots: doctor.maxChildren - doctor.currentChildrenCount,
