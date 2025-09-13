@@ -36,6 +36,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/api/admin/auth/**").permitAll()
                 .requestMatchers("/api/admin/schools/**").permitAll() // Temporarily allow for testing
+                .requestMatchers("/api/admin/doctors/**").permitAll() // Allow doctor approval endpoints
                 .requestMatchers("/api/admin/users").permitAll() // Allow school service to get admin IDs
                 .anyRequest().authenticated()
             )

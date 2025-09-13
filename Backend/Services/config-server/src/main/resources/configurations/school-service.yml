@@ -13,6 +13,10 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
+  data:
+    mongodb:
+      uri: mongodb+srv://abhishekcse4:pscjscsschsc@cluster0.dqxwxgp.mongodb.net/school_tickets?retryWrites=true&w=majority&appName=Cluster0
+
 server:
   port: 8091
 

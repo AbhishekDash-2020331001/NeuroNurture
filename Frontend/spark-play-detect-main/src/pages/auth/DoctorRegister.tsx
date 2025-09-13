@@ -39,11 +39,48 @@ const DoctorRegister: React.FC = () => {
     
     setIsLoading(true);
     
-    // TODO: Implement actual registration logic
-    setTimeout(() => {
+    try {
+      const response = await fetch('http://localhost:8093/api/doctor/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: formData.email, // Use email as username
+          email: formData.email,
+          password: formData.password,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone,
+          specialization: formData.specialization,
+          licenseNumber: formData.licenseNumber,
+          hospital: formData.hospital,
+          address: '', // Add address fields to form if needed
+          city: '',
+          state: '',
+          zipCode: '',
+          yearsOfExperience: 0 // Add experience field to form if needed
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.text();
+        alert(result);
+        // Store email for verification status checking
+        localStorage.setItem('doctorEmail', formData.email);
+        // Redirect to pending approval page after 5 seconds to show success message
+        setTimeout(() => {
+          navigate('/doctor/pending-approval');
+        }, 5000);
+      } else {
+        const errorText = await response.text();
+        alert(errorText);
+      }
+    } catch (err) {
+      alert('Registration failed. Please try again.');
+    } finally {
       setIsLoading(false);
-      navigate('/auth/doctor/login'); // Redirect to login after successful registration
-    }, 2000);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

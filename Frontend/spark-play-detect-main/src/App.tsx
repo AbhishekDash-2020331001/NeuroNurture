@@ -39,6 +39,15 @@ import ParentLogin from "./pages/auth/ParentLogin";
 import ParentRegister from "./pages/auth/ParentRegister";
 import SchoolLogin from "./pages/auth/SchoolLogin";
 import SchoolRegister from "./pages/auth/SchoolRegister";
+import DoctorCheckoutPage from "./pages/doctor/DoctorCheckoutPage";
+import DoctorEmailVerification from "./pages/doctor/DoctorEmailVerification";
+import DoctorNewTicketPage from "./pages/doctor/DoctorNewTicketPage";
+import DoctorPendingApproval from "./pages/doctor/DoctorPendingApproval";
+import DoctorPricingPage from "./pages/doctor/DoctorPricingPage";
+import DoctorSubscriptionPage from "./pages/doctor/DoctorSubscriptionPage";
+import DoctorTicketChatPage from "./pages/doctor/DoctorTicketChatPage";
+import DoctorTicketsPage from "./pages/doctor/DoctorTicketsPage";
+import PaymentSuccessPage from "./pages/doctor/PaymentSuccessPage";
 // School Dashboard imports
 import SchoolRedirectGuard from "./components/auth/SchoolRedirectGuard";
 import SchoolAuthGuard from "./components/school/SchoolAuthGuard";
@@ -50,7 +59,10 @@ import ChildProgressComparison from "./pages/school/ChildProgressComparison";
 import Children from "./pages/school/Children";
 import SchoolDashboard from "./pages/school/SchoolDashboard";
 import SchoolEmailVerification from "./pages/school/SchoolEmailVerification";
+import SchoolNewTicketPage from "./pages/school/SchoolNewTicketPage";
 import SchoolPendingApproval from "./pages/school/SchoolPendingApproval";
+import SchoolTicketChatPage from "./pages/school/SchoolTicketChatPage";
+import SchoolTicketsPage from "./pages/school/SchoolTicketsPage";
 import TaskDetails from "./pages/school/TaskDetails";
 import Tasks from "./pages/school/Tasks";
 import TournamentDetails from "./pages/school/TournamentDetails";
@@ -113,6 +125,12 @@ const App = () => (
           <Route path="/auth/school/register" element={<SchoolRegister />} />
           <Route path="/auth/doctor/login" element={<DoctorLogin />} />
           <Route path="/auth/doctor/register" element={<DoctorRegister />} />
+          {/* Doctor specific routes */}
+          <Route path="/doctor/verify-email" element={<DoctorEmailVerification />} />
+          <Route path="/doctor/pending-approval" element={<DoctorPendingApproval />} />
+          <Route path="/doctor/tickets" element={<DoctorTicketsPage />} />
+          <Route path="/doctor/tickets/new" element={<DoctorNewTicketPage />} />
+          <Route path="/doctor/tickets/:ticketId" element={<DoctorTicketChatPage />} />
           <Route path="/verify-email" element={<EmailVerificationPage />} />
           <Route path="/email-verification-required" element={<EmailVerificationRequired />} />
           {/* School specific routes - must be before nested /school route */}
@@ -120,6 +138,9 @@ const App = () => (
           <Route path="/school/register" element={<SchoolRegister />} />
           <Route path="/school/verify-email" element={<SchoolEmailVerification />} />
           <Route path="/school/pending-approval" element={<SchoolPendingApproval />} />
+          <Route path="/school/tickets" element={<SchoolTicketsPage />} />
+          <Route path="/school/tickets/new" element={<SchoolNewTicketPage />} />
+          <Route path="/school/tickets/:ticketId" element={<SchoolTicketChatPage />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <EmailVerificationGuard>
@@ -251,6 +272,10 @@ const App = () => (
             <Route path="tasks" element={<TaskManagement />} />
             <Route path="tasks/history" element={<TaskHistory />} />
             <Route path="chat" element={<DoctorChat />} />
+            <Route path="pricing" element={<DoctorPricingPage />} />
+            <Route path="subscription/checkout" element={<DoctorCheckoutPage />} />
+            <Route path="payment-success" element={<PaymentSuccessPage />} />
+            <Route path="subscription" element={<DoctorSubscriptionPage />} />
             {/* Additional doctor routes will be added here */}
           </Route>
           

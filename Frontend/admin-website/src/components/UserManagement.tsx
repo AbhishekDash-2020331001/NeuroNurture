@@ -19,7 +19,7 @@ import { adminService } from '../services/adminService'
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 
-// Convert Parent to User interface for compatibility
+// Convert Parent/School/Doctor to User interface for compatibility
 interface User {
   id: string
   name: string
@@ -31,6 +31,25 @@ interface User {
   address?: string
   numberOfChildren?: number
   suspectedAutisticChildCount?: number
+  // School specific fields
+  schoolName?: string
+  contactPerson?: string
+  phone?: string
+  city?: string
+  state?: string
+  zipCode?: string
+  studentCount?: number
+  childrenLimit?: number
+  currentChildren?: number
+  // Doctor specific fields
+  firstName?: string
+  lastName?: string
+  specialization?: string
+  licenseNumber?: string
+  hospital?: string
+  yearsOfExperience?: number
+  patientLimit?: number
+  currentPatients?: number
 }
 
 interface Child {
@@ -96,15 +115,22 @@ export default function UserManagement() {
     return child.age || 0
   }
 
-  // Fetch parents data on component mount
+  // Fetch all users data on component mount
   useEffect(() => {
-    const fetchParents = async () => {
+    const fetchAllUsers = async () => {
       try {
         setLoading(true)
-        const parents = await adminService.getAllParents()
+        const [parents, schools, doctors] = await Promise.all([
+          adminService.getAllParents(),
+          adminService.getAllSchools(),
+          adminService.getAllDoctors()
+        ])
         
-        // Convert Parent[] to User[] format
-        const convertedUsers: User[] = parents.map(parent => ({
+        // Convert all data to User[] format
+        const convertedUsers: User[] = []
+        
+        // Convert parents
+        const parentUsers: User[] = parents.map(parent => ({
           id: parent.id.toString(),
           name: parent.name,
           email: parent.email,
@@ -113,32 +139,73 @@ export default function UserManagement() {
           address: parent.address,
           numberOfChildren: parent.numberOfChildren,
           suspectedAutisticChildCount: parent.suspectedAutisticChildCount,
-          children: parent.children.map(child => {
-            console.log('Child data:', child) // Debug log
-            return {
-              id: child.id.toString(),
-              name: child.name,
-              dateOfBirth: child.dateOfBirth,
-              age: child.age, // Include age as fallback
-              gender: child.gender,
-              height: child.height,
-              weight: child.weight
-            }
-          })
+          children: parent.children.map(child => ({
+            id: child.id.toString(),
+            name: child.name,
+            dateOfBirth: child.dateOfBirth,
+            age: child.age,
+            gender: child.gender,
+            height: child.height,
+            weight: child.weight
+          }))
         }))
+        
+        // Convert schools
+        const schoolUsers: User[] = schools.map(school => ({
+          id: school.id.toString(),
+          name: school.schoolName,
+          email: school.email,
+          status: school.status || 'active',
+          type: 'school' as const,
+          schoolName: school.schoolName,
+          contactPerson: school.contactPerson,
+          phone: school.phone,
+          address: school.address,
+          city: school.city,
+          state: school.state,
+          zipCode: school.zipCode,
+          studentCount: school.studentCount,
+          childrenLimit: school.childrenLimit,
+          currentChildren: school.currentChildren
+        }))
+        
+        // Convert doctors
+        const doctorUsers: User[] = doctors.map(doctor => ({
+          id: doctor.id.toString(),
+          name: `${doctor.firstName} ${doctor.lastName}`,
+          email: doctor.email,
+          status: doctor.status || 'active',
+          type: 'doctor' as const,
+          firstName: doctor.firstName,
+          lastName: doctor.lastName,
+          phone: doctor.phone,
+          specialization: doctor.specialization,
+          licenseNumber: doctor.licenseNumber,
+          hospital: doctor.hospital,
+          address: doctor.address,
+          city: doctor.city,
+          state: doctor.state,
+          zipCode: doctor.zipCode,
+          yearsOfExperience: doctor.yearsOfExperience,
+          patientLimit: doctor.patientLimit,
+          currentPatients: doctor.currentPatients
+        }))
+        
+        // Combine all users
+        convertedUsers.push(...parentUsers, ...schoolUsers, ...doctorUsers)
         
         setUsers(convertedUsers)
         setError(null)
       } catch (err) {
-        console.error('Error fetching parents:', err)
-        setError('Failed to load parent data')
+        console.error('Error fetching users:', err)
+        setError('Failed to load user data')
         setUsers([])
       } finally {
         setLoading(false)
       }
     }
 
-    fetchParents()
+    fetchAllUsers()
   }, [])
 
   const toggleUserExpansion = (userId: string) => {
@@ -153,10 +220,23 @@ export default function UserManagement() {
 
   const handleStatusUpdate = async (userId: string, newStatus: 'active' | 'suspended') => {
     try {
-      const parentId = parseInt(userId)
-      const updatedParent = await adminService.updateParentStatus(parentId, newStatus)
+      const user = users.find(u => u.id === userId)
+      if (!user) return
       
-      if (updatedParent) {
+      let updatedUser = null
+      
+      if (user.type === 'parent') {
+        const parentId = parseInt(userId)
+        updatedUser = await adminService.updateParentStatus(parentId, newStatus)
+      } else if (user.type === 'school') {
+        const schoolId = parseInt(userId)
+        updatedUser = await adminService.updateSchoolStatus(schoolId, newStatus)
+      } else if (user.type === 'doctor') {
+        const doctorId = parseInt(userId)
+        updatedUser = await adminService.updateDoctorStatus(doctorId, newStatus)
+      }
+      
+      if (updatedUser) {
         // Update the user in the local state
         setUsers(prevUsers => 
           prevUsers.map(user => 
@@ -167,42 +247,98 @@ export default function UserManagement() {
         )
       }
     } catch (err) {
-      console.error('Error updating parent status:', err)
-      setError('Failed to update parent status')
+      console.error('Error updating user status:', err)
+      setError('Failed to update user status')
     }
   }
 
-  const handleViewParent = async (userId: string) => {
+  const handleViewUser = async (userId: string) => {
     try {
-      const parentId = parseInt(userId)
-      const parent = await adminService.getParentById(parentId)
+      const user = users.find(u => u.id === userId)
+      if (!user) return
       
-      if (parent) {
-        const convertedParent: User = {
-          id: parent.id.toString(),
-          name: parent.name,
-          email: parent.email,
-          status: parent.status,
-          type: 'parent' as const,
-          address: parent.address,
-          numberOfChildren: parent.numberOfChildren,
-          suspectedAutisticChildCount: parent.suspectedAutisticChildCount,
-          children: parent.children.map(child => ({
-            id: child.id.toString(),
-            name: child.name,
-            dateOfBirth: child.dateOfBirth,
-            age: child.age, // Include age as fallback
-            gender: child.gender,
-            height: child.height,
-            weight: child.weight
-          }))
+      let detailedUser = null
+      
+      if (user.type === 'parent') {
+        const parentId = parseInt(userId)
+        const parent = await adminService.getParentById(parentId)
+        if (parent) {
+          detailedUser = {
+            id: parent.id.toString(),
+            name: parent.name,
+            email: parent.email,
+            status: parent.status,
+            type: 'parent' as const,
+            address: parent.address,
+            numberOfChildren: parent.numberOfChildren,
+            suspectedAutisticChildCount: parent.suspectedAutisticChildCount,
+            children: parent.children.map(child => ({
+              id: child.id.toString(),
+              name: child.name,
+              dateOfBirth: child.dateOfBirth,
+              age: child.age,
+              gender: child.gender,
+              height: child.height,
+              weight: child.weight
+            }))
+          }
         }
-        setSelectedParent(convertedParent)
+      } else if (user.type === 'school') {
+        const schoolId = parseInt(userId)
+        const school = await adminService.getSchoolById(schoolId)
+        if (school) {
+          detailedUser = {
+            id: school.id.toString(),
+            name: school.schoolName,
+            email: school.email,
+            status: school.status || 'active',
+            type: 'school' as const,
+            schoolName: school.schoolName,
+            contactPerson: school.contactPerson,
+            phone: school.phone,
+            address: school.address,
+            city: school.city,
+            state: school.state,
+            zipCode: school.zipCode,
+            studentCount: school.studentCount,
+            childrenLimit: school.childrenLimit,
+            currentChildren: school.currentChildren
+          }
+        }
+      } else if (user.type === 'doctor') {
+        const doctorId = parseInt(userId)
+        const doctor = await adminService.getDoctorById(doctorId)
+        if (doctor) {
+          detailedUser = {
+            id: doctor.id.toString(),
+            name: `${doctor.firstName} ${doctor.lastName}`,
+            email: doctor.email,
+            status: doctor.status || 'active',
+            type: 'doctor' as const,
+            firstName: doctor.firstName,
+            lastName: doctor.lastName,
+            phone: doctor.phone,
+            specialization: doctor.specialization,
+            licenseNumber: doctor.licenseNumber,
+            hospital: doctor.hospital,
+            address: doctor.address,
+            city: doctor.city,
+            state: doctor.state,
+            zipCode: doctor.zipCode,
+            yearsOfExperience: doctor.yearsOfExperience,
+            patientLimit: doctor.patientLimit,
+            currentPatients: doctor.currentPatients
+          }
+        }
+      }
+      
+      if (detailedUser) {
+        setSelectedParent(detailedUser)
         setShowViewModal(true)
       }
     } catch (err) {
-      console.error('Error fetching parent details:', err)
-      setError('Failed to load parent details')
+      console.error('Error fetching user details:', err)
+      setError('Failed to load user details')
     }
   }
 
@@ -216,9 +352,9 @@ export default function UserManagement() {
     // Status filter
     const statusMatch = statusFilter === 'all' || user.status === statusFilter
     
-    // Minimum children count filter
+    // Minimum children count filter (only for parents)
     const childrenCount = user.children ? user.children.length : 0
-    const childrenMatch = childrenCount >= minChildrenCount
+    const childrenMatch = user.type !== 'parent' || childrenCount >= minChildrenCount
     
     return typeMatch && emailMatch && statusMatch && childrenMatch
   })
@@ -265,7 +401,7 @@ export default function UserManagement() {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin" />
-        <span className="ml-2">Loading parent data...</span>
+        <span className="ml-2">Loading user data...</span>
       </div>
     )
   }
@@ -304,17 +440,15 @@ export default function UserManagement() {
             variant={selectedType === 'school' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setSelectedType('school')}
-            disabled
           >
-            Schools (Coming Soon)
+            Schools ({users.filter(u => u.type === 'school').length})
           </Button>
           <Button
             variant={selectedType === 'doctor' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setSelectedType('doctor')}
-            disabled
           >
-            Doctors (Coming Soon)
+            Doctors ({users.filter(u => u.type === 'doctor').length})
           </Button>
         </div>
       </div>
@@ -373,22 +507,24 @@ export default function UserManagement() {
                 </select>
               </div>
 
-              {/* Minimum Children Count Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Children Count</label>
-                <select
-                  value={minChildrenCount}
-                  onChange={(e) => setMinChildrenCount(Number(e.target.value))}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value={0}>All Parents (0+)</option>
-                  <option value={1}>1+ Children</option>
-                  <option value={2}>2+ Children</option>
-                  <option value={3}>3+ Children</option>
-                  <option value={4}>4+ Children</option>
-                  <option value={5}>5+ Children</option>
-                </select>
-              </div>
+              {/* Minimum Children Count Filter - Only for parents */}
+              {selectedType === 'parent' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Children Count</label>
+                  <select
+                    value={minChildrenCount}
+                    onChange={(e) => setMinChildrenCount(Number(e.target.value))}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value={0}>All Parents (0+)</option>
+                    <option value={1}>1+ Children</option>
+                    <option value={2}>2+ Children</option>
+                    <option value={3}>3+ Children</option>
+                    <option value={4}>4+ Children</option>
+                    <option value={5}>5+ Children</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Clear Filters */}
@@ -417,14 +553,14 @@ export default function UserManagement() {
           </div>
           <p className="text-gray-500 text-lg font-medium mb-2">
             {searchEmail || statusFilter !== 'all' || minChildrenCount > 0
-              ? 'No parents match your filters' 
-              : 'No parents found'
+              ? 'No users match your filters' 
+              : 'No users found'
             }
           </p>
           <p className="text-gray-400 text-sm">
             {searchEmail || statusFilter !== 'all' || minChildrenCount > 0
               ? 'Try adjusting your search criteria or clear filters'
-              : 'Parents will appear here once they register'
+              : 'Users will appear here once they register'
             }
           </p>
         </div>
@@ -478,7 +614,7 @@ export default function UserManagement() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => handleViewParent(user.id)}
+                    onClick={() => handleViewUser(user.id)}
                   >
                     <Eye className="h-4 w-4 mr-2" />
                     View
@@ -507,8 +643,8 @@ export default function UserManagement() {
                 </div>
               </div>
               
-              {/* Children count and stats */}
-              {user.children && user.children.length > 0 && (
+              {/* Children count and stats - Only for parents */}
+              {user.type === 'parent' && user.children && user.children.length > 0 && (
                 <div 
                   className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100 cursor-pointer hover:bg-blue-100 transition-colors"
                   onClick={() => toggleUserExpansion(user.id)}
@@ -533,8 +669,8 @@ export default function UserManagement() {
             </CardHeader>
             
             
-            {/* Expanded children section */}
-            {expandedUsers.has(user.id) && user.children && user.children.length > 0 && (
+            {/* Expanded children section - Only for parents */}
+            {user.type === 'parent' && expandedUsers.has(user.id) && user.children && user.children.length > 0 && (
               <CardContent className="pt-0 border-t border-gray-100 bg-gray-50/50">
                 <div className="space-y-3">
                   <h4 className="text-sm font-semibold text-gray-700 mb-3">Children Details</h4>
@@ -661,7 +797,10 @@ export default function UserManagement() {
                     <Users className="h-6 w-6" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold">Parent Details</h3>
+                    <h3 className="text-xl font-bold">
+                      {selectedParent.type === 'parent' ? 'Parent' : 
+                       selectedParent.type === 'school' ? 'School' : 'Doctor'} Details
+                    </h3>
                     <p className="text-blue-100 text-sm">Complete information</p>
                   </div>
                 </div>
@@ -705,23 +844,65 @@ export default function UserManagement() {
                     <p className="text-gray-900">{selectedParent.address || 'Not provided'}</p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <span className="font-semibold text-gray-700">Total Children</span>
+                  {selectedParent.type === 'parent' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <span className="font-semibold text-gray-700">Total Children</span>
+                        </div>
+                        <p className="text-2xl font-bold text-blue-600">{selectedParent.numberOfChildren || 0}</p>
                       </div>
-                      <p className="text-2xl font-bold text-blue-600">{selectedParent.numberOfChildren || 0}</p>
-                    </div>
 
-                    <div className="bg-amber-50 p-4 rounded-lg">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                        <span className="font-semibold text-gray-700">Suspected Autistic</span>
+                      <div className="bg-amber-50 p-4 rounded-lg">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                          <span className="font-semibold text-gray-700">Suspected Autistic</span>
+                        </div>
+                        <p className="text-2xl font-bold text-amber-600">{selectedParent.suspectedAutisticChildCount || 0}</p>
                       </div>
-                      <p className="text-2xl font-bold text-amber-600">{selectedParent.suspectedAutisticChildCount || 0}</p>
                     </div>
-                  </div>
+                  )}
+
+                  {selectedParent.type === 'school' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-green-50 p-4 rounded-lg">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span className="font-semibold text-gray-700">Student Count</span>
+                        </div>
+                        <p className="text-2xl font-bold text-green-600">{selectedParent.studentCount || 0}</p>
+                      </div>
+
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <span className="font-semibold text-gray-700">Current Children</span>
+                        </div>
+                        <p className="text-2xl font-bold text-blue-600">{selectedParent.currentChildren || 0}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedParent.type === 'doctor' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-purple-50 p-4 rounded-lg">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                          <span className="font-semibold text-gray-700">Specialization</span>
+                        </div>
+                        <p className="text-lg font-bold text-purple-600">{selectedParent.specialization || 'Not specified'}</p>
+                      </div>
+
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <span className="font-semibold text-gray-700">Years of Experience</span>
+                        </div>
+                        <p className="text-2xl font-bold text-blue-600">{selectedParent.yearsOfExperience || 0}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

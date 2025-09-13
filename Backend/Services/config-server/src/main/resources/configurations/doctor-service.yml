@@ -1,0 +1,44 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/neuronurture
+    username: postgres
+    password: pscjscsschsc
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  data:
+    mongodb:
+      uri: mongodb+srv://abhishekcse4:pscjscsschsc@cluster0.dqxwxgp.mongodb.net/doctor_tickets?retryWrites=true&w=majority&appName=Cluster0
+  security:
+    user:
+      name: admin
+      password: admin
+
+stripe:
+  secret-key: 
+  publishable-key: 
+
+server:
+  port: 8093
+
+jwt:
+  secret: c14be041f7be953106853d0d25ff6b7c769afc3278ffce7923a8145f93231dfa
+  expiration: 86400000
+
+sendgrid:
+  api-key: 
+  from-email: abhishekdash997@gmail.com
+  from-name: NeuroNurture
+
+
+
+
+
+

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import com.example.admin.dto.DoctorApprovalDto;
 import com.example.admin.dto.SchoolApprovalDto;
 import com.example.admin.entity.AdminUser;
 import com.example.admin.repository.AdminUserRepository;
@@ -23,6 +24,7 @@ public class AdminService {
     
     private static final String PARENT_SERVICE_URL = "http://localhost:8082";
     private static final String SCHOOL_SERVICE_URL = "http://localhost:8091";
+    private static final String DOCTOR_SERVICE_URL = "http://localhost:8093";
     
     public List<ParentWithChildrenDto> getAllParentsWithChildren() {
         try {
@@ -187,6 +189,153 @@ public class AdminService {
         } catch (Exception e) {
             e.printStackTrace();
             return new Long[]{};
+        }
+    }
+    
+    // Doctor Management Methods
+    public List<DoctorApprovalDto> getPendingDoctors() {
+        try {
+            DoctorApprovalDto[] doctors = restTemplate.getForObject(
+                DOCTOR_SERVICE_URL + "/api/doctor/admin/pending",
+                DoctorApprovalDto[].class
+            );
+            return doctors != null ? Arrays.asList(doctors) : Arrays.asList();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Arrays.asList();
+        }
+    }
+    
+    public List<DoctorApprovalDto> getPendingDoctorsForAdmin(Long adminId) {
+        try {
+            DoctorApprovalDto[] doctors = restTemplate.getForObject(
+                DOCTOR_SERVICE_URL + "/api/doctor/admin/pending/" + adminId,
+                DoctorApprovalDto[].class
+            );
+            return doctors != null ? Arrays.asList(doctors) : Arrays.asList();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Arrays.asList();
+        }
+    }
+    
+    public DoctorApprovalDto approveDoctor(Long doctorId) {
+        try {
+            DoctorApprovalDto doctor = restTemplate.postForObject(
+                DOCTOR_SERVICE_URL + "/api/doctor/admin/approve/" + doctorId,
+                null,
+                DoctorApprovalDto.class
+            );
+            return doctor;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    public DoctorApprovalDto rejectDoctor(Long doctorId) {
+        try {
+            DoctorApprovalDto doctor = restTemplate.postForObject(
+                DOCTOR_SERVICE_URL + "/api/doctor/admin/reject/" + doctorId,
+                null,
+                DoctorApprovalDto.class
+            );
+            return doctor;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    // School Management - Get All Schools
+    public List<SchoolApprovalDto> getAllSchools() {
+        try {
+            SchoolApprovalDto[] schools = restTemplate.getForObject(
+                SCHOOL_SERVICE_URL + "/api/school/admin/all",
+                SchoolApprovalDto[].class
+            );
+            return schools != null ? Arrays.asList(schools) : Arrays.asList();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Arrays.asList();
+        }
+    }
+    
+    public SchoolApprovalDto getSchoolById(Long schoolId) {
+        try {
+            SchoolApprovalDto school = restTemplate.getForObject(
+                SCHOOL_SERVICE_URL + "/api/school/admin/" + schoolId,
+                SchoolApprovalDto.class
+            );
+            return school;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    public SchoolApprovalDto updateSchoolStatus(Long schoolId, String status) {
+        try {
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.TEXT_PLAIN);
+            org.springframework.http.HttpEntity<String> entity = new org.springframework.http.HttpEntity<>(status, headers);
+            
+            SchoolApprovalDto school = restTemplate.exchange(
+                SCHOOL_SERVICE_URL + "/api/school/admin/" + schoolId + "/status",
+                org.springframework.http.HttpMethod.PUT,
+                entity,
+                SchoolApprovalDto.class
+            ).getBody();
+            return school;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    // Doctor Management - Get All Doctors
+    public List<DoctorApprovalDto> getAllDoctors() {
+        try {
+            DoctorApprovalDto[] doctors = restTemplate.getForObject(
+                DOCTOR_SERVICE_URL + "/api/doctor/admin/all",
+                DoctorApprovalDto[].class
+            );
+            return doctors != null ? Arrays.asList(doctors) : Arrays.asList();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Arrays.asList();
+        }
+    }
+    
+    public DoctorApprovalDto getDoctorById(Long doctorId) {
+        try {
+            DoctorApprovalDto doctor = restTemplate.getForObject(
+                DOCTOR_SERVICE_URL + "/api/doctor/admin/" + doctorId,
+                DoctorApprovalDto.class
+            );
+            return doctor;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    public DoctorApprovalDto updateDoctorStatus(Long doctorId, String status) {
+        try {
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.TEXT_PLAIN);
+            org.springframework.http.HttpEntity<String> entity = new org.springframework.http.HttpEntity<>(status, headers);
+            
+            DoctorApprovalDto doctor = restTemplate.exchange(
+                DOCTOR_SERVICE_URL + "/api/doctor/admin/" + doctorId + "/status",
+                org.springframework.http.HttpMethod.PUT,
+                entity,
+                DoctorApprovalDto.class
+            ).getBody();
+            return doctor;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
     }
 }

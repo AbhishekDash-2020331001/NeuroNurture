@@ -2,13 +2,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-    AlertCircle,
-    Bot,
-    CheckCircle,
-    Clock,
-    MessageSquare,
-    User,
-    XCircle
+  AlertCircle,
+  Bot,
+  CheckCircle,
+  Clock,
+  MessageSquare,
+  User,
+  XCircle
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.admin.dto.DoctorApprovalDto;
 import com.example.admin.dto.SchoolApprovalDto;
 
 @RestController
@@ -85,5 +86,96 @@ public class AdminController {
     public ResponseEntity<Long[]> getAllAdminIds() {
         Long[] adminIds = adminService.getAllAdminIds();
         return ResponseEntity.ok(adminIds);
+    }
+    
+    // Doctor Management Endpoints
+    @GetMapping("/doctors/pending")
+    public ResponseEntity<List<DoctorApprovalDto>> getPendingDoctors() {
+        List<DoctorApprovalDto> doctors = adminService.getPendingDoctors();
+        return ResponseEntity.ok(doctors);
+    }
+    
+    @GetMapping("/doctors/pending/{adminId}")
+    public ResponseEntity<List<DoctorApprovalDto>> getPendingDoctorsForAdmin(@PathVariable Long adminId) {
+        List<DoctorApprovalDto> doctors = adminService.getPendingDoctorsForAdmin(adminId);
+        return ResponseEntity.ok(doctors);
+    }
+    
+    @PutMapping("/doctors/{doctorId}/approve")
+    public ResponseEntity<DoctorApprovalDto> approveDoctor(@PathVariable Long doctorId) {
+        DoctorApprovalDto doctor = adminService.approveDoctor(doctorId);
+        if (doctor != null) {
+            return ResponseEntity.ok(doctor);
+        } else {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    @PutMapping("/doctors/{doctorId}/reject")
+    public ResponseEntity<DoctorApprovalDto> rejectDoctor(@PathVariable Long doctorId) {
+        DoctorApprovalDto doctor = adminService.rejectDoctor(doctorId);
+        if (doctor != null) {
+            return ResponseEntity.ok(doctor);
+        } else {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    // School Management - Get All Schools
+    @GetMapping("/schools")
+    public ResponseEntity<List<SchoolApprovalDto>> getAllSchools() {
+        List<SchoolApprovalDto> schools = adminService.getAllSchools();
+        return ResponseEntity.ok(schools);
+    }
+    
+    @GetMapping("/schools/{schoolId}")
+    public ResponseEntity<SchoolApprovalDto> getSchoolById(@PathVariable Long schoolId) {
+        SchoolApprovalDto school = adminService.getSchoolById(schoolId);
+        if (school != null) {
+            return ResponseEntity.ok(school);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    @PutMapping("/schools/{schoolId}/status")
+    public ResponseEntity<SchoolApprovalDto> updateSchoolStatus(
+            @PathVariable Long schoolId, 
+            @RequestBody String status) {
+        SchoolApprovalDto school = adminService.updateSchoolStatus(schoolId, status);
+        if (school != null) {
+            return ResponseEntity.ok(school);
+        } else {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    // Doctor Management - Get All Doctors
+    @GetMapping("/doctors")
+    public ResponseEntity<List<DoctorApprovalDto>> getAllDoctors() {
+        List<DoctorApprovalDto> doctors = adminService.getAllDoctors();
+        return ResponseEntity.ok(doctors);
+    }
+    
+    @GetMapping("/doctors/{doctorId}")
+    public ResponseEntity<DoctorApprovalDto> getDoctorById(@PathVariable Long doctorId) {
+        DoctorApprovalDto doctor = adminService.getDoctorById(doctorId);
+        if (doctor != null) {
+            return ResponseEntity.ok(doctor);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    @PutMapping("/doctors/{doctorId}/status")
+    public ResponseEntity<DoctorApprovalDto> updateDoctorStatus(
+            @PathVariable Long doctorId, 
+            @RequestBody String status) {
+        DoctorApprovalDto doctor = adminService.updateDoctorStatus(doctorId, status);
+        if (doctor != null) {
+            return ResponseEntity.ok(doctor);
+        } else {
+            return ResponseEntity.badRequest().build();
+        }
     }
 }

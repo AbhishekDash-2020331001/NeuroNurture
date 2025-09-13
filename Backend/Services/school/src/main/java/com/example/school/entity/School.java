@@ -84,6 +84,9 @@ public class School implements UserDetails {
     @Column(nullable = false)
     private Boolean isVerified = false; // Admin approval status
 
+    @Column(name = "status")
+    private String status = "active"; // Default to "active", can be "active" or "suspended"
+
     @Column
     private String subscriptionStatus = "pending"; // pending, active, expired
 

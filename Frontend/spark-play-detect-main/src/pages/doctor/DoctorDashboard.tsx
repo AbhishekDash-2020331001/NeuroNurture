@@ -1,20 +1,20 @@
+import SubscriptionStatus from '@/components/doctor/SubscriptionStatus';
+import { useDoctorAuth } from '@/contexts/doctor/DoctorAuthContext';
+import { getDashboardStats } from '@/data/doctorMockData';
+import {
+    BarChart3,
+    BookOpen,
+    Calendar,
+    CheckCircle,
+    Clock,
+    Heart,
+    MessageSquare,
+    Stethoscope,
+    TrendingUp,
+    Users
+} from 'lucide-react';
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useDoctorAuth } from '@/contexts/doctor/DoctorAuthContext';
-import { getDashboardStats, mockPatients, mockTasks, mockChatSessions } from '@/data/doctorMockData';
-import { 
-  Users, 
-  BookOpen, 
-  MessageSquare, 
-  BarChart3, 
-  TrendingUp,
-  Calendar,
-  Stethoscope,
-  Activity,
-  Clock,
-  CheckCircle,
-  Heart
-} from 'lucide-react';
 
 const DoctorDashboard: React.FC = () => {
   const { doctor } = useDoctorAuth();
@@ -27,7 +27,7 @@ const DoctorDashboard: React.FC = () => {
       name: 'My Patients',
       value: dashboardStats.activePatients,
       icon: Users,
-      color: 'bg-purple-500',
+      color: 'bg-red-500',
       href: '/doctor/children',
       subtitle: `of ${doctor?.maxChildren || 3} max`
     },
@@ -43,7 +43,7 @@ const DoctorDashboard: React.FC = () => {
       name: 'Completed Tasks',
       value: dashboardStats.completedTasks,
       icon: CheckCircle,
-      color: 'bg-blue-500',
+      color: 'bg-yellow-500',
       href: '/doctor/tasks/history',
       subtitle: 'this month'
     },
@@ -51,7 +51,7 @@ const DoctorDashboard: React.FC = () => {
       name: 'Avg. Progress',
       value: `${dashboardStats.averageProgress}%`,
       icon: TrendingUp,
-      color: 'bg-orange-500',
+      color: 'bg-black',
       href: '/doctor/children',
       subtitle: 'across all patients'
     }
@@ -70,21 +70,21 @@ const DoctorDashboard: React.FC = () => {
       description: 'Monitor patient development',
       icon: BarChart3,
       href: '/doctor/children',
-      color: 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+      color: 'bg-red-100 text-red-700 hover:bg-red-200'
     },
     {
       name: 'Chat with Patient',
       description: 'Direct communication',
       icon: MessageSquare,
       href: '/doctor/chat',
-      color: 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+      color: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
     },
     {
       name: 'Task History',
       description: 'Review completed activities',
       icon: Clock,
       href: '/doctor/tasks/history',
-      color: 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+      color: 'bg-black text-white hover:bg-gray-800'
     }
   ];
 
@@ -92,7 +92,7 @@ const DoctorDashboard: React.FC = () => {
   return (
     <div className="py-2">
         {/* Welcome Header */}
-        <div className="bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-700 rounded-2xl p-3 sm:p-4 text-white shadow-xl mb-4">
+        <div className="bg-gradient-to-r from-black via-red-600 to-red-700 rounded-2xl p-3 sm:p-4 text-white shadow-xl mb-4">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
             <div className="mb-4 lg:mb-0">
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">
@@ -129,6 +129,11 @@ const DoctorDashboard: React.FC = () => {
               </Link>
             </div>
           </div>
+        </div>
+
+        {/* Subscription Status */}
+        <div className="mb-4">
+          <SubscriptionStatus />
         </div>
 
         {/* Stats Grid */}

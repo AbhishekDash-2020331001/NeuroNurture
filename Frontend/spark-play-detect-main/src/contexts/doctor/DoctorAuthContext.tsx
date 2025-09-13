@@ -1,17 +1,27 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 interface Doctor {
   id: string;
-  name: string;
+  username: string;
   email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
   specialization: string;
   licenseNumber: string;
-  subscriptionStatus: 'free' | 'paid';
-  maxChildren: number;
-  currentChildrenCount: number;
-  phone?: string;
-  address?: string;
-  experience?: number;
+  hospital: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  yearsOfExperience: number;
+  subscriptionStatus: 'pending' | 'active' | 'expired';
+  patientLimit: number;
+  currentPatients: number;
+  // Computed properties
+  name?: string;
+  maxChildren?: number;
+  currentChildrenCount?: number;
   rating?: number;
   joinDate?: string;
   avatar?: string;
@@ -43,7 +53,6 @@ interface DoctorAuthContextType {
   login: (credentials: LoginCredentials) => Promise<boolean>;
   logout: () => void;
   updateDoctor: (updates: Partial<Doctor>) => void;
-  refreshAuth: () => Promise<void>;
   clearError: () => void;
   hasPermission: (permission: string) => boolean;
   canAddPatient: () => boolean;
@@ -70,125 +79,32 @@ interface DoctorAuthProviderProps {
   children: ReactNode;
 }
 
-// Mock authentication service (replace with real API calls)
-const mockAuthService = {
-  async login(credentials: LoginCredentials): Promise<Doctor> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Mock validation - accept multiple demo credentials
-    const validCredentials = [
-      { email: 'doctor@example.com', password: 'password' },
-      { email: 'doctor@clinic.com', password: 'doctor123' },
-      { email: 'dr.smith@hospital.com', password: 'medical123' },
-      { email: 'test@doctor.com', password: 'test123' }
-    ];
-    
-    const isValid = validCredentials.some(
-      cred => cred.email === credentials.email && cred.password === credentials.password
-    );
-    
-    if (isValid) {
-      return {
-        id: '1',
-        name: 'Dr. Sarah Johnson',
-        email: credentials.email,
-        specialization: 'Pediatric Neurology',
-        licenseNumber: 'MD123456',
-        subscriptionStatus: 'free',
-        maxChildren: 3,
-        currentChildrenCount: 2,
-        phone: '+1 (555) 123-4567',
-        address: '123 Medical Center Dr, Health City, HC 12345',
-        experience: 8,
-        rating: 4.8,
-        joinDate: '2023-01-15',
-        lastLogin: new Date().toISOString(),
-        preferences: {
-          theme: 'light',
-          notifications: true,
-          language: 'en'
-        }
-      };
-    } else {
-      throw new Error('Invalid email or password');
-    }
-  },
-
-  async refreshToken(): Promise<Doctor> {
-    // Simulate token refresh
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const storedDoctor = localStorage.getItem('doctor');
-    if (storedDoctor) {
-      return JSON.parse(storedDoctor);
-    }
-    throw new Error('No valid session found');
-  },
-
-  async updateProfile(updates: Partial<Doctor>): Promise<Doctor> {
-    // Simulate profile update
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const storedDoctor = localStorage.getItem('doctor');
-    if (storedDoctor) {
-      const currentDoctor = JSON.parse(storedDoctor);
-      const updatedDoctor = { ...currentDoctor, ...updates };
-      localStorage.setItem('doctor', JSON.stringify(updatedDoctor));
-      return updatedDoctor;
-    }
-    throw new Error('No doctor session found');
-  }
-};
 
 export const DoctorAuthProvider: React.FC<DoctorAuthProviderProps> = ({ children }) => {
   const [doctor, setDoctor] = useState<Doctor | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<AuthError | null>(null);
 
   // Initialize auth state from localStorage
   useEffect(() => {
-    const initializeAuth = async () => {
+    // Check for existing doctor session in localStorage
+    const savedDoctor = localStorage.getItem('doctorAuth');
+    const savedToken = localStorage.getItem('doctorToken');
+    console.log('DoctorAuthContext: Checking saved data...');
+    console.log('Saved doctor:', savedDoctor);
+    console.log('Saved token:', savedToken);
+    
+    if (savedDoctor) {
       try {
-        const storedDoctor = localStorage.getItem('doctor');
-        const storedAuth = localStorage.getItem('doctor_auth');
-        
-        if (storedDoctor && storedAuth) {
-          const doctorData = JSON.parse(storedDoctor);
-          const authData = JSON.parse(storedAuth);
-          
-          // Check if session is still valid (not expired)
-          if (authData.expiresAt && new Date(authData.expiresAt) > new Date()) {
-            setDoctor(doctorData);
-            setIsAuthenticated(true);
-            
-            // Try to refresh token in background
-            try {
-              const refreshedDoctor = await mockAuthService.refreshToken();
-              setDoctor(refreshedDoctor);
-              localStorage.setItem('doctor', JSON.stringify(refreshedDoctor));
-            } catch (refreshError) {
-              console.warn('Token refresh failed:', refreshError);
-              // Continue with existing session
-            }
-          } else {
-            // Session expired, clear storage
-            localStorage.removeItem('doctor');
-            localStorage.removeItem('doctor_auth');
-          }
-        }
+        const doctorData = JSON.parse(savedDoctor);
+        setDoctor(doctorData);
+        console.log('DoctorAuthContext: Doctor data loaded successfully');
       } catch (error) {
-        console.error('Auth initialization error:', error);
-        // Clear corrupted data
-        localStorage.removeItem('doctor');
-        localStorage.removeItem('doctor_auth');
-      } finally {
-        setIsLoading(false);
+        console.error('Error parsing saved doctor data:', error);
+        localStorage.removeItem('doctorAuth');
       }
-    };
-
-    initializeAuth();
+    }
+    setIsLoading(false);
   }, []);
 
   const login = async (credentials: LoginCredentials): Promise<boolean> => {
@@ -196,77 +112,91 @@ export const DoctorAuthProvider: React.FC<DoctorAuthProviderProps> = ({ children
     setError(null);
 
     try {
-      const doctorData = await mockAuthService.login(credentials);
-      
-      // Set expiration time (24 hours from now)
-      const expiresAt = new Date();
-      expiresAt.setHours(expiresAt.getHours() + 24);
-      
-      // Store in localStorage
-      localStorage.setItem('doctor', JSON.stringify(doctorData));
-      localStorage.setItem('doctor_auth', JSON.stringify({
-        isAuthenticated: true,
-        expiresAt: expiresAt.toISOString(),
-        rememberMe: credentials.rememberMe || false
-      }));
-      
-      setDoctor(doctorData);
-      setIsAuthenticated(true);
-      
-      return true; // Success
+      const response = await fetch('http://localhost:8093/api/doctor/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: credentials.email,
+          password: credentials.password
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('DoctorAuthContext login response:', data);
+        console.log('JWT Token received:', data.token);
+        
+        // Store token and doctor data
+        localStorage.setItem('doctorToken', data.token);
+        localStorage.setItem('doctorEmail', credentials.email);
+        
+        const doctorData: Doctor = {
+          id: data.doctor.id.toString(),
+          username: data.doctor.username,
+          email: data.doctor.email,
+          firstName: data.doctor.firstName,
+          lastName: data.doctor.lastName,
+          phone: data.doctor.phone,
+          specialization: data.doctor.specialization,
+          licenseNumber: data.doctor.licenseNumber,
+          hospital: data.doctor.hospital,
+          address: data.doctor.address,
+          city: data.doctor.city,
+          state: data.doctor.state,
+          zipCode: data.doctor.zipCode,
+          yearsOfExperience: data.doctor.yearsOfExperience,
+          subscriptionStatus: data.doctor.subscriptionStatus,
+          patientLimit: data.doctor.patientLimit,
+          currentPatients: data.doctor.currentPatients,
+          // Computed properties
+          name: `Dr. ${data.doctor.firstName} ${data.doctor.lastName}`,
+          maxChildren: data.doctor.patientLimit,
+          currentChildrenCount: data.doctor.currentPatients,
+          rating: 4.8, // Default rating
+          joinDate: new Date().toISOString(),
+          lastLogin: new Date().toISOString(),
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.doctor.firstName + ' ' + data.doctor.lastName)}&background=random`,
+          preferences: {
+            theme: 'light',
+            notifications: true,
+            language: 'en'
+          }
+        };
+        
+        setDoctor(doctorData);
+        localStorage.setItem('doctorAuth', JSON.stringify(doctorData));
+        setIsLoading(false);
+        return true;
+      } else {
+        const errorText = await response.text();
+        console.error('Login failed:', errorText);
+        setIsLoading(false);
+        return false;
+      }
     } catch (error) {
-      const authError: AuthError = {
-        message: error instanceof Error ? error.message : 'Login failed',
-        code: 'LOGIN_FAILED'
-      };
-      setError(authError);
-      return false; // Failed
-    } finally {
+      console.error('Login error:', error);
       setIsLoading(false);
+      return false;
     }
   };
 
   const logout = () => {
-    // Clear localStorage
-    localStorage.removeItem('doctor');
-    localStorage.removeItem('doctor_auth');
-    
-    // Clear state
     setDoctor(null);
-    setIsAuthenticated(false);
-    setError(null);
-    
-    // Navigation will be handled by the component using the context
+    localStorage.removeItem('doctorAuth');
+    localStorage.removeItem('doctorToken');
+    localStorage.removeItem('doctorEmail');
   };
 
-  const updateDoctor = async (updates: Partial<Doctor>) => {
-    if (!doctor) return;
-
-    try {
-      const updatedDoctor = await mockAuthService.updateProfile(updates);
+  const updateDoctor = (updates: Partial<Doctor>) => {
+    if (doctor) {
+      const updatedDoctor = { ...doctor, ...updates };
       setDoctor(updatedDoctor);
-    } catch (error) {
-      const authError: AuthError = {
-        message: error instanceof Error ? error.message : 'Update failed',
-        code: 'UPDATE_FAILED'
-      };
-      setError(authError);
-      throw authError;
+      localStorage.setItem('doctorAuth', JSON.stringify(updatedDoctor));
     }
   };
 
-  const refreshAuth = async () => {
-    if (!isAuthenticated) return;
-
-    try {
-      const refreshedDoctor = await mockAuthService.refreshToken();
-      setDoctor(refreshedDoctor);
-      localStorage.setItem('doctor', JSON.stringify(refreshedDoctor));
-    } catch (error) {
-      console.error('Auth refresh failed:', error);
-      logout(); // Force logout if refresh fails
-    }
-  };
 
   const clearError = () => {
     setError(null);
@@ -315,13 +245,12 @@ export const DoctorAuthProvider: React.FC<DoctorAuthProviderProps> = ({ children
 
   const value: DoctorAuthContextType = {
     doctor,
-    isAuthenticated,
+    isAuthenticated: !!doctor,
     isLoading,
     error,
     login,
     logout,
     updateDoctor,
-    refreshAuth,
     clearError,
     hasPermission,
     canAddPatient,

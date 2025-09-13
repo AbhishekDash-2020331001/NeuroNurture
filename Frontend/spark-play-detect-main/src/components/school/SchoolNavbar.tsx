@@ -1,18 +1,18 @@
+import { useSchoolAuth } from '@/contexts/school/SchoolAuthContext';
+import {
+    BarChart3,
+    BookOpen,
+    ChevronDown,
+    Home,
+    LogOut,
+    Menu,
+    MessageSquare,
+    School,
+    Trophy,
+    Users
+} from 'lucide-react';
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useSchoolAuth } from '@/contexts/school/SchoolAuthContext';
-import { 
-  Users, 
-  BookOpen, 
-  Trophy, 
-  BarChart3, 
-  Home, 
-  LogOut,
-  Menu,
-  X,
-  School,
-  ChevronDown
-} from 'lucide-react';
 
 const SchoolNavbar: React.FC = () => {
   const { school, logout } = useSchoolAuth();
@@ -27,6 +27,7 @@ const SchoolNavbar: React.FC = () => {
     { name: 'Tasks', href: '/school/tasks', icon: BookOpen },
     { name: 'Tournaments', href: '/school/tournaments', icon: Trophy },
     { name: 'Progress Comparison', href: '/school/progress-comparison', icon: BarChart3 },
+    { name: 'Support Tickets', href: '/school/tickets', icon: MessageSquare },
   ];
 
   const handleLogout = () => {
