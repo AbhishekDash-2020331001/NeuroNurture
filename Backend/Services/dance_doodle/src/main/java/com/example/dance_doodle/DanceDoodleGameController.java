@@ -192,5 +192,40 @@ public class DanceDoodleGameController {
         service.deleteSessionsByTaskId(taskId);
         return ResponseEntity.ok().build();
     }
+    
+    // Get latest session data for a child (for ALI assessment)
+    @GetMapping("/child/{childId}/latest-session")
+    public ResponseEntity<Map<String, Object>> getLatestSessionForChild(@PathVariable String childId) {
+        try {
+            DanceDoodleGame latestSession = service.getLatestSessionForChild(childId);
+            if (latestSession != null) {
+                // Return the entire database row as a map
+                Map<String, Object> sessionData = new java.util.HashMap<>();
+                sessionData.put("id", latestSession.getId());
+                sessionData.put("sessionId", latestSession.getSessionId());
+                sessionData.put("dateTime", latestSession.getDateTime());
+                sessionData.put("childId", latestSession.getChildId());
+                sessionData.put("age", latestSession.getAge());
+                sessionData.put("schoolTaskId", latestSession.getSchoolTaskId());
+                sessionData.put("tournamentId", latestSession.getTournamentId());
+                sessionData.put("cool_arms", latestSession.getCool_arms());
+                sessionData.put("open_wings", latestSession.getOpen_wings());
+                sessionData.put("silly_boxer", latestSession.getSilly_boxer());
+                sessionData.put("happy_stand", latestSession.getHappy_stand());
+                sessionData.put("crossy_play", latestSession.getCrossy_play());
+                sessionData.put("shh_fun", latestSession.getShh_fun());
+                sessionData.put("stretch", latestSession.getStretch());
+                sessionData.put("videoURL", latestSession.getVideoURL());
+                sessionData.put("isTrainingAllowed", latestSession.getIsTrainingAllowed());
+                sessionData.put("suspectedASD", latestSession.getSuspectedASD());
+                sessionData.put("isASD", latestSession.getIsASD());
+                return ResponseEntity.ok(sessionData);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }
 

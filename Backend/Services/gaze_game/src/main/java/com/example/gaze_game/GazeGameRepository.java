@@ -21,6 +21,9 @@ public interface GazeGameRepository extends JpaRepository<GazeGame, Long> {
     // Find paginated records by child ID, ordered by date
     Page<GazeGame> findByChildIdOrderByDateTimeDesc(String childId, Pageable pageable);
     
+    // Find all records by child ID, ordered by date
+    List<GazeGame> findByChildIdOrderByDateTimeDesc(String childId);
+    
     // Find all records where training is allowed
     List<GazeGame> findByIsTrainingAllowedTrue();
     

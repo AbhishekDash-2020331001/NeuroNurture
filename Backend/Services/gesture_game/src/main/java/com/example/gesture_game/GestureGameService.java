@@ -377,4 +377,10 @@ public class GestureGameService {
         }
         return 0;
     }
+    
+    // Get latest session for a child (for ALI assessment)
+    public GestureGame getLatestSessionForChild(String childId) {
+        List<GestureGame> sessions = repository.findByChildIdOrderByDateTimeDesc(childId);
+        return sessions.isEmpty() ? null : sessions.get(0);
+    }
 }

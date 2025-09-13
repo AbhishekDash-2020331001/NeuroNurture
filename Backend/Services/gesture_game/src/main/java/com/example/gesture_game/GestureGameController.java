@@ -192,4 +192,43 @@ public class GestureGameController {
     public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok("Gesture Game Service is running!");
     }
+    
+    // Get latest session data for a child (for ALI assessment)
+    @GetMapping("/child/{childId}/latest-session")
+    public ResponseEntity<Map<String, Object>> getLatestSessionForChild(@PathVariable String childId) {
+        try {
+            GestureGame latestSession = service.getLatestSessionForChild(childId);
+            if (latestSession != null) {
+                // Return the entire database row as a map
+                Map<String, Object> sessionData = new java.util.HashMap<>();
+                sessionData.put("id", latestSession.getId());
+                sessionData.put("sessionId", latestSession.getSessionId());
+                sessionData.put("dateTime", latestSession.getDateTime());
+                sessionData.put("childId", latestSession.getChildId());
+                sessionData.put("age", latestSession.getAge());
+                sessionData.put("schoolTaskId", latestSession.getSchoolTaskId());
+                sessionData.put("tournamentId", latestSession.getTournamentId());
+                sessionData.put("thumbs_up", latestSession.getThumbs_up());
+                sessionData.put("thumbs_down", latestSession.getThumbs_down());
+                sessionData.put("victory", latestSession.getVictory());
+                sessionData.put("butterfly", latestSession.getButterfly());
+                sessionData.put("spectacle", latestSession.getSpectacle());
+                sessionData.put("heart", latestSession.getHeart());
+                sessionData.put("pointing_up", latestSession.getPointing_up());
+                sessionData.put("iloveyou", latestSession.getIloveyou());
+                sessionData.put("dua", latestSession.getDua());
+                sessionData.put("closed_fist", latestSession.getClosed_fist());
+                sessionData.put("open_palm", latestSession.getOpen_palm());
+                sessionData.put("videoURL", latestSession.getVideoURL());
+                sessionData.put("isTrainingAllowed", latestSession.getIsTrainingAllowed());
+                sessionData.put("suspectedASD", latestSession.getSuspectedASD());
+                sessionData.put("isASD", latestSession.getIsASD());
+                return ResponseEntity.ok(sessionData);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

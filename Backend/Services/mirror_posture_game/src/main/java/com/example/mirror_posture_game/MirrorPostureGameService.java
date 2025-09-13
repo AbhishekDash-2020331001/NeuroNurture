@@ -293,4 +293,12 @@ public class MirrorPostureGameService {
         
         return summary;
     }
+    
+    /**
+     * Get latest session for a child (for ALI assessment)
+     */
+    public MirrorPostureGame getLatestSessionForChild(String childId) {
+        List<MirrorPostureGame> sessions = repository.findByChildIdOrderByDateTimeDesc(childId);
+        return sessions.isEmpty() ? null : sessions.get(0);
+    }
 } 

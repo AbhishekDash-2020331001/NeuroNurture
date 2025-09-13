@@ -349,5 +349,11 @@ public class DanceDoodleGameService {
     public void deleteSessionsByTaskId(String taskId) {
         repository.deleteBySchoolTaskId(taskId);
     }
+    
+    // Get latest session for a child (for ALI assessment)
+    public DanceDoodleGame getLatestSessionForChild(String childId) {
+        List<DanceDoodleGame> sessions = repository.findByChildIdOrderByDateTimeDesc(childId);
+        return sessions.isEmpty() ? null : sessions.get(0);
+    }
 }
 

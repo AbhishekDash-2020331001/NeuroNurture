@@ -33,6 +33,9 @@ public interface GestureGameRepository extends JpaRepository<GestureGame, Long> 
     // Find paginated records by child ID, ordered by date
     Page<GestureGame> findByChildIdOrderByDateTimeDesc(String childId, Pageable pageable);
     
+    // Find all records by child ID, ordered by date
+    List<GestureGame> findByChildIdOrderByDateTimeDesc(String childId);
+    
     // Find all records where training is allowed
     List<GestureGame> findByIsTrainingAllowedTrue();
     

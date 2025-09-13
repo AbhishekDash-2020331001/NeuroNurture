@@ -33,6 +33,9 @@ public interface MirrorPostureGameRepository extends JpaRepository<MirrorPosture
     // Find paginated records by child ID, ordered by date
     Page<MirrorPostureGame> findByChildIdOrderByDateTimeDesc(String childId, Pageable pageable);
     
+    // Find all records by child ID, ordered by date
+    List<MirrorPostureGame> findByChildIdOrderByDateTimeDesc(String childId);
+    
     // Find all records where training is allowed
     List<MirrorPostureGame> findByIsTrainingAllowedTrue();
     

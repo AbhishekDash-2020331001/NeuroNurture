@@ -1,6 +1,7 @@
 package com.example.gaze_game;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -399,6 +400,39 @@ public class GazeGameController {
         } catch (Exception e) {
             log.error("Error deleting sessions for task ID {}: {}", taskId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * Get latest session data for a child (for ALI assessment)
+     */
+    @GetMapping("/child/{childId}/latest-session")
+    public ResponseEntity<Map<String, Object>> getLatestSessionForChild(@PathVariable String childId) {
+        try {
+            GazeGame latestSession = gazeGameService.getLatestSessionForChild(childId);
+            if (latestSession != null) {
+                // Return the entire database row as a map
+                Map<String, Object> sessionData = new java.util.HashMap<>();
+                sessionData.put("id", latestSession.getId());
+                sessionData.put("sessionId", latestSession.getSessionId());
+                sessionData.put("dateTime", latestSession.getDateTime());
+                sessionData.put("childId", latestSession.getChildId());
+                sessionData.put("age", latestSession.getAge());
+                sessionData.put("schoolTaskId", latestSession.getSchoolTaskId());
+                sessionData.put("tournamentId", latestSession.getTournamentId());
+                sessionData.put("round1Count", latestSession.getRound1Count());
+                sessionData.put("round2Count", latestSession.getRound2Count());
+                sessionData.put("round3Count", latestSession.getRound3Count());
+                sessionData.put("isTrainingAllowed", latestSession.getIsTrainingAllowed());
+                sessionData.put("suspectedASD", latestSession.getSuspectedASD());
+                sessionData.put("isASD", latestSession.getIsASD());
+                return ResponseEntity.ok(sessionData);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            log.error("Error getting latest session for child {}: {}", childId, e.getMessage(), e);
+            return ResponseEntity.notFound().build();
         }
     }
 }

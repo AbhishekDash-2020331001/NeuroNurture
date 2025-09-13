@@ -10,12 +10,14 @@ import {
     Users
 } from 'lucide-react'
 import { Link, Route, Routes, useLocation } from 'react-router-dom'
+import { useState } from 'react'
 import PendingRequests from '../components/PendingRequests'
 import SubscriptionManagement from '../components/SubscriptionManagement'
 import TicketManagement from '../components/TicketManagement'
 import { Button } from '../components/ui/button'
 import UserManagement from '../components/UserManagement'
 import { useAuth } from '../contexts/AuthContext'
+import Assistant from '../components/assistant/Assistant'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -28,6 +30,7 @@ const navigation = [
 export default function Dashboard() {
   const { admin, logout, isLoading } = useAuth()
   const location = useLocation()
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false)
 
   const handleLogout = async () => {
     try {
@@ -35,6 +38,10 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Logout error:', error)
     }
+  }
+
+  const toggleAssistant = () => {
+    setIsAssistantOpen(!isAssistantOpen)
   }
 
   // Show loading state while checking authentication
@@ -116,6 +123,12 @@ export default function Dashboard() {
           </main>
         </div>
       </div>
+
+      {/* AI Assistant */}
+      <Assistant 
+        isOpen={isAssistantOpen} 
+        onToggle={toggleAssistant} 
+      />
     </div>
   )
 }

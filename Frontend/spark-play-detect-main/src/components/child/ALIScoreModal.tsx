@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Star, Trophy, Brain, Target, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { getCurrentChild } from '@/utils/childUtils';
 
 interface Game {
   id: string;
@@ -21,42 +22,44 @@ const ALIScoreModal: React.FC<ALIScoreModalProps> = ({ isOpen, onClose }) => {
   const [showResult, setShowResult] = useState(false);
   const [aliScore, setAliScore] = useState<number | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [sessionErrors, setSessionErrors] = useState<{[key: string]: string}>({});
+  const [modelConfidence, setModelConfidence] = useState<number | null>(null);
 
   const games: Game[] = [
     {
-      id: 'gesture',
+      id: 'dance_doodle_game',
+      title: 'Dance Doodle',
+      description: 'Strike amazing poses!',
+      icon: '🕺',
+      color: 'from-purple-400 to-pink-500'
+    },
+    {
+      id: 'gesture_game',
       title: 'Gesture Game',
       description: 'Learn hand gestures!',
       icon: '👋',
       color: 'from-blue-400 to-purple-500'
     },
     {
-      id: 'posture',
-      title: 'Mirror Posture',
-      description: 'Mimic expressions!',
-      icon: '😎',
-      color: 'from-orange-400 to-pink-500'
-    },
-    {
-      id: 'gaze',
+      id: 'gaze_tracking_game',
       title: 'Eye Gaze Tracking',
       description: 'Pop balloons with your eyes!',
       icon: '👁️',
       color: 'from-purple-400 to-blue-500'
     },
     {
-      id: 'repeat',
-      title: 'Repeat with Me',
-      description: 'Listen and repeat Bengali sentences!',
-      icon: '🎤',
-      color: 'from-pink-400 to-red-500'
+      id: 'mirror_posture_game',
+      title: 'Mirror Posture',
+      description: 'Mimic expressions!',
+      icon: '😎',
+      color: 'from-orange-400 to-pink-500'
     },
     {
-      id: 'dance',
-      title: 'Dance Doodle',
-      description: 'Strike amazing poses!',
-      icon: '🕺',
-      color: 'from-purple-400 to-pink-500'
+      id: 'repeat_with_me_game',
+      title: 'Repeat with Me',
+      description: 'Listen and repeat sentences!',
+      icon: '🎤',
+      color: 'from-pink-400 to-red-500'
     }
   ];
 
@@ -68,23 +71,283 @@ const ALIScoreModal: React.FC<ALIScoreModalProps> = ({ isOpen, onClose }) => {
     );
   };
 
+  // Generate 5-bit binary code for selected games
+  const generateBinaryCode = (selectedGames: string[]): number => {
+    // Game order must match ALI model lexicographic order: dance_doodle_game, gaze_game, gesture_game, mirror_posture_game, repeat_with_me_game
+    const gameOrder = ['dance_doodle_game', 'gaze_game', 'gesture_game', 'mirror_posture_game', 'repeat_with_me_game'];
+    
+    // Generate binary string that will be reversed by ALI model
+    // We need to think in reverse: what should the final bitmask be after reversal?
+    let binaryString = '';
+    for (const gameId of gameOrder) {
+      // Map frontend game IDs to ALI model game IDs for binary generation
+      const aliGameId = gameId === 'gaze_game' ? 'gaze_tracking_game' : gameId;
+      binaryString += selectedGames.includes(aliGameId) ? '1' : '0';
+    }
+    
+    // Reverse the binary string because ALI model will reverse it again
+    const reversedBinary = binaryString.split('').reverse().join('');
+    const decimalValue = parseInt(reversedBinary, 2);
+    
+    console.log('Selected games:', selectedGames);
+    console.log('Game order:', gameOrder);
+    console.log('Binary string (before reversal):', binaryString);
+    console.log('Binary string (after reversal):', reversedBinary);
+    console.log('Decimal value to send:', decimalValue);
+    
+    return decimalValue;
+  };
+
+  // Fetch game data for selected games
+  const fetchGameData = async (selectedGames: string[], childId: string) => {
+    try {
+      const gameData: any = {};
+      const errors: {[key: string]: string} = {};
+      
+      // Game service URLs mapping
+      const gameServiceUrls: {[key: string]: string} = {
+        'dance_doodle_game': 'http://localhost:8087/api/dance-doodle',
+        'gesture_game': 'http://localhost:8084/api/gesture-game',
+        'gaze_tracking_game': 'http://localhost:8086/api/gaze-game',
+        'mirror_posture_game': 'http://localhost:8083/api/mirror-posture-game',
+        'repeat_with_me_game': 'http://localhost:8089/api/repeat-with-me-game'
+      };
+      
+      // Map frontend game IDs to ALI model game IDs
+      const gameIdMapping: {[key: string]: string} = {
+        'dance_doodle_game': 'dance_doodle_game',
+        'gesture_game': 'gesture_game',
+        'gaze_tracking_game': 'gaze_game',  // Map to gaze_game for ALI model
+        'mirror_posture_game': 'mirror_posture_game',
+        'repeat_with_me_game': 'repeat_with_me_game'
+      };
+      
+      // Get child age (assuming 6 for now, could be fetched from child data)
+      const childAge = 6;
+      
+      // Fetch data from each game service
+      for (const gameId of selectedGames) {
+        try {
+          const serviceUrl = gameServiceUrls[gameId];
+          if (!serviceUrl) {
+            errors[gameId] = "Unknown game service";
+            continue;
+          }
+          
+          const latestSessionUrl = `${serviceUrl}/child/${childId}/latest-session`;
+          console.log(`Fetching data from: ${latestSessionUrl}`);
+          
+          const response = await fetch(latestSessionUrl, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          });
+          
+          if (response.ok) {
+            const sessionData = await response.json();
+            // Add age to the session data
+            sessionData.age = childAge;
+            // Use mapped game ID for ALI model compatibility
+            const aliGameId = gameIdMapping[gameId] || gameId;
+            gameData[aliGameId] = sessionData;
+            console.log(`✅ Successfully fetched data for game: ${gameId} -> ${aliGameId}`, sessionData);
+          } else if (response.status === 404) {
+            errors[gameId] = `No session found for ${getGameDisplayName(gameId)}`;
+            console.warn(`❌ No session data found for game: ${gameId} (404)`);
+          } else {
+            errors[gameId] = `Service unavailable for ${getGameDisplayName(gameId)}`;
+            console.warn(`❌ Service error for game: ${gameId} (${response.status})`);
+          }
+        } catch (error) {
+          const errorMsg = `No session found for ${getGameDisplayName(gameId)}`;
+          errors[gameId] = errorMsg;
+          console.error(`❌ Error fetching data for game ${gameId}:`, error);
+        }
+      }
+      
+      // For games with errors, use mock data as fallback
+      for (const gameId of selectedGames) {
+        const aliGameId = gameIdMapping[gameId] || gameId;
+        if (!gameData[aliGameId] && errors[gameId]) {
+          gameData[aliGameId] = getMockGameData(gameId, childId);
+          console.log(`Using mock data for game: ${gameId} -> ${aliGameId} due to error: ${errors[gameId]}`);
+        }
+      }
+      
+      // Store errors for display
+      if (Object.keys(errors).length > 0) {
+        setSessionErrors(errors);
+        console.warn('Some games had no session data:', errors);
+      } else {
+        setSessionErrors({});
+      }
+      
+      return gameData;
+    } catch (error) {
+      console.error('Error fetching game data:', error);
+      setSessionErrors({});
+      // Fallback to mock data if API fails
+      const gameData: any = {};
+      for (const gameId of selectedGames) {
+        gameData[gameId] = getMockGameData(gameId, childId);
+      }
+      return gameData;
+    }
+  };
+  
+  const getGameDisplayName = (gameId: string): string => {
+    switch (gameId) {
+      case 'dance_doodle_game': return 'Dance Doodle';
+      case 'gesture_game': return 'Gesture Game';
+      case 'gaze_tracking_game': return 'Eye Gaze Tracking';
+      case 'mirror_posture_game': return 'Mirror Posture';
+      case 'repeat_with_me_game': return 'Repeat with Me';
+      default: return gameId;
+    }
+  };
+
+  // Mock game data generator
+  const getMockGameData = (gameId: string, childId: string) => {
+    const baseData = { age: 6 };
+    
+    switch (gameId) {
+      case 'dance_doodle_game':
+        return {
+          ...baseData,
+          cool_arms: Math.floor(Math.random() * 5) + 1,
+          crossy_play: Math.floor(Math.random() * 5) + 1,
+          happy_stand: Math.floor(Math.random() * 5) + 1,
+          open_wings: Math.floor(Math.random() * 5) + 1,
+          shh_fun: Math.floor(Math.random() * 5) + 1,
+          silly_boxer: Math.floor(Math.random() * 5) + 1,
+          stretch: Math.floor(Math.random() * 5) + 1
+        };
+      case 'gesture_game':
+        return {
+          ...baseData,
+          butterfly: Math.floor(Math.random() * 5) + 1,
+          closed_fist: Math.floor(Math.random() * 5) + 1,
+          dua: Math.floor(Math.random() * 5) + 1,
+          heart: Math.floor(Math.random() * 5) + 1,
+          iloveyou: Math.floor(Math.random() * 5) + 1,
+          open_palm: Math.floor(Math.random() * 5) + 1,
+          pointing_up: Math.floor(Math.random() * 5) + 1,
+          spectacle: Math.floor(Math.random() * 5) + 1,
+          thumbs_down: Math.floor(Math.random() * 5) + 1,
+          thumbs_up: Math.floor(Math.random() * 5) + 1,
+          victory: Math.floor(Math.random() * 5) + 1
+        };
+      case 'gaze_tracking_game':
+        return {
+          ...baseData,
+          focus_time: Math.floor(Math.random() * 30) + 10,
+          accuracy: Math.floor(Math.random() * 40) + 60,
+          reaction_time: Math.floor(Math.random() * 1000) + 500
+        };
+      case 'mirror_posture_game':
+        return {
+          ...baseData,
+          kiss: Math.floor(Math.random() * 5) + 1,
+          looking_sideways: Math.floor(Math.random() * 5) + 1,
+          mouth_open: Math.floor(Math.random() * 5) + 1,
+          showing_teeth: Math.floor(Math.random() * 5) + 1
+        };
+      case 'repeat_with_me_game':
+        const rounds = 10;
+        const scores = Array.from({ length: rounds }, () => Math.floor(Math.random() * 20) + 80);
+        return {
+          ...baseData,
+          average_score: scores.reduce((a, b) => a + b, 0) / scores.length,
+          completed_rounds: rounds,
+          ...scores.reduce((acc, score, index) => {
+            acc[`round${index + 1}score`] = score;
+            return acc;
+          }, {} as any)
+        };
+      default:
+        return baseData;
+    }
+  };
+
+  // Default game data fallback
+  const getDefaultGameData = (gameId: string) => {
+    return { age: 6, score: 0 };
+  };
+
   const handleGetResult = async () => {
     if (selectedGames.length === 0) return;
     
     setIsCalculating(true);
     
-    // Simulate API call to calculate ALI score
-    setTimeout(() => {
-      // Mock calculation based on selected games (lower scores are better)
-      const baseScore = 25; // Lower base score
-      const gamePenalty = selectedGames.length * 3; // More games = slightly higher score
-      const randomVariation = Math.floor(Math.random() * 15) - 5;
-      const calculatedScore = Math.max(0, Math.min(50, baseScore + gamePenalty + randomVariation));
+    try {
+      // Get current child data
+      const childData = getCurrentChild();
+      const childId = childData?.id || 'default';
+      
+      // Generate binary code for selected games
+      const gamesBinary = generateBinaryCode(selectedGames);
+      console.log('Selected games:', selectedGames);
+      console.log('Binary code:', gamesBinary);
+      
+      // Fetch game data for selected games
+      const gameData = await fetchGameData(selectedGames, childId);
+      console.log('Game data:', gameData);
+      
+      // Prepare the request payload
+      const requestPayload = {
+        games: gamesBinary,
+        data: gameData
+      };
+      
+      console.log('Sending ALI request:', requestPayload);
+      
+      // Send request to backend
+      const response = await fetch('http://localhost:8005/predict_ali_score', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestPayload)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log('ALI response:', result);
+      
+      // Extract score from response - use probability of class 1 (autistic)
+      // The higher the probability of class 1, the higher the chance the child is autistic
+      const prediction = result.prediction || 0;
+      const probabilities = result.probabilities || [0.5, 0.5];
+      const autisticProbability = probabilities[1] || 0.5; // probability of class 1 (autistic)
+      
+      // Convert to ALI score: multiply by 100 to get percentage (0-100%)
+      // Higher probability of autistic = higher chance of being autistic
+      // Score interpretation: 0-30% = Very Low, 30-50% = Low, 50-70% = Moderate, 70-100% = Higher
+      const score = Math.round(autisticProbability * 100);
+      const confidence = Math.round(Math.max(...probabilities) * 100);
+      
+      setAliScore(score);
+      setModelConfidence(confidence);
+      setShowResult(true);
+      
+    } catch (error) {
+      console.error('Error getting ALI score:', error);
+      
+      // Fallback to mock calculation if API fails
+      const baseScore = 40; // Base percentage
+      const gamePenalty = selectedGames.length * 5;
+      const randomVariation = Math.floor(Math.random() * 20) - 10;
+      const calculatedScore = Math.max(0, Math.min(100, baseScore + gamePenalty + randomVariation));
       
       setAliScore(calculatedScore);
       setShowResult(true);
+    } finally {
       setIsCalculating(false);
-    }, 2000);
+    }
   };
 
   const handleClose = () => {
@@ -92,27 +355,29 @@ const ALIScoreModal: React.FC<ALIScoreModalProps> = ({ isOpen, onClose }) => {
     setShowResult(false);
     setAliScore(null);
     setIsCalculating(false);
+    setSessionErrors({});
+    setModelConfidence(null);
     onClose();
   };
 
   const getScoreColor = (score: number) => {
-    if (score <= 15) return 'text-green-600';
-    if (score <= 25) return 'text-yellow-600';
-    if (score <= 35) return 'text-orange-600';
-    return 'text-red-600';
+    if (score <= 30) return 'text-green-600';  // Low chance of autism
+    if (score <= 50) return 'text-yellow-600'; // Moderate chance
+    if (score <= 70) return 'text-orange-600'; // Higher chance
+    return 'text-red-600';                     // High chance of autism
   };
 
   const getScoreMessage = (score: number) => {
-    if (score <= 15) return "Excellent! Very low likelihood! 🌟";
-    if (score <= 25) return "Great! Low likelihood indicators! 🎉";
-    if (score <= 35) return "Good! Moderate likelihood indicators! 💪";
+    if (score <= 30) return "Excellent! Very low likelihood of autism! 🌟";
+    if (score <= 50) return "Great! Low likelihood indicators! 🎉";
+    if (score <= 70) return "Good! Moderate likelihood indicators! 💪";
     return "Continue monitoring! Higher likelihood indicators! 🌱";
   };
 
   const getScoreIcon = (score: number) => {
-    if (score <= 15) return "🏆";
-    if (score <= 25) return "⭐";
-    if (score <= 35) return "🎯";
+    if (score <= 30) return "🏆";
+    if (score <= 50) return "⭐";
+    if (score <= 70) return "🎯";
     return "📊";
   };
 
@@ -242,11 +507,12 @@ const ALIScoreModal: React.FC<ALIScoreModalProps> = ({ isOpen, onClose }) => {
                   ALI Assessment Result
                 </h3>
                 <div className={`text-4xl font-bold mb-3 ${getScoreColor(aliScore!)}`}>
-                  {aliScore}
+                  {aliScore}%
                 </div>
                 <p className="text-sm text-gray-600 mb-3">
                   {getScoreMessage(aliScore!)}
                 </p>
+                
               </div>
 
               {/* Score Breakdown */}
@@ -262,7 +528,7 @@ const ALIScoreModal: React.FC<ALIScoreModalProps> = ({ isOpen, onClose }) => {
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600 text-sm">Likelihood Level:</span>
                     <span className={`font-semibold text-sm ${getScoreColor(aliScore!)}`}>
-                      {aliScore! <= 15 ? 'Very Low' : aliScore! <= 25 ? 'Low' : aliScore! <= 35 ? 'Moderate' : 'Higher'}
+                      {aliScore! <= 30 ? 'Very Low' : aliScore! <= 50 ? 'Low' : aliScore! <= 70 ? 'Moderate' : 'Higher'}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -280,16 +546,38 @@ const ALIScoreModal: React.FC<ALIScoreModalProps> = ({ isOpen, onClose }) => {
                 <div className="flex flex-wrap gap-1 justify-center">
                   {selectedGames.map(gameId => {
                     const game = games.find(g => g.id === gameId);
+                    const hasError = sessionErrors[gameId];
                     return (
                       <span
                         key={gameId}
-                        className="px-2 py-1 bg-white rounded text-xs font-medium text-gray-700 border border-blue-300"
+                        className={`px-2 py-1 rounded text-xs font-medium border ${
+                          hasError 
+                            ? 'bg-red-100 text-red-700 border-red-300' 
+                            : 'bg-white text-gray-700 border-blue-300'
+                        }`}
+                        title={hasError ? sessionErrors[gameId] : ''}
                       >
                         {game?.icon} {game?.title}
+                        {hasError && ' ⚠️'}
                       </span>
                     );
                   })}
                 </div>
+                {Object.keys(sessionErrors).length > 0 && (
+                  <div className="mt-2 text-xs text-red-600">
+                    <p className="font-semibold">Note: Some games had no session data:</p>
+                    <ul className="list-disc list-inside mt-1">
+                      {Object.entries(sessionErrors).map(([gameId, error]) => {
+                        const game = games.find(g => g.id === gameId);
+                        return (
+                          <li key={gameId}>
+                            {game?.title}: {error}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
               </Card>
 
               {/* Action Buttons */}

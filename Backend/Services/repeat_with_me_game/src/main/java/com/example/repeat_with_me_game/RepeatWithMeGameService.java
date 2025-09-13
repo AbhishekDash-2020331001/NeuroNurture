@@ -326,4 +326,12 @@ public class RepeatWithMeGameService {
     public void deleteRecord(Long id) {
         repository.deleteById(id);
     }
+    
+    /**
+     * Get latest session for a child (for ALI assessment)
+     */
+    public RepeatWithMeGame getLatestSessionForChild(String childId) {
+        List<RepeatWithMeGame> sessions = repository.findByChildIdOrderByDateTimeDesc(childId);
+        return sessions.isEmpty() ? null : sessions.get(0);
+    }
 }

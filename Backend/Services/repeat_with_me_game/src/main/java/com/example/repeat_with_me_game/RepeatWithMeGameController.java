@@ -178,4 +178,45 @@ public class RepeatWithMeGameController {
     public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok("Repeat with Me Game Service is running!");
     }
+    
+    // Get latest session data for a child (for ALI assessment)
+    @GetMapping("/child/{childId}/latest-session")
+    public ResponseEntity<Map<String, Object>> getLatestSessionForChild(@PathVariable String childId) {
+        try {
+            RepeatWithMeGame latestSession = service.getLatestSessionForChild(childId);
+            if (latestSession != null) {
+                // Return the entire database row as a map
+                Map<String, Object> sessionData = new java.util.HashMap<>();
+                sessionData.put("id", latestSession.getId());
+                sessionData.put("sessionId", latestSession.getSessionId());
+                sessionData.put("dateTime", latestSession.getDateTime());
+                sessionData.put("childId", latestSession.getChildId());
+                sessionData.put("age", latestSession.getAge());
+                sessionData.put("schoolTaskId", latestSession.getSchoolTaskId());
+                sessionData.put("tournamentId", latestSession.getTournamentId());
+                sessionData.put("averageScore", latestSession.getAverageScore());
+                sessionData.put("completedRounds", latestSession.getCompletedRounds());
+                sessionData.put("round1score", latestSession.getRound1Score());
+                sessionData.put("round2score", latestSession.getRound2Score());
+                sessionData.put("round3score", latestSession.getRound3Score());
+                sessionData.put("round4score", latestSession.getRound4Score());
+                sessionData.put("round5score", latestSession.getRound5Score());
+                sessionData.put("round6score", latestSession.getRound6Score());
+                sessionData.put("round7score", latestSession.getRound7Score());
+                sessionData.put("round8score", latestSession.getRound8Score());
+                sessionData.put("round9score", latestSession.getRound9Score());
+                sessionData.put("round10score", latestSession.getRound10Score());
+                sessionData.put("round11score", latestSession.getRound11Score());
+                sessionData.put("round12score", latestSession.getRound12Score());
+                sessionData.put("isTrainingAllowed", latestSession.getIsTrainingAllowed());
+                sessionData.put("suspectedASD", latestSession.getSuspectedASD());
+                sessionData.put("isASD", latestSession.getIsASD());
+                return ResponseEntity.ok(sessionData);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

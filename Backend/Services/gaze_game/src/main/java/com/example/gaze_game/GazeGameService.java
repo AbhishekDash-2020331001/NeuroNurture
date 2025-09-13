@@ -482,4 +482,12 @@ public class GazeGameService {
             throw new RuntimeException("Failed to delete sessions", e);
         }
     }
+    
+    /**
+     * Get latest session for a child (for ALI assessment)
+     */
+    public GazeGame getLatestSessionForChild(String childId) {
+        List<GazeGame> sessions = gazeGameRepository.findByChildIdOrderByDateTimeDesc(childId);
+        return sessions.isEmpty() ? null : sessions.get(0);
+    }
 }

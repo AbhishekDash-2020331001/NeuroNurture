@@ -2,7 +2,9 @@ package com.example.parent;
 
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
@@ -31,6 +34,7 @@ public class ParentController {
     private static final Logger logger = LoggerFactory.getLogger(ParentController.class);
     @Autowired private ParentRepository parentRepository;
     @Autowired private ChildRepository childRepository;
+    @Autowired private RestTemplate restTemplate;
 
     // Get all parents
     @GetMapping
@@ -414,5 +418,91 @@ public class ParentController {
         schoolInfo.setEstablishedYear(2010);
         schoolInfo.setPrincipalName("Dr. Sarah Johnson");
         return schoolInfo;
+    }
+
+    // Get latest game session data for ALI assessment
+    @GetMapping("/children/{childId}/game-sessions")
+    public ResponseEntity<Map<String, Object>> getLatestGameSessions(@PathVariable Long childId, @RequestParam List<String> games) {
+        logger.info("=== PARENT SERVICE: GET GAME SESSIONS DEBUG ===");
+        logger.info("Requested child ID: {}", childId);
+        logger.info("Requested games: {}", games);
+        
+        try {
+            Map<String, Object> gameData = new HashMap<>();
+            Map<String, String> errors = new HashMap<>();
+            
+            // Game service URLs mapping
+            Map<String, String> gameServiceUrls = new HashMap<>();
+            gameServiceUrls.put("dance_doodle_game", "http://localhost:8082/api/dance-doodle");
+            gameServiceUrls.put("gesture_game", "http://localhost:8083/api/gesture-game");
+            gameServiceUrls.put("gaze_tracking_game", "http://localhost:8084/api/gaze-game");
+            gameServiceUrls.put("mirror_posture_game", "http://localhost:8085/api/mirror-posture");
+            gameServiceUrls.put("repeat_with_me_game", "http://localhost:8086/api/repeat-with-me");
+            
+            // Get child age for all game data
+            Child child = childRepository.findById(childId)
+                    .orElseThrow(() -> new RuntimeException("Child not found"));
+            
+            int childAge = calculateAge(child.getDateOfBirth());
+            logger.info("Child age calculated: {}", childAge);
+            
+            for (String gameId : games) {
+                try {
+                    String serviceUrl = gameServiceUrls.get(gameId);
+                    if (serviceUrl == null) {
+                        errors.put(gameId, "Unknown game service");
+                        continue;
+                    }
+                    
+                    // Get latest session data for this game
+                    String latestSessionUrl = serviceUrl + "/child/" + childId + "/latest-session";
+                    logger.info("Calling game service: {}", latestSessionUrl);
+                    
+                    ResponseEntity<Map> response = restTemplate.getForEntity(latestSessionUrl, Map.class);
+                    
+                    if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> sessionData = (Map<String, Object>) response.getBody();
+                        // Add age to the session data
+                        sessionData.put("age", childAge);
+                        gameData.put(gameId, sessionData);
+                        logger.info("✅ Successfully fetched data for game: {}", gameId);
+                    } else {
+                        errors.put(gameId, "No session data found");
+                        logger.warn("❌ No session data found for game: {}", gameId);
+                    }
+                } catch (Exception e) {
+                    String errorMsg = "No session found for " + getGameDisplayName(gameId);
+                    errors.put(gameId, errorMsg);
+                    logger.error("❌ Error fetching data for game {}: {}", gameId, e.getMessage());
+                }
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", gameData);
+            response.put("errors", errors);
+            response.put("childId", childId);
+            response.put("childAge", childAge);
+            
+            logger.info("✅ Returning game session data with {} successful games and {} errors", 
+                       gameData.size(), errors.size());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("❌ Error in getLatestGameSessions: {}", e.getMessage());
+            return ResponseEntity.status(500).body(Map.of("error", "Internal server error"));
+        }
+    }
+    
+    private String getGameDisplayName(String gameId) {
+        switch (gameId) {
+            case "dance_doodle_game": return "Dance Doodle";
+            case "gesture_game": return "Gesture Game";
+            case "gaze_tracking_game": return "Eye Gaze Tracking";
+            case "mirror_posture_game": return "Mirror Posture";
+            case "repeat_with_me_game": return "Repeat with Me";
+            default: return gameId;
+        }
     }
 } 

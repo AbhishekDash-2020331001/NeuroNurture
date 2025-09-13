@@ -192,4 +192,36 @@ public class MirrorPostureGameController {
     public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok("Mirror Posture Game Service is running!");
     }
+    
+    // Get latest session data for a child (for ALI assessment)
+    @GetMapping("/child/{childId}/latest-session")
+    public ResponseEntity<Map<String, Object>> getLatestSessionForChild(@PathVariable String childId) {
+        try {
+            MirrorPostureGame latestSession = service.getLatestSessionForChild(childId);
+            if (latestSession != null) {
+                // Return the entire database row as a map
+                Map<String, Object> sessionData = new java.util.HashMap<>();
+                sessionData.put("id", latestSession.getId());
+                sessionData.put("sessionId", latestSession.getSessionId());
+                sessionData.put("dateTime", latestSession.getDateTime());
+                sessionData.put("childId", latestSession.getChildId());
+                sessionData.put("age", latestSession.getAge());
+                sessionData.put("schoolTaskId", latestSession.getSchoolTaskId());
+                sessionData.put("tournamentId", latestSession.getTournamentId());
+                sessionData.put("kiss", latestSession.getKiss());
+                sessionData.put("looking_sideways", latestSession.getLookingSideways());
+                sessionData.put("mouth_open", latestSession.getMouthOpen());
+                sessionData.put("showing_teeth", latestSession.getShowingTeeth());
+                sessionData.put("videoURL", latestSession.getVideoURL());
+                sessionData.put("isTrainingAllowed", latestSession.getIsTrainingAllowed());
+                sessionData.put("suspectedASD", latestSession.getSuspectedASD());
+                sessionData.put("isASD", latestSession.getIsASD());
+                return ResponseEntity.ok(sessionData);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 } 
