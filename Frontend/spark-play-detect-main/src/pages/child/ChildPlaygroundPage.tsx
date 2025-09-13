@@ -5,6 +5,8 @@ import { gameDataService, GameStats, HeatmapData } from '@/services/gameDataServ
 import { getCurrentChild } from '@/utils/childUtils';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ALIScoreModal from '@/components/child/ALIScoreModal';
+import { Brain, Trophy } from 'lucide-react';
 
 interface ChildPlaygroundPageProps {
   username: string | null;
@@ -21,6 +23,7 @@ export default function ChildPlaygroundPage({ username }: ChildPlaygroundPagePro
     averageSessionTime: 0
   });
   const [isLoadingHeatmap, setIsLoadingHeatmap] = useState(true);
+  const [isALIModalOpen, setIsALIModalOpen] = useState(false);
 
   useEffect(() => {
     const childData = getCurrentChild();
@@ -86,7 +89,6 @@ export default function ChildPlaygroundPage({ username }: ChildPlaygroundPagePro
       description: "Learn hand gestures!",
       icon: "👋",
       color: "from-blue-400 to-purple-500",
-      progress: 75,
       route: "/games/gesture/insights"
     },
     {
@@ -94,7 +96,6 @@ export default function ChildPlaygroundPage({ username }: ChildPlaygroundPagePro
       description: "Mimic expressions!",
       icon: "😎",
       color: "from-orange-400 to-pink-500",
-      progress: 45,
       route: "/games/posture/insights"
     },
     {
@@ -102,15 +103,13 @@ export default function ChildPlaygroundPage({ username }: ChildPlaygroundPagePro
       description: "Pop balloons with your eyes!",
       icon: "👁️",
       color: "from-purple-400 to-blue-500",
-      progress: 60,
       route: "/games/gaze-tracking/insights"
     },
     {
       title: "Repeat with Me",
-      description: "Listen and repeat Bengali sentences!",
+      description: "Listen and repeat sentences!",
       icon: "🎤",
       color: "from-pink-400 to-red-500",
-      progress: 40,
       route: "/games/repeat-with-me/insights"
     },
     {
@@ -118,22 +117,7 @@ export default function ChildPlaygroundPage({ username }: ChildPlaygroundPagePro
       description: "Strike amazing poses!",
       icon: "🕺",
       color: "from-purple-400 to-pink-500",
-      progress: 65,
       route: "/games/dance-doodle/insights"
-    },
-    {
-      title: "Shape Sorter",
-      description: "Learn shapes & colors",
-      icon: "🔷",
-      color: "from-green-400 to-teal-500",
-      progress: 90
-    },
-    {
-      title: "Story Builder",
-      description: "Create stories!",
-      icon: "📚",
-      color: "from-yellow-400 to-orange-500",
-      progress: 30
     }
   ];
 
@@ -142,40 +126,31 @@ export default function ChildPlaygroundPage({ username }: ChildPlaygroundPagePro
     <div className="space-y-4 px-1 py-2">
       {/* Greeting Header */}
       <div className="relative">
-        <div className="flex items-center space-x-3">
-          <img 
-            src={mascotImage} 
-            alt="NeuroNurture Mascot" 
-            className="w-12 h-12 animate-pulse-fun"
-          />
-          <div>
-            <h1 className="text-3xl lg:text-4xl font-playful text-primary">
-              {selectedChild ? `Hi ${selectedChild.name}! 🎉` : username ? `Hi ${username}! 🎉` : 'Welcome! 🎉'}
-            </h1>
-            <p className="text-lg lg:text-xl font-comic text-muted-foreground">
-              {selectedChild ? `Ready for fun learning, ${selectedChild.name}?` : 'Ready for fun learning?'}
-            </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+
+            <div>
+              <h1 className="text-3xl lg:text-4xl font-playful text-primary">
+                {selectedChild ? `Hi ${selectedChild.name}! ` : username ? `Hi ${username}! ` : 'Welcome! '}
+              </h1>
+              <p className="text-lg lg:text-xl font-comic text-muted-foreground">
+                {selectedChild ? `Ready for fun learning, ${selectedChild.name}?` : 'Ready for fun learning?'}
+              </p>
+            </div>
           </div>
+          
+          {/* ALI Score Button */}
+          <Button
+            onClick={() => setIsALIModalOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow-md transition-all duration-200"
+          >
+            <Brain className="w-4 h-4 mr-2" />
+            Get ALI Assessment
+            <Trophy className="w-4 h-4 ml-2" />
+          </Button>
         </div>
         
-        {/* Flying Bird Animation */}
-        <div className="absolute top-0 right-0 w-full h-full pointer-events-none overflow-hidden">
-          <div className="absolute top-2 right-0 text-2xl animate-pulse" style={{ animationDuration: '3s' }}>
-            🐦
-          </div>
-          <div className="absolute top-4 right-8 text-xl animate-bounce" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }}>
-            ✨
-          </div>
-          <div className="absolute top-1 right-16 text-lg animate-ping" style={{ animationDuration: '2s', animationDelay: '1s' }}>
-            🌟
-          </div>
-          <div className="absolute top-3 right-24 text-xl animate-pulse" style={{ animationDuration: '2.8s', animationDelay: '1.5s' }}>
-            🦋
-          </div>
-          <div className="absolute top-0 right-32 text-lg animate-bounce" style={{ animationDuration: '3.2s', animationDelay: '2s' }}>
-            🍃
-          </div>
-        </div>
+
       </div>
 
       {/* Spacing */}
@@ -284,22 +259,6 @@ export default function ChildPlaygroundPage({ username }: ChildPlaygroundPagePro
                     </div>
                   </div>
                   
-                  {/* Progress Section */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-xs font-black" style={{ 
-                      fontFamily: 'Comic Sans MS, cursive, sans-serif',
-                      letterSpacing: '0.3px'
-                    }}>
-                      <span>Progress</span>
-                      <span>{game.progress}%</span>
-                    </div>
-                    <div className="w-full bg-white/30 rounded-full h-2 overflow-hidden">
-                      <div 
-                        className="bg-gradient-to-r from-yellow-300 to-orange-400 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${game.progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
                   
                   {/* Play Button */}
                   <Button 
@@ -311,7 +270,7 @@ export default function ChildPlaygroundPage({ username }: ChildPlaygroundPagePro
                     }}
                     onClick={() => game.route ? navigate(game.route) : console.log(`Playing ${game.title}`)}
                   >
-                    🚀 Play
+                    Play
                   </Button>
                 </div>
               </Card>
@@ -488,6 +447,12 @@ export default function ChildPlaygroundPage({ username }: ChildPlaygroundPagePro
           </div>
         </Card>
       </div>
+
+      {/* ALI Score Modal */}
+      <ALIScoreModal
+        isOpen={isALIModalOpen}
+        onClose={() => setIsALIModalOpen(false)}
+      />
 
     </div>
   );

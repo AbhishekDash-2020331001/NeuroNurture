@@ -404,7 +404,7 @@ const ChildProgressComparison: React.FC = () => {
       
       try {
         setIsLoadingChildren(true);
-        const children = await childrenService.getChildrenBySchool(school.id);
+        const children = await childrenService.getChildrenBySchool(Number(school.id));
         setRealChildren(children);
         
         // Calculate stats
