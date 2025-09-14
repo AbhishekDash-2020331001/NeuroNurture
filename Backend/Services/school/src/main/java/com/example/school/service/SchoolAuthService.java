@@ -135,6 +135,25 @@ public class SchoolAuthService implements UserDetailsService {
         schoolInfo.setState(school.getState());
         schoolInfo.setZipCode(school.getZipCode());
         schoolInfo.setStudentCount(school.getStudentCount());
+        // Debug subscription data
+        System.out.println("=== SCHOOL LOGIN DEBUG ===");
+        System.out.println("School ID: " + school.getId());
+        System.out.println("Subscription Status: " + school.getSubscriptionStatus());
+        System.out.println("Subscription Plan: " + school.getSubscriptionPlan());
+        System.out.println("Subscription Expiry: " + school.getSubscriptionExpiry());
+        System.out.println("Stripe Customer ID: " + school.getStripeCustomerId());
+        System.out.println("Stripe Subscription ID: " + school.getStripeSubscriptionId());
+        System.out.println("Children Limit: " + school.getChildrenLimit());
+        System.out.println("Current Children: " + school.getCurrentChildren());
+        System.out.println("=========================");
+        
+        schoolInfo.setSubscriptionStatus(school.getSubscriptionStatus());
+        schoolInfo.setSubscriptionPlan(school.getSubscriptionPlan());
+        schoolInfo.setSubscriptionExpiry(school.getSubscriptionExpiry() != null ? school.getSubscriptionExpiry().toString() : null);
+        schoolInfo.setStripeCustomerId(school.getStripeCustomerId());
+        schoolInfo.setStripeSubscriptionId(school.getStripeSubscriptionId());
+        schoolInfo.setChildrenLimit(school.getChildrenLimit());
+        schoolInfo.setCurrentChildren(school.getCurrentChildren());
         
         return new SchoolAuthResponse(token, "Bearer", schoolInfo);
     }

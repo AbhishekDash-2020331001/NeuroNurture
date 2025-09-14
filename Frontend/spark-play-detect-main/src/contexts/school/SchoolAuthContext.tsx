@@ -56,8 +56,8 @@ export const SchoolAuthProvider: React.FC<SchoolAuthProviderProps> = ({ children
         // Ensure new fields are present for backward compatibility
         const updatedSchoolData = {
           ...schoolData,
-          subscriptionPlan: schoolData.subscriptionPlan || 'premium',
-          subscriptionExpiry: schoolData.subscriptionExpiry || '2024-12-31'
+          subscriptionPlan: schoolData.subscriptionPlan || 'free',
+          subscriptionExpiry: schoolData.subscriptionExpiry
         };
         setSchool(updatedSchoolData);
         // Update localStorage with the new fields
@@ -99,14 +99,21 @@ export const SchoolAuthProvider: React.FC<SchoolAuthProviderProps> = ({ children
           address: `${data.school.address}, ${data.school.city}, ${data.school.state} ${data.school.zipCode}`,
           phone: data.school.phone,
           subscriptionStatus: data.school.subscriptionStatus,
-          subscriptionPlan: data.school.subscriptionPlan || 'premium',
-          subscriptionExpiry: data.school.subscriptionExpiry || '2024-12-31',
+          subscriptionPlan: data.school.subscriptionPlan || 'free',
+          subscriptionExpiry: data.school.subscriptionExpiry,
           childrenLimit: data.school.childrenLimit,
           currentChildren: data.school.currentChildren
         };
         
-        setSchool(schoolData);
-        localStorage.setItem('schoolAuth', JSON.stringify(schoolData));
+        console.log('SchoolAuthContext: Full login response:', data);
+        console.log('SchoolAuthContext: School object from backend:', data.school);
+        console.log('SchoolAuthContext: Backend subscriptionStatus:', data.school.subscriptionStatus);
+        console.log('SchoolAuthContext: Backend subscriptionPlan:', data.school.subscriptionPlan);
+        console.log('SchoolAuthContext: Backend subscriptionExpiry:', data.school.subscriptionExpiry);
+        console.log('SchoolAuthContext: Parsed school data:', schoolData);
+        console.log('SchoolAuthContext: Parsed subscriptionExpiry:', schoolData.subscriptionExpiry);
+        console.log('SchoolAuthContext: Parsed subscriptionPlan:', schoolData.subscriptionPlan);
+        
         setSchool(schoolData);
         localStorage.setItem('schoolAuth', JSON.stringify(schoolData));
         setIsLoading(false);

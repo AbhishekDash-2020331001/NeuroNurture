@@ -57,10 +57,14 @@ import ChildProfile from "./pages/school/ChildProfile";
 import ChildProgress from "./pages/school/ChildProgress";
 import ChildProgressComparison from "./pages/school/ChildProgressComparison";
 import Children from "./pages/school/Children";
+import SchoolCheckoutPage from "./pages/school/SchoolCheckoutPage";
 import SchoolDashboard from "./pages/school/SchoolDashboard";
 import SchoolEmailVerification from "./pages/school/SchoolEmailVerification";
 import SchoolNewTicketPage from "./pages/school/SchoolNewTicketPage";
+import SchoolPaymentSuccessPage from "./pages/school/SchoolPaymentSuccessPage";
 import SchoolPendingApproval from "./pages/school/SchoolPendingApproval";
+import SchoolPricingPage from "./pages/school/SchoolPricingPage";
+import SchoolSubscriptionPage from "./pages/school/SchoolSubscriptionPage";
 import SchoolTicketChatPage from "./pages/school/SchoolTicketChatPage";
 import SchoolTicketsPage from "./pages/school/SchoolTicketsPage";
 import TaskDetails from "./pages/school/TaskDetails";
@@ -257,6 +261,10 @@ const App = () => (
             <Route path="tickets" element={<SchoolTicketsPage />} />
             <Route path="tickets/new" element={<SchoolNewTicketPage />} />
             <Route path="tickets/:ticketId" element={<SchoolTicketChatPage />} />
+            <Route path="pricing" element={<SchoolPricingPage />} />
+            <Route path="subscription" element={<SchoolSubscriptionPage />} />
+            <Route path="checkout" element={<SchoolCheckoutPage />} />
+            <Route path="payment-success" element={<SchoolPaymentSuccessPage />} />
             {/* Additional school routes will be added here */}
           </Route>
           

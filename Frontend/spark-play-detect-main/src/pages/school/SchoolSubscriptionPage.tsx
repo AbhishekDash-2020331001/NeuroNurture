@@ -1,4 +1,5 @@
-import { useDoctorAuth } from '@/contexts/doctor/DoctorAuthContext';
+import { useSchoolAuth } from '@/contexts/school/SchoolAuthContext';
+import { makeAuthenticatedSchoolRequest } from '@/utils/schoolApiUtils';
 import {
     AlertTriangle,
     ArrowRight,
@@ -25,15 +26,15 @@ interface SubscriptionInfo {
   currency: string;
 }
 
-const DoctorSubscriptionPage: React.FC = () => {
-  const { doctor, isAuthenticated } = useDoctorAuth();
+const SchoolSubscriptionPage: React.FC = () => {
+  const { school, isAuthenticated } = useSchoolAuth();
   const navigate = useNavigate();
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate('/auth/doctor/login');
+      navigate('/auth/school/login');
       return;
     }
     fetchSubscriptionInfo();
@@ -41,13 +42,7 @@ const DoctorSubscriptionPage: React.FC = () => {
 
   const fetchSubscriptionInfo = async () => {
     try {
-      const response = await fetch('http://localhost:8093/api/doctor/subscription/current', {
-        headers: {
-          'X-Doctor-Id': doctor?.id,
-          'Authorization': `Bearer ${localStorage.getItem('doctorToken')}`
-        }
-      });
-
+      const response = await makeAuthenticatedSchoolRequest('http://localhost:8091/api/school/subscription/current');
       if (response.ok) {
         const subscriptionData = await response.json();
         setSubscription(subscriptionData);
@@ -60,8 +55,8 @@ const DoctorSubscriptionPage: React.FC = () => {
   };
 
   const isSubscriptionActive = () => {
-    if (!doctor?.subscriptionExpiry) return false;
-    return new Date(doctor.subscriptionExpiry) > new Date();
+    if (!school?.subscriptionExpiry) return false;
+    return new Date(school.subscriptionExpiry) > new Date();
   };
 
   const formatPrice = (priceInCents: number, currency: string) => {
@@ -82,9 +77,9 @@ const DoctorSubscriptionPage: React.FC = () => {
   };
 
   const getDaysUntilExpiry = () => {
-    if (!doctor?.subscriptionExpiry) return null;
+    if (!school?.subscriptionExpiry) return null;
     const now = new Date();
-    const expiry = new Date(doctor.subscriptionExpiry);
+    const expiry = new Date(school.subscriptionExpiry);
     const diffTime = expiry.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
@@ -93,15 +88,15 @@ const DoctorSubscriptionPage: React.FC = () => {
   const premiumFeatures = [
     {
       icon: Users,
-      title: 'Unlimited Patients',
-      description: 'Add and manage unlimited patients without any restrictions',
+      title: 'Unlimited Children',
+      description: 'Add and manage unlimited students without any restrictions',
       color: 'text-blue-500',
       bgColor: 'bg-blue-50'
     },
     {
       icon: BarChart3,
       title: 'Advanced Analytics',
-      description: 'Get detailed insights and reports on patient progress and outcomes',
+      description: 'Get detailed insights and reports on student progress and outcomes',
       color: 'text-green-500',
       bgColor: 'bg-green-50'
     },
@@ -115,7 +110,7 @@ const DoctorSubscriptionPage: React.FC = () => {
     {
       icon: Download,
       title: 'Data Export',
-      description: 'Export patient data and reports in multiple formats',
+      description: 'Export student data and reports in multiple formats',
       color: 'text-orange-500',
       bgColor: 'bg-orange-50'
     },
@@ -138,7 +133,7 @@ const DoctorSubscriptionPage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
   }
@@ -175,7 +170,7 @@ const DoctorSubscriptionPage: React.FC = () => {
                       <Calendar className="h-5 w-5 text-green-600 mr-3" />
                       <span className="font-medium text-gray-900">Expires</span>
                     </div>
-                    <span className="text-gray-900">{formatDate(doctor?.subscriptionExpiry || '')}</span>
+                    <span className="text-gray-900">{formatDate(school?.subscriptionExpiry || '')}</span>
                   </div>
 
                   <div className="flex items-center justify-between py-3 border-b border-gray-200">
@@ -189,7 +184,7 @@ const DoctorSubscriptionPage: React.FC = () => {
                   <div className="flex items-center justify-between py-3">
                     <div className="flex items-center">
                       <Users className="h-5 w-5 text-purple-600 mr-3" />
-                      <span className="font-medium text-gray-900">Patient Limit</span>
+                      <span className="font-medium text-gray-900">Children Limit</span>
                     </div>
                     <span className="text-gray-900">Unlimited</span>
                   </div>
@@ -215,11 +210,11 @@ const DoctorSubscriptionPage: React.FC = () => {
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">You're on the Free Plan</h3>
                   <p className="text-gray-600 mb-4">
-                    Limited to {doctor?.maxChildren || 3} patients. Upgrade to unlock unlimited patients and premium features.
+                    Limited to {school?.childrenLimit || 10} children. Upgrade to unlock unlimited children and premium features.
                   </p>
                   <Link
-                    to="/doctor/pricing"
-                    className="inline-flex items-center px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                    to="/school/pricing"
+                    className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                   >
                     Upgrade Now
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -255,8 +250,8 @@ const DoctorSubscriptionPage: React.FC = () => {
               <div className="space-y-3">
                 {!isSubscriptionActive() && (
                   <Link
-                    to="/doctor/pricing"
-                    className="flex items-center justify-between w-full p-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                    to="/school/pricing"
+                    className="flex items-center justify-between w-full p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                   >
                     <span className="font-medium">Upgrade to Premium</span>
                     <ArrowRight className="h-4 w-4" />
@@ -264,7 +259,7 @@ const DoctorSubscriptionPage: React.FC = () => {
                 )}
                 
                 <Link
-                  to="/doctor/pricing"
+                  to="/school/pricing"
                   className="flex items-center justify-between w-full p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   <span className="font-medium">View Plans</span>
@@ -272,7 +267,7 @@ const DoctorSubscriptionPage: React.FC = () => {
                 </Link>
 
                 <Link
-                  to="/doctor/tickets"
+                  to="/school/tickets"
                   className="flex items-center justify-between w-full p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   <span className="font-medium">Contact Support</span>
@@ -287,9 +282,9 @@ const DoctorSubscriptionPage: React.FC = () => {
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700">Patients</span>
+                    <span className="text-sm font-medium text-gray-700">Children</span>
                     <span className="text-sm text-gray-500">
-                      {doctor?.currentChildrenCount || 0} / {isSubscriptionActive() ? '∞' : (doctor?.maxChildren || 3)}
+                      {school?.currentChildren || 0} / {isSubscriptionActive() ? '∞' : (school?.childrenLimit || 10)}
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
@@ -297,14 +292,14 @@ const DoctorSubscriptionPage: React.FC = () => {
                       className={`h-2 rounded-full ${
                         isSubscriptionActive() 
                           ? 'bg-green-500' 
-                          : (doctor?.currentChildrenCount || 0) >= (doctor?.maxChildren || 3)
+                          : (school?.currentChildren || 0) >= (school?.childrenLimit || 10)
                             ? 'bg-red-500'
                             : 'bg-yellow-500'
                       }`}
                       style={{
                         width: isSubscriptionActive() 
                           ? '100%' 
-                          : `${Math.min(((doctor?.currentChildrenCount || 0) / (doctor?.maxChildren || 3)) * 100, 100)}%`
+                          : `${Math.min(((school?.currentChildren || 0) / (school?.childrenLimit || 10)) * 100, 100)}%`
                       }}
                     ></div>
                   </div>
@@ -325,18 +320,18 @@ const DoctorSubscriptionPage: React.FC = () => {
 
              {/* Benefits Summary - Only show if not premium */}
              {!isSubscriptionActive() && (
-               <div className="bg-gradient-to-br from-black via-red-600 to-red-700 rounded-lg shadow-lg p-6 text-white">
+               <div className="bg-gradient-to-br from-black via-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white">
                  <div className="flex items-center mb-4">
                    <Crown className="h-6 w-6 mr-2 text-yellow-400" />
                    <h3 className="text-lg font-semibold">Upgrade to Premium</h3>
                  </div>
                  <p className="text-sm text-gray-200 mb-4">
-                   Unlock unlimited patients and premium features to enhance your practice.
+                   Unlock unlimited children and premium features to enhance your school's learning experience.
                  </p>
                  <ul className="space-y-3 text-sm">
                    <li className="flex items-center">
                      <CheckCircle className="h-4 w-4 mr-3 text-green-400" />
-                     <span>Unlimited patients</span>
+                     <span>Unlimited children</span>
                    </li>
                    <li className="flex items-center">
                      <CheckCircle className="h-4 w-4 mr-3 text-green-400" />
@@ -361,7 +356,7 @@ const DoctorSubscriptionPage: React.FC = () => {
                  </ul>
                  <div className="mt-6">
                    <Link
-                     to="/doctor/pricing"
+                     to="/school/pricing"
                      className="inline-flex items-center justify-center w-full px-4 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-400 transition-colors"
                    >
                      <Crown className="mr-2 h-5 w-5" />
@@ -380,7 +375,7 @@ const DoctorSubscriptionPage: React.FC = () => {
                    <h3 className="text-lg font-semibold">Premium Active</h3>
                  </div>
                  <p className="text-sm text-green-100 mb-4">
-                   You're enjoying all premium features and unlimited patient access.
+                   You're enjoying all premium features and unlimited children access.
                  </p>
                  <div className="space-y-2 text-sm">
                    <div className="flex items-center justify-between">
@@ -389,10 +384,10 @@ const DoctorSubscriptionPage: React.FC = () => {
                    </div>
                    <div className="flex items-center justify-between">
                      <span>Expires:</span>
-                     <span className="font-semibold">{formatDate(doctor?.subscriptionExpiry || '')}</span>
+                     <span className="font-semibold">{formatDate(school?.subscriptionExpiry || '')}</span>
                    </div>
                    <div className="flex items-center justify-between">
-                     <span>Patients:</span>
+                     <span>Children:</span>
                      <span className="font-semibold">Unlimited</span>
                    </div>
                  </div>
@@ -410,4 +405,4 @@ const DoctorSubscriptionPage: React.FC = () => {
   );
 };
 
-export default DoctorSubscriptionPage;
+export default SchoolSubscriptionPage;

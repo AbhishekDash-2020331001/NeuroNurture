@@ -34,6 +34,9 @@ const SchoolLoginForm: React.FC = () => {
         const data = await response.json();
         console.log('School login response:', data);
         console.log('JWT Token received:', data.token);
+        console.log('Backend subscriptionStatus:', data.school.subscriptionStatus);
+        console.log('Backend subscriptionPlan:', data.school.subscriptionPlan);
+        console.log('Backend subscriptionExpiry:', data.school.subscriptionExpiry);
         
         // Store token and school data
         localStorage.setItem('schoolToken', data.token);
@@ -46,9 +49,15 @@ const SchoolLoginForm: React.FC = () => {
           address: `${data.school.address}, ${data.school.city}, ${data.school.state} ${data.school.zipCode}`,
           phone: data.school.phone,
           subscriptionStatus: data.school.subscriptionStatus,
+          subscriptionPlan: data.school.subscriptionPlan || 'free',
+          subscriptionExpiry: data.school.subscriptionExpiry,
           childrenLimit: data.school.childrenLimit,
           currentChildren: data.school.currentChildren
         };
+        
+        console.log('Parsed school data:', schoolData);
+        console.log('Parsed subscriptionExpiry:', schoolData.subscriptionExpiry);
+        console.log('Parsed subscriptionPlan:', schoolData.subscriptionPlan);
         
         localStorage.setItem('schoolAuth', JSON.stringify(schoolData));
         navigate('/school/dashboard');

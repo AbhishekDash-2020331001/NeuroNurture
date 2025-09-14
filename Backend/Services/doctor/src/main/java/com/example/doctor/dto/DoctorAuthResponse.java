@@ -31,6 +31,9 @@ public class DoctorAuthResponse {
         private String zipCode;
         private Integer yearsOfExperience;
         private String subscriptionStatus;
+        private String subscriptionExpiry;
+        private String stripeCustomerId;
+        private String stripeSubscriptionId;
         private Integer patientLimit;
         private Integer currentPatients;
     }

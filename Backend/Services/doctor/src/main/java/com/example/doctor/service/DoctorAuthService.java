@@ -141,6 +141,9 @@ public class DoctorAuthService implements UserDetailsService {
         doctorInfo.setZipCode(doctor.getZipCode());
         doctorInfo.setYearsOfExperience(doctor.getYearsOfExperience());
         doctorInfo.setSubscriptionStatus(doctor.getSubscriptionStatus());
+        doctorInfo.setSubscriptionExpiry(doctor.getSubscriptionExpiry() != null ? doctor.getSubscriptionExpiry().toString() : null);
+        doctorInfo.setStripeCustomerId(doctor.getStripeCustomerId());
+        doctorInfo.setStripeSubscriptionId(doctor.getStripeSubscriptionId());
         doctorInfo.setPatientLimit(doctor.getPatientLimit());
         doctorInfo.setCurrentPatients(doctor.getCurrentPatients());
         

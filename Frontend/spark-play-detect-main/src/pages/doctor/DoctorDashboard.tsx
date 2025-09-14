@@ -7,11 +7,14 @@ import {
     Calendar,
     CheckCircle,
     Clock,
-    Heart,
+    Crown,
+    Download,
     MessageSquare,
+    Shield,
     Stethoscope,
     TrendingUp,
-    Users
+    Users,
+    Zap
 } from 'lucide-react';
 import React from 'react';
 import { Link } from 'react-router-dom';
@@ -21,6 +24,58 @@ const DoctorDashboard: React.FC = () => {
   const dashboardStats = getDashboardStats();
 
   // DoctorAuthGuard handles authentication, so we can assume doctor exists here
+
+  // Check if doctor has active premium subscription
+  const isPremiumActive = () => {
+    if (!doctor?.subscriptionExpiry) return false;
+    return new Date(doctor.subscriptionExpiry) > new Date();
+  };
+
+  // Premium features list
+  const premiumFeatures = [
+    {
+      icon: Users,
+      title: 'Unlimited Patients',
+      description: 'Add and manage unlimited patients without any restrictions',
+      color: 'text-blue-500',
+      bgColor: 'bg-blue-50'
+    },
+    {
+      icon: BarChart3,
+      title: 'Advanced Analytics',
+      description: 'Get detailed insights and reports on patient progress and outcomes',
+      color: 'text-green-500',
+      bgColor: 'bg-green-50'
+    },
+    {
+      icon: MessageSquare,
+      title: 'Priority Support',
+      description: 'Get priority support and faster response times for all your needs',
+      color: 'text-purple-500',
+      bgColor: 'bg-purple-50'
+    },
+    {
+      icon: Download,
+      title: 'Data Export',
+      description: 'Export patient data and reports in multiple formats',
+      color: 'text-orange-500',
+      bgColor: 'bg-orange-50'
+    },
+    {
+      icon: Shield,
+      title: 'Enhanced Security',
+      description: 'Advanced security features and data protection',
+      color: 'text-red-500',
+      bgColor: 'bg-red-50'
+    },
+    {
+      icon: Zap,
+      title: 'Advanced Tools',
+      description: 'Access to premium assessment tools and features',
+      color: 'text-yellow-500',
+      bgColor: 'bg-yellow-50'
+    }
+  ];
 
   const stats = [
     {
@@ -183,37 +238,58 @@ const DoctorDashboard: React.FC = () => {
         </div>
 
 
-        {/* Call to Action */}
-        <div className="bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-700 rounded-2xl p-3 sm:p-4 text-white shadow-xl">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-            <div className="mb-4 lg:mb-0">
-              <h2 className="text-2xl font-bold mb-2">Ready to make a difference?</h2>
-              <p className="text-purple-100 text-lg mb-4">
-                Continue helping your patients reach their therapeutic goals
-              </p>
-              {doctor?.subscriptionStatus === 'paid' ? (
-                <p className="text-sm text-purple-200">
-                  Premium Plan • {doctor.maxChildren - dashboardStats.activePatients} patient slots available
-                </p>
-              ) : (
-                <p className="text-sm text-purple-200">
-                  Basic Plan • {3 - dashboardStats.activePatients} patient slots available
-                </p>
-              )}
+        {/* Premium Features and Upgrade Card - Only show for free users */}
+        {!isPremiumActive() && (
+          <>
+            {/* Premium Features Grid */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Unlock Premium Features</h3>
+                <p className="text-gray-600">Upgrade to access these powerful tools and unlimited patients</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {premiumFeatures.map((feature, index) => (
+                  <div key={index} className={`${feature.bgColor} rounded-lg p-4`}>
+                    <div className="flex items-start">
+                      <feature.icon className={`h-6 w-6 ${feature.color} mr-3 mt-1`} />
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-1">{feature.title}</h4>
+                        <p className="text-sm text-gray-600">{feature.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-              {doctor?.subscriptionStatus !== 'paid' && dashboardStats.activePatients >= 3 && (
-                <button className="inline-flex items-center justify-center px-6 py-3 bg-white bg-opacity-20 backdrop-blur-sm text-white text-sm font-medium rounded-xl hover:bg-opacity-30 transition-all duration-200 border border-white border-opacity-30">
-                  <Heart className="h-4 w-4 mr-2" />
-                  Upgrade to Premium
-                </button>
-              )}
+
+            {/* Upgrade Call to Action */}
+            <div className="bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-700 rounded-2xl p-3 sm:p-4 text-white shadow-xl">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+                <div className="mb-4 lg:mb-0">
+                  <h2 className="text-2xl font-bold mb-2">Ready to unlock unlimited potential?</h2>
+                  <p className="text-purple-100 text-lg mb-4">
+                    Upgrade to premium and access all features with unlimited patients
+                  </p>
+                  <p className="text-sm text-purple-200">
+                    Basic Plan • {3 - dashboardStats.activePatients} patient slots available
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                  <Link
+                    to="/doctor/pricing"
+                    className="inline-flex items-center justify-center px-6 py-3 bg-white bg-opacity-20 backdrop-blur-sm text-white text-sm font-medium rounded-xl hover:bg-opacity-30 transition-all duration-200 border border-white border-opacity-30"
+                  >
+                    <Crown className="h-4 w-4 mr-2" />
+                    View Premium Plans
+                  </Link>
+                </div>
+                <div className="hidden md:block">
+                  <Crown className="h-12 w-12 text-purple-300" />
+                </div>
+              </div>
             </div>
-            <div className="hidden md:block">
-              <Heart className="h-12 w-12 text-purple-300" />
-            </div>
-          </div>
-        </div>
+          </>
+        )}
     </div>
   );
 };

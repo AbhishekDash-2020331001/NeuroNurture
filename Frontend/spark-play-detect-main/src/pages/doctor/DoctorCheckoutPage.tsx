@@ -258,15 +258,16 @@ const DoctorCheckoutPage: React.FC = () => {
   };
 
   const formatPrice = (priceInCents: number, currency: string) => {
-    const price = priceInCents / 100;
-    return new Intl.NumberFormat('en-US', {
+    // Convert USD to Taka by multiplying by 100
+    const priceInTaka = (priceInCents / 100) * 100;
+    return new Intl.NumberFormat('en-BD', {
       style: 'currency',
-      currency: currency.toUpperCase()
-    }).format(price);
+      currency: 'BDT'
+    }).format(priceInTaka);
   };
 
   const handlePaymentSuccess = () => {
-    navigate('/doctor/payment-success');
+    navigate(`/doctor/payment-success?plan=${planId}`);
   };
 
   const handlePaymentError = (error: string) => {

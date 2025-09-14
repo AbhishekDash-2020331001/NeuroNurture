@@ -96,6 +96,18 @@ public class School implements UserDetails {
     @Column
     private Integer currentChildren = 0;
 
+    @Column
+    private LocalDateTime subscriptionExpiry; // When subscription expires, null means no active subscription
+
+    @Column
+    private String stripeCustomerId; // Stripe customer ID for subscription management
+
+    @Column
+    private String stripeSubscriptionId; // Stripe subscription ID
+
+    @Column
+    private String subscriptionPlan = "free"; // free, premium
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -128,6 +140,22 @@ public class School implements UserDetails {
     @Override
     public boolean isEnabled() {
         return enabled && emailVerified && isVerified;
+    }
+
+    // Helper method to check if subscription is active
+    public boolean isSubscriptionActive() {
+        return subscriptionExpiry != null && subscriptionExpiry.isAfter(LocalDateTime.now());
+    }
+
+    // Helper method to get subscription status
+    public String getSubscriptionStatus() {
+        if (subscriptionExpiry == null) {
+            return "none";
+        } else if (subscriptionExpiry.isAfter(LocalDateTime.now())) {
+            return "active";
+        } else {
+            return "expired";
+        }
     }
 }
 

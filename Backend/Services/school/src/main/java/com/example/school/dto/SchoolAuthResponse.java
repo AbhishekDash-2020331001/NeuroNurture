@@ -27,6 +27,13 @@ public class SchoolAuthResponse {
         private String state;
         private String zipCode;
         private Integer studentCount;
+        private String subscriptionStatus;
+        private String subscriptionPlan;
+        private String subscriptionExpiry;
+        private String stripeCustomerId;
+        private String stripeSubscriptionId;
+        private Integer childrenLimit;
+        private Integer currentChildren;
     }
 }
 

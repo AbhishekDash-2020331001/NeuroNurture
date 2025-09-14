@@ -67,13 +67,14 @@ const DoctorPricingPage: React.FC = () => {
     console.log('formatPrice called with:', { priceInCents, currency });
     if (!priceInCents || isNaN(priceInCents)) {
       console.error('Invalid priceInCents:', priceInCents);
-      return '$0.00';
+      return '৳0.00';
     }
-    const price = priceInCents / 100;
-    return new Intl.NumberFormat('en-US', {
+    // Convert USD to Taka by multiplying by 100
+    const priceInTaka = (priceInCents / 100) * 100;
+    return new Intl.NumberFormat('en-BD', {
       style: 'currency',
-      currency: currency.toUpperCase()
-    }).format(price);
+      currency: 'BDT'
+    }).format(priceInTaka);
   };
 
   const handleSelectPlan = (planId: string) => {
@@ -135,7 +136,7 @@ const DoctorPricingPage: React.FC = () => {
                     {formatPrice(plan.priceInCents, plan.currency)}
                   </span>
                   <span className="text-gray-500 ml-2">
-                    /{plan.durationInMonths === 12 ? 'year' : `${plan.durationInMonths} years`}
+                    /{plan.durationInMonths === 12 ? 'year' : `${plan.durationInMonths / 12} years`}
                   </span>
                 </div>
                 <p className="text-sm text-gray-500 mt-2">
