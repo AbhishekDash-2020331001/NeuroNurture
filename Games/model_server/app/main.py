@@ -2,7 +2,7 @@ from fastapi import FastAPI, UploadFile, File, Form
 from app.predictor import *
 from app.dance_doodle import *
 from fastapi.middleware.cors import CORSMiddleware
-from app.gaze import get_gaze
+#from app.gaze import get_gaze
 import cv2
 import threading
 import mediapipe as mp

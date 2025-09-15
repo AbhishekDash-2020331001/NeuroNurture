@@ -1,16 +1,16 @@
 import { useDoctorAuth } from '@/contexts/doctor/DoctorAuthContext';
 import { patientService, type Patient } from '@/services/patientService';
-import {
+import { 
     Activity,
     BarChart3,
-    BookOpen,
+  BookOpen,
     CheckCircle,
     Clock,
     Heart,
-    MessageSquare,
+  MessageSquare,
     Plus,
     Search,
-    Stethoscope,
+  Stethoscope,
     Users,
     X
 } from 'lucide-react';
@@ -472,10 +472,10 @@ const EnrolledChildren: React.FC = () => {
                   <Clock className="h-4 w-4 mr-2" />
                   <span>Age: {patient.age} years</span>
                 </div>
-                <div className="flex items-center">
-                  <Heart className="h-4 w-4 mr-2" />
+                  <div className="flex items-center">
+                    <Heart className="h-4 w-4 mr-2" />
                   <span>Condition: {patient.problem}</span>
-                </div>
+                  </div>
               </div>
             </div>
           ))}
@@ -598,8 +598,8 @@ const EnrolledChildren: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
-      )}
+          </div>
+        )}
       </div>
     </div>
   );
