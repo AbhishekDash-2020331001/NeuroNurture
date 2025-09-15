@@ -1,21 +1,21 @@
 import {
-    BarChart3,
-    CheckCircle,
-    Download, Filter,
-    Gamepad2,
-    Lightbulb,
-    Search,
-    Star,
-    Target,
-    TrendingUp,
-    Users,
-    XCircle,
-    Zap
+  BarChart3,
+  CheckCircle,
+  Download, Filter,
+  Gamepad2,
+  Lightbulb,
+  Search,
+  Star,
+  Target,
+  TrendingUp,
+  Users,
+  XCircle,
+  Zap
 } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSchoolAuth } from '../../contexts/school/SchoolAuthContext';
 import { childrenService, SchoolChild } from '../../services/childrenService';
-import { childSessionService, ChildSessionStats } from '../../services/childSessionService';
+import { childSessionService, ChildSessionStats, GameSession } from '../../services/childSessionService';
 
 interface Child {
   id: string;
@@ -308,6 +308,11 @@ const ChildProgressComparison: React.FC = () => {
   const [child1SessionStats, setChild1SessionStats] = useState<ChildSessionStats | null>(null);
   const [child2SessionStats, setChild2SessionStats] = useState<ChildSessionStats | null>(null);
   const [isLoadingSessionStats, setIsLoadingSessionStats] = useState(false);
+  
+  // Game data state for detailed analysis
+  const [child1GameData, setChild1GameData] = useState<GameSession[]>([]);
+  const [child2GameData, setChild2GameData] = useState<GameSession[]>([]);
+  const [isLoadingGameData, setIsLoadingGameData] = useState(false);
 
   // Convert SchoolChild to Child format for comparison
   const convertToChild = (schoolChild: SchoolChild): Child => {
@@ -448,6 +453,81 @@ const ChildProgressComparison: React.FC = () => {
     fetchSessionStats();
   }, [selectedChild1, selectedChild2]);
 
+  // Fetch game data when children are selected - NEW APPROACH: Fetch each game type separately
+  useEffect(() => {
+    const fetchGameDataForEachType = async () => {
+      if (!selectedChild1 && !selectedChild2) return;
+      
+      setIsLoadingGameData(true);
+      try {
+        // Fetch data for each game type separately for both children
+        const gameTypes = ['gesture', 'mirror', 'dance', 'repeat', 'gaze'];
+        const child1Scores: {[key: string]: {score: number, sessions: number}} = {};
+        const child2Scores: {[key: string]: {score: number, sessions: number}} = {};
+        
+        for (const gameType of gameTypes) {
+          if (selectedChild1) {
+            let result = {score: 0, sessions: 0};
+            switch (gameType) {
+              case 'gesture':
+                result = await fetchAndCalculateGestureGameScore(selectedChild1.id);
+                break;
+              case 'mirror':
+                result = await fetchAndCalculateMirrorPostureGameScore(selectedChild1.id);
+                break;
+              case 'dance':
+                result = await fetchAndCalculateDanceDoodleGameScore(selectedChild1.id);
+                break;
+              case 'repeat':
+                result = await fetchAndCalculateRepeatWithMeGameScore(selectedChild1.id);
+                break;
+              case 'gaze':
+                result = await fetchAndCalculateGazeGameScore(selectedChild1.id);
+                break;
+            }
+            child1Scores[gameType] = result;
+          }
+          
+          if (selectedChild2) {
+            let result = {score: 0, sessions: 0};
+            switch (gameType) {
+              case 'gesture':
+                result = await fetchAndCalculateGestureGameScore(selectedChild2.id);
+                break;
+              case 'mirror':
+                result = await fetchAndCalculateMirrorPostureGameScore(selectedChild2.id);
+                break;
+              case 'dance':
+                result = await fetchAndCalculateDanceDoodleGameScore(selectedChild2.id);
+                break;
+              case 'repeat':
+                result = await fetchAndCalculateRepeatWithMeGameScore(selectedChild2.id);
+                break;
+              case 'gaze':
+                result = await fetchAndCalculateGazeGameScore(selectedChild2.id);
+                break;
+            }
+            child2Scores[gameType] = result;
+          }
+        }
+        
+        // Store the calculated scores
+        setChild1GameData(child1Scores as any);
+        setChild2GameData(child2Scores as any);
+        
+        console.log('Child 1 calculated scores:', child1Scores);
+        console.log('Child 2 calculated scores:', child2Scores);
+        
+      } catch (error) {
+        console.error('Error fetching game data:', error);
+      } finally {
+        setIsLoadingGameData(false);
+      }
+    };
+
+    fetchGameDataForEachType();
+  }, [selectedChild1, selectedChild2]);
+
   // Handle game selection
   const handleGameSelection = (gameId: string) => {
     setSelectedGames(prev => 
@@ -484,6 +564,232 @@ const ChildProgressComparison: React.FC = () => {
     });
     
     return data;
+  };
+
+
+  // Fetch and calculate scores for each game type separately
+  const fetchAndCalculateGestureGameScore = async (childId: string): Promise<{score: number, sessions: number}> => {
+    try {
+      // Fetch gesture game sessions directly from gesture game service
+      const response = await fetch(`http://localhost:8084/api/gesture-game/child/${childId}`);
+      if (response.ok) {
+        const sessions = await response.json();
+        console.log(`Gesture sessions for child ${childId}:`, sessions);
+        
+        if (!sessions || sessions.length === 0) return {score: 0, sessions: 0};
+        
+        let totalTime = 0;
+        let validSessions = 0;
+        
+        sessions.forEach((session: any) => {
+          const gestureFields = [
+            session.thumbs_up, session.thumbs_down, session.victory, session.butterfly,
+            session.spectacle, session.heart, session.pointing_up, session.iloveyou,
+            session.dua, session.closed_fist, session.open_palm
+          ];
+          
+          const hasAllPosesCompleted = gestureFields.every(time => time !== null && time !== undefined);
+          
+          if (hasAllPosesCompleted) {
+            const sessionTotalTime = gestureFields.reduce((sum, time) => sum + time, 0);
+            totalTime += sessionTotalTime;
+            validSessions++;
+          }
+        });
+        
+        return {
+          score: validSessions > 0 ? totalTime / validSessions : 0,
+          sessions: validSessions
+        };
+      }
+    } catch (error) {
+      console.error(`Error fetching gesture data for child ${childId}:`, error);
+    }
+    return {score: 0, sessions: 0};
+  };
+
+  const fetchAndCalculateMirrorPostureGameScore = async (childId: string): Promise<{score: number, sessions: number}> => {
+    try {
+      const response = await fetch(`http://localhost:8083/api/mirror-posture-game/child/${childId}`);
+      if (response.ok) {
+        const sessions = await response.json();
+        console.log(`Mirror posture sessions for child ${childId}:`, sessions);
+        
+        if (!sessions || sessions.length === 0) return {score: 0, sessions: 0};
+        
+        let totalTime = 0;
+        let validSessions = 0;
+        
+        sessions.forEach((session: any) => {
+          const postureFields = [
+            session.lookingSideways, session.mouthOpen, session.showingTeeth, session.kiss
+          ];
+          
+          const hasAllPosturesCompleted = postureFields.every(time => time !== null && time !== undefined);
+          
+          if (hasAllPosturesCompleted) {
+            const sessionTotalTime = postureFields.reduce((sum, time) => sum + time, 0);
+            totalTime += sessionTotalTime;
+            validSessions++;
+          }
+        });
+        
+        return {
+          score: validSessions > 0 ? totalTime / validSessions : 0,
+          sessions: validSessions
+        };
+      }
+    } catch (error) {
+      console.error(`Error fetching mirror posture data for child ${childId}:`, error);
+    }
+    return {score: 0, sessions: 0};
+  };
+
+  const fetchAndCalculateDanceDoodleGameScore = async (childId: string): Promise<{score: number, sessions: number}> => {
+    try {
+      const response = await fetch(`http://localhost:8087/api/dance-doodle/child/${childId}`);
+      if (response.ok) {
+        const sessions = await response.json();
+        console.log(`Dance doodle sessions for child ${childId}:`, sessions);
+        
+        if (!sessions || sessions.length === 0) return {score: 0, sessions: 0};
+        
+        let totalTime = 0;
+        let validSessions = 0;
+        
+        sessions.forEach((session: any) => {
+          const danceFields = [
+            session.cool_arms, session.open_wings, session.silly_boxer, session.happy_stand,
+            session.crossy_play, session.shh_fun, session.stretch
+          ];
+          
+          const hasAllPosesCompleted = danceFields.every(time => time !== null && time !== undefined);
+          
+          if (hasAllPosesCompleted) {
+            const sessionTotalTime = danceFields.reduce((sum, time) => sum + time, 0);
+            totalTime += sessionTotalTime;
+            validSessions++;
+          }
+        });
+        
+        return {
+          score: validSessions > 0 ? totalTime / validSessions : 0,
+          sessions: validSessions
+        };
+      }
+    } catch (error) {
+      console.error(`Error fetching dance doodle data for child ${childId}:`, error);
+    }
+    return {score: 0, sessions: 0};
+  };
+
+  const fetchAndCalculateRepeatWithMeGameScore = async (childId: string): Promise<{score: number, sessions: number}> => {
+    try {
+      const response = await fetch(`http://localhost:8086/api/repeat-with-me-game/child/${childId}`);
+      if (response.ok) {
+        const sessions = await response.json();
+        console.log(`Repeat with me sessions for child ${childId}:`, sessions);
+        
+        if (!sessions || sessions.length === 0) return {score: 0, sessions: 0};
+        
+        let totalSimilarity = 0;
+        let validSessions = 0;
+        
+        sessions.forEach((session: any) => {
+          const roundFields = [
+            session.round1Score, session.round2Score, session.round3Score, session.round4Score,
+            session.round5Score, session.round6Score, session.round7Score, session.round8Score,
+            session.round9Score, session.round10Score, session.round11Score, session.round12Score
+          ];
+          
+          const hasAllRoundsCompleted = roundFields.every(score => score !== null && score !== undefined);
+          
+          if (hasAllRoundsCompleted) {
+            const sessionAverageSimilarity = roundFields.reduce((sum, score) => sum + score, 0) / roundFields.length;
+            totalSimilarity += sessionAverageSimilarity;
+            validSessions++;
+          }
+        });
+        
+        return {
+          score: validSessions > 0 ? totalSimilarity / validSessions : 0,
+          sessions: validSessions
+        };
+      }
+    } catch (error) {
+      console.error(`Error fetching repeat with me data for child ${childId}:`, error);
+    }
+    return {score: 0, sessions: 0};
+  };
+
+  const fetchAndCalculateGazeGameScore = async (childId: string): Promise<{score: number, sessions: number}> => {
+    try {
+      const response = await fetch(`http://localhost:8085/api/gaze-game/child/${childId}`);
+      if (response.ok) {
+        const sessions = await response.json();
+        console.log(`Gaze game sessions for child ${childId}:`, sessions);
+        
+        if (!sessions || sessions.length === 0) return {score: 0, sessions: 0};
+        
+        let totalBalloonPops = 0;
+        let validSessions = 0;
+        
+        sessions.forEach((session: any) => {
+          const roundFields = [session.round1Count, session.round2Count, session.round3Count];
+          
+          const hasAllRoundsCompleted = roundFields.every(count => count !== null && count !== undefined);
+          
+          if (hasAllRoundsCompleted) {
+            const sessionTotalPops = roundFields.reduce((sum, count) => sum + count, 0);
+            totalBalloonPops += sessionTotalPops;
+            validSessions++;
+          }
+        });
+        
+        return {
+          score: validSessions > 0 ? totalBalloonPops / validSessions : 0,
+          sessions: validSessions
+        };
+      }
+    } catch (error) {
+      console.error(`Error fetching gaze game data for child ${childId}:`, error);
+    }
+    return {score: 0, sessions: 0};
+  };
+
+  // Get calculated score for a specific game type - NEW APPROACH: Use pre-calculated scores
+  const getCalculatedGameScore = (gameData: any, gameType: string): number => {
+    // Map game types to our internal keys
+    const gameTypeMap: { [key: string]: string } = {
+      'gesture-game': 'gesture',
+      'mirror-posture-game': 'mirror',
+      'dance-doodle': 'dance',
+      'repeat-with-me-game': 'repeat',
+      'gaze-game': 'gaze'
+    };
+    
+    const internalKey = gameTypeMap[gameType];
+    if (internalKey && gameData && gameData[internalKey]) {
+      return gameData[internalKey].score || 0;
+    }
+    return 0;
+  };
+
+  // Get session count for a specific game type
+  const getSessionCount = (gameData: any, gameType: string): number => {
+    const gameTypeMap: { [key: string]: string } = {
+      'gesture-game': 'gesture',
+      'mirror-posture-game': 'mirror',
+      'dance-doodle': 'dance',
+      'repeat-with-me-game': 'repeat',
+      'gaze-game': 'gaze'
+    };
+    
+    const internalKey = gameTypeMap[gameType];
+    if (internalKey && gameData && gameData[internalKey]) {
+      return gameData[internalKey].sessions || 0;
+    }
+    return 0;
   };
 
   // Get maximum sessions across all selected games
@@ -1375,8 +1681,16 @@ const ChildProgressComparison: React.FC = () => {
                     </div>
                   </div>
                   
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
+                  {isLoadingGameData ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <p className="text-gray-600">Loading game performance data...</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
                       <thead>
                         <tr className="border-b border-gray-200">
                           <th className="text-left py-3 px-4 font-medium text-gray-700">Game</th>
@@ -1386,38 +1700,93 @@ const ChildProgressComparison: React.FC = () => {
                           <th className="text-center py-3 px-4 font-medium text-gray-700">Gap</th>
                         </tr>
                       </thead>
-                      <tbody>
-                        {Object.keys(gameNames).map((gameId) => {
-                          const child1Perf = selectedChild1.performance[gameId];
-                          const child2Perf = selectedChild2.performance[gameId];
-                          
-                          let child1Value, child2Value, winner;
-                          switch (selectedMetric) {
-                            case 'scores':
-                              child1Value = child1Perf.bestScore;
-                              child2Value = child2Perf.bestScore;
-                              winner = child1Value > child2Value ? selectedChild1.name : 
-                                       child2Value > child1Value ? selectedChild2.name : 'Tie';
-                              break;
-                            case 'time':
-                              child1Value = child1Perf.timeSpent;
-                              child2Value = child2Perf.timeSpent;
-                              winner = child1Value > child2Value ? selectedChild1.name : 
-                                       child2Value > child1Value ? selectedChild2.name : 'Tie';
-                              break;
-                            case 'consistency':
-                              child1Value = child1Perf.consistency;
-                              child2Value = child2Perf.consistency;
-                              winner = child1Value > child2Value ? selectedChild1.name : 
-                                       child2Value > child1Value ? selectedChild2.name : 'Tie';
-                              break;
-                            case 'improvement':
-                              child1Value = child1Perf.improvement;
-                              child2Value = child2Perf.improvement;
-                              winner = child1Value > child2Value ? selectedChild1.name : 
-                                       child2Value > child1Value ? selectedChild2.name : 'Tie';
-                              break;
-                          }
+                        <tbody>
+                          {Object.keys(gameNames).map((gameId) => {
+                            // Get real calculated scores from game data
+                            const child1CalculatedScore = getCalculatedGameScore(child1GameData, gameId);
+                            const child2CalculatedScore = getCalculatedGameScore(child2GameData, gameId);
+                            
+                            // Get session counts for additional info
+                            const child1Sessions = getSessionCount(child1GameData, gameId);
+                            const child2Sessions = getSessionCount(child2GameData, gameId);
+                            
+                            let child1Value, child2Value, winner, displayValue1, displayValue2;
+                            
+                            switch (selectedMetric) {
+                              case 'scores':
+                                child1Value = child1CalculatedScore;
+                                child2Value = child2CalculatedScore;
+                                winner = child1Value > child2Value ? selectedChild1.name : 
+                                         child2Value > child1Value ? selectedChild2.name : 'Tie';
+                                
+                                // Format display values based on game type
+                                if (gameId === 'gesture-game' || gameId === 'mirror-posture-game' || gameId === 'dance-doodle') {
+                                  displayValue1 = child1Value >= 0 ? `${(child1Value / 1000).toFixed(1)}s` : 'N/A';
+                                  displayValue2 = child2Value >= 0 ? `${(child2Value / 1000).toFixed(1)}s` : 'N/A';
+                                } else if (gameId === 'repeat-with-me-game') {
+                                  displayValue1 = child1Value >= 0 ? `${child1Value.toFixed(1)}%` : 'N/A';
+                                  displayValue2 = child2Value >= 0 ? `${child2Value.toFixed(1)}%` : 'N/A';
+                                } else if (gameId === 'gaze-game') {
+                                  displayValue1 = child1Value >= 0 ? `${child1Value.toFixed(1)}` : 'N/A';
+                                  displayValue2 = child2Value >= 0 ? `${child2Value.toFixed(1)}` : 'N/A';
+                                } else {
+                                  displayValue1 = child1Value >= 0 ? child1Value.toFixed(1) : 'N/A';
+                                  displayValue2 = child2Value >= 0 ? child2Value.toFixed(1) : 'N/A';
+                                }
+                                break;
+                              case 'time':
+                                // For time metric, show total time spent
+                                const child1TotalTime = child1GameData
+                                  .filter(session => {
+                                    const gameTypeMap: { [key: string]: string } = {
+                                      'gesture-game': 'gesture',
+                                      'mirror-posture-game': 'mirror',
+                                      'dance-doodle': 'dance',
+                                      'repeat-with-me-game': 'repeat',
+                                      'gaze-game': 'gaze'
+                                    };
+                                    return session.gameType === gameTypeMap[gameId];
+                                  })
+                                  .reduce((total, session) => total + (session.completionTime || 0), 0);
+                                
+                                const child2TotalTime = child2GameData
+                                  .filter(session => {
+                                    const gameTypeMap: { [key: string]: string } = {
+                                      'gesture-game': 'gesture',
+                                      'mirror-posture-game': 'mirror',
+                                      'dance-doodle': 'dance',
+                                      'repeat-with-me-game': 'repeat',
+                                      'gaze-game': 'gaze'
+                                    };
+                                    return session.gameType === gameTypeMap[gameId];
+                                  })
+                                  .reduce((total, session) => total + (session.completionTime || 0), 0);
+                                
+                                child1Value = child1TotalTime;
+                                child2Value = child2TotalTime;
+                                winner = child1Value > child2Value ? selectedChild1.name : 
+                                         child2Value > child1Value ? selectedChild2.name : 'Tie';
+                                displayValue1 = `${(child1Value / 60000).toFixed(1)}m`;
+                                displayValue2 = `${(child2Value / 60000).toFixed(1)}m`;
+                                break;
+                              case 'consistency':
+                                // For consistency, we'll use the calculated score as a proxy
+                                child1Value = child1CalculatedScore;
+                                child2Value = child2CalculatedScore;
+                                winner = child1Value > child2Value ? selectedChild1.name : 
+                                         child2Value > child1Value ? selectedChild2.name : 'Tie';
+                                displayValue1 = child1Value >= 0 ? `${child1Value.toFixed(1)}%` : 'N/A';
+                                displayValue2 = child2Value >= 0 ? `${child2Value.toFixed(1)}%` : 'N/A';
+                                break;
+                              case 'improvement':
+                                // For improvement, we'll calculate based on first vs last sessions
+                                child1Value = 0; // TODO: Implement improvement calculation
+                                child2Value = 0; // TODO: Implement improvement calculation
+                                winner = 'Tie';
+                                displayValue1 = 'N/A';
+                                displayValue2 = 'N/A';
+                                break;
+                            }
                           
                           const gap = Math.abs(child1Value - child2Value);
                           
@@ -1440,16 +1809,13 @@ const ChildProgressComparison: React.FC = () => {
                                     selectedMetric === 'consistency' ? 'text-purple-600 bg-purple-50' :
                                     getImprovementColor(child1Value)
                                   }`}>
-                                    {selectedMetric === 'time' ? `${child1Value}m` : 
-                                     selectedMetric === 'improvement' ? `+${child1Value}%` :
-                                     selectedMetric === 'consistency' ? `${child1Value}%` :
-                                     child1Value}
+                                    {isLoadingGameData ? '...' : displayValue1}
                                   </div>
                                   <div className="text-xs text-gray-500">
-                                    {selectedMetric === 'scores' && `Best: ${child1Perf.bestScore}`}
-                                    {selectedMetric === 'time' && `Games: ${child1Perf.gamesPlayed}`}
-                                    {selectedMetric === 'consistency' && `Accuracy: ${child1Perf.accuracy}%`}
-                                    {selectedMetric === 'improvement' && `Games: ${child1Perf.gamesPlayed}`}
+                                    {selectedMetric === 'scores' && `Sessions: ${child1Sessions}`}
+                                    {selectedMetric === 'time' && `Sessions: ${child1Sessions}`}
+                                    {selectedMetric === 'consistency' && `Sessions: ${child1Sessions}`}
+                                    {selectedMetric === 'improvement' && `Sessions: ${child1Sessions}`}
                                   </div>
                                 </div>
                               </td>
@@ -1461,16 +1827,13 @@ const ChildProgressComparison: React.FC = () => {
                                     selectedMetric === 'consistency' ? 'text-purple-600 bg-purple-50' :
                                     getImprovementColor(child2Value)
                                   }`}>
-                                    {selectedMetric === 'time' ? `${child2Value}m` : 
-                                     selectedMetric === 'improvement' ? `+${child2Value}%` :
-                                     selectedMetric === 'consistency' ? `${child2Value}%` :
-                                     child2Value}
+                                    {isLoadingGameData ? '...' : displayValue2}
                                   </div>
                                   <div className="text-xs text-gray-500">
-                                    {selectedMetric === 'scores' && `Best: ${child2Perf.bestScore}`}
-                                    {selectedMetric === 'time' && `Games: ${child2Perf.gamesPlayed}`}
-                                    {selectedMetric === 'consistency' && `Accuracy: ${child2Perf.accuracy}%`}
-                                    {selectedMetric === 'improvement' && `Games: ${child2Perf.gamesPlayed}`}
+                                    {selectedMetric === 'scores' && `Sessions: ${child2Sessions}`}
+                                    {selectedMetric === 'time' && `Sessions: ${child2Sessions}`}
+                                    {selectedMetric === 'consistency' && `Sessions: ${child2Sessions}`}
+                                    {selectedMetric === 'improvement' && `Sessions: ${child2Sessions}`}
                                   </div>
                                 </div>
                               </td>
@@ -1485,18 +1848,24 @@ const ChildProgressComparison: React.FC = () => {
                               </td>
                               <td className="py-4 px-4 text-center">
                                 <div className="text-sm font-medium text-gray-600">
-                                  {selectedMetric === 'time' ? `${gap}m` : 
-                                   selectedMetric === 'improvement' ? `${gap}%` :
-                                   selectedMetric === 'consistency' ? `${gap}%` :
-                                   gap}
+                                  {isLoadingGameData ? '...' : (
+                                    selectedMetric === 'time' ? `${(gap / 60000).toFixed(1)}m` : 
+                                    selectedMetric === 'improvement' ? `${gap}%` :
+                                    selectedMetric === 'consistency' ? `${gap}%` :
+                                    (gameId === 'gesture-game' || gameId === 'mirror-posture-game' || gameId === 'dance-doodle') ? `${(gap / 1000).toFixed(1)}s` :
+                                    gameId === 'repeat-with-me-game' ? `${gap.toFixed(1)}%` :
+                                    gameId === 'gaze-game' ? `${gap.toFixed(1)}` :
+                                    gap.toFixed(1)
+                                  )}
                                 </div>
                               </td>
                             </tr>
                           );
                         })}
                       </tbody>
-                    </table>
-                  </div>
+                      </table>
+                    </div>
+                  )}
                 </div>
 
                 {/* Strengths & Weaknesses Analysis */}

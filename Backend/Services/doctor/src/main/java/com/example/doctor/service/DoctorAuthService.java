@@ -1,9 +1,13 @@
 package com.example.doctor.service;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -217,5 +221,30 @@ public class DoctorAuthService implements UserDetailsService {
     
     private String generateVerificationToken() {
         return java.util.UUID.randomUUID().toString();
+    }
+    
+    // Get doctor information by ID (public method)
+    public ResponseEntity<?> getDoctorInfo(Long doctorId) {
+        Optional<Doctor> doctorOpt = doctorRepository.findById(doctorId);
+        if (doctorOpt.isPresent()) {
+            Doctor doctor = doctorOpt.get();
+            
+            // Create a simplified doctor info DTO for public access
+            Map<String, Object> doctorInfo = new HashMap<>();
+            doctorInfo.put("id", doctor.getId());
+            doctorInfo.put("firstName", doctor.getFirstName());
+            doctorInfo.put("lastName", doctor.getLastName());
+            doctorInfo.put("specialization", doctor.getSpecialization());
+            doctorInfo.put("hospital", doctor.getHospital());
+            doctorInfo.put("email", doctor.getEmail());
+            doctorInfo.put("phone", doctor.getPhone());
+            doctorInfo.put("address", doctor.getAddress());
+            doctorInfo.put("yearsOfExperience", doctor.getYearsOfExperience());
+            doctorInfo.put("licenseNumber", doctor.getLicenseNumber());
+            
+            return ResponseEntity.ok(doctorInfo);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

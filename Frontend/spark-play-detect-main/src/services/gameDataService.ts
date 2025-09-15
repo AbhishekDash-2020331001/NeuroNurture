@@ -8,6 +8,57 @@ export interface GameSession {
   isTrainingAllowed: boolean;
   suspectedASD: boolean;
   isASD?: boolean;
+  gameType?: string; // Added by gameDataService
+  
+  // Gesture Game fields
+  thumbs_up?: number;
+  thumbs_down?: number;
+  victory?: number;
+  butterfly?: number;
+  spectacle?: number;
+  heart?: number;
+  pointing_up?: number;
+  iloveyou?: number;
+  dua?: number;
+  closed_fist?: number;
+  open_palm?: number;
+  
+  // Mirror Posture Game fields
+  lookingSideways?: number;
+  mouthOpen?: number;
+  showingTeeth?: number;
+  kiss?: number;
+  
+  // Dance Doodle Game fields
+  cool_arms?: number;
+  open_wings?: number;
+  silly_boxer?: number;
+  happy_stand?: number;
+  crossy_play?: number;
+  shh_fun?: number;
+  stretch?: number;
+  
+  // Repeat with Me Game fields
+  round1Score?: number;
+  round2Score?: number;
+  round3Score?: number;
+  round4Score?: number;
+  round5Score?: number;
+  round6Score?: number;
+  round7Score?: number;
+  round8Score?: number;
+  round9Score?: number;
+  round10Score?: number;
+  round11Score?: number;
+  round12Score?: number;
+  
+  // Gaze Game fields
+  round1Count?: number;
+  round2Count?: number;
+  round3Count?: number;
+  
+  // Common fields
+  completionTime?: number;
 }
 
 export interface HeatmapData {

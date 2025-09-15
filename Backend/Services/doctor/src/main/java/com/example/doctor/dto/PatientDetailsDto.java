@@ -1,4 +1,4 @@
-package com.example.parent.dto;
+package com.example.doctor.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ChildDetailsDto {
+public class PatientDetailsDto {
     private Long id;
     private String name;
     private Integer age;
@@ -16,14 +16,9 @@ public class ChildDetailsDto {
     private String grade;
     private String gender;
     private Long schoolId;
-    private Boolean enrolled;
-    
-    // Parent information
+    private Boolean enrolledInSchool;
     private String parentName;
     private String parentEmail;
-    private String parentPhone;
     private String parentAddress;
-    
-    // Medical information
     private String problem; // Medical condition or problem
 }

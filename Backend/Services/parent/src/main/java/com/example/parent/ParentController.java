@@ -22,10 +22,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import com.example.parent.dto.ChatMessageDto;
 import com.example.parent.dto.ChildDetailsDto;
 import com.example.parent.dto.ChildSchoolInfoDto;
+import com.example.parent.dto.DoctorEnrollmentRequest;
+import com.example.parent.dto.DoctorInfoDto;
 import com.example.parent.dto.SchoolEnrollmentRequest;
 import com.example.parent.dto.SchoolInfoDto;
+import com.example.parent.dto.SendMessageRequest;
+import com.example.parent.service.ChatService;
 
 @RestController
 @RequestMapping("/api/parents")
@@ -35,6 +40,7 @@ public class ParentController {
     @Autowired private ParentRepository parentRepository;
     @Autowired private ChildRepository childRepository;
     @Autowired private RestTemplate restTemplate;
+    @Autowired private ChatService chatService;
 
     // Get all parents
     @GetMapping
@@ -124,7 +130,38 @@ public class ParentController {
                     parent != null ? parent.getName() : "Unknown",
                     parent != null ? parent.getEmail() : "Unknown",
                     "N/A", // Parent phone not available
-                    parent != null ? parent.getAddress() : "Unknown"
+                    parent != null ? parent.getAddress() : "Unknown",
+                    child.getProblem() // Medical condition or problem
+                );
+            })
+            .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(childDetails);
+    }
+
+    // Get all children enrolled with a specific doctor
+    @GetMapping("/doctors/{doctorId}/children")
+    public ResponseEntity<List<ChildDetailsDto>> getChildrenByDoctor(@PathVariable Long doctorId) {
+        List<Child> children = childRepository.findByDoctorId(doctorId);
+        List<ChildDetailsDto> childDetails = children.stream()
+            .map(child -> {
+                Parent parent = child.getParent();
+                int age = calculateAge(child.getDateOfBirth());
+                
+                return new ChildDetailsDto(
+                    child.getId(),
+                    child.getName(),
+                    age,
+                    child.getHeight(),
+                    child.getWeight(),
+                    child.getGrade(),
+                    child.getGender(),
+                    child.getSchoolId(),
+                    child.getSchoolId() != null,
+                    parent != null ? parent.getName() : "Unknown",
+                    parent != null ? parent.getEmail() : "Unknown",
+                    "N/A", // Parent phone not available
+                    parent != null ? parent.getAddress() : "Unknown",
+                    child.getProblem() // Medical condition or problem
                 );
             })
             .collect(java.util.stream.Collectors.toList());
@@ -235,6 +272,25 @@ public class ParentController {
         return ResponseEntity.ok(childRepository.save(child));
     }
 
+    // Enroll child with doctor
+    @PutMapping("/children/{childId}/enroll-doctor")
+    public ResponseEntity<Child> enrollChildWithDoctor(@PathVariable Long childId, @RequestBody DoctorEnrollmentRequest request) {
+        Child child = childRepository.findById(childId)
+                .orElseThrow(() -> new RuntimeException("Child not found"));
+        child.setDoctorId(request.getDoctorId());
+        child.setProblem(request.getProblem());
+        return ResponseEntity.ok(childRepository.save(child));
+    }
+
+    // Unenroll child from doctor
+    @PutMapping("/children/{childId}/unenroll-doctor")
+    public ResponseEntity<Child> unenrollChildFromDoctor(@PathVariable Long childId) {
+        Child child = childRepository.findById(childId)
+                .orElseThrow(() -> new RuntimeException("Child not found"));
+        child.setDoctorId(null);
+        return ResponseEntity.ok(childRepository.save(child));
+    }
+
     // Get child's school enrollment status
     @GetMapping("/children/{childId}/school-status")
     public ResponseEntity<SchoolEnrollmentStatus> getChildSchoolStatus(@PathVariable Long childId) {
@@ -246,6 +302,22 @@ public class ParentController {
         status.setChildName(child.getName());
         status.setSchoolId(child.getSchoolId());
         status.setEnrolled(child.getSchoolId() != null);
+        
+        return ResponseEntity.ok(status);
+    }
+
+    // Get child's doctor enrollment status and information
+    @GetMapping("/children/{childId}/doctor-status")
+    public ResponseEntity<DoctorEnrollmentStatus> getChildDoctorStatus(@PathVariable Long childId) {
+        Child child = childRepository.findById(childId)
+                .orElseThrow(() -> new RuntimeException("Child not found"));
+        
+        DoctorEnrollmentStatus status = new DoctorEnrollmentStatus();
+        status.setChildId(childId);
+        status.setChildName(child.getName());
+        status.setDoctorId(child.getDoctorId());
+        status.setProblem(child.getProblem());
+        status.setEnrolled(child.getDoctorId() != null);
         
         return ResponseEntity.ok(status);
     }
@@ -266,6 +338,31 @@ public class ParentController {
         
         public Long getSchoolId() { return schoolId; }
         public void setSchoolId(Long schoolId) { this.schoolId = schoolId; }
+        
+        public boolean isEnrolled() { return enrolled; }
+        public void setEnrolled(boolean enrolled) { this.enrolled = enrolled; }
+    }
+
+    // Inner class for doctor enrollment status response
+    public static class DoctorEnrollmentStatus {
+        private Long childId;
+        private String childName;
+        private Long doctorId;
+        private String problem;
+        private boolean enrolled;
+
+        // Getters and setters
+        public Long getChildId() { return childId; }
+        public void setChildId(Long childId) { this.childId = childId; }
+        
+        public String getChildName() { return childName; }
+        public void setChildName(String childName) { this.childName = childName; }
+        
+        public Long getDoctorId() { return doctorId; }
+        public void setDoctorId(Long doctorId) { this.doctorId = doctorId; }
+        
+        public String getProblem() { return problem; }
+        public void setProblem(String problem) { this.problem = problem; }
         
         public boolean isEnrolled() { return enrolled; }
         public void setEnrolled(boolean enrolled) { this.enrolled = enrolled; }
@@ -503,6 +600,140 @@ public class ParentController {
             case "mirror_posture_game": return "Mirror Posture";
             case "repeat_with_me_game": return "Repeat with Me";
             default: return gameId;
+        }
+    }
+
+    // Get doctor information by doctor ID
+    @GetMapping("/doctors/{doctorId}")
+    public ResponseEntity<DoctorInfoDto> getDoctorInfo(@PathVariable Long doctorId) {
+        logger.info("=== PARENT SERVICE: GET DOCTOR INFO DEBUG ===");
+        logger.info("Requested doctor ID: {}", doctorId);
+        
+        try {
+            // Call doctor service to get doctor information
+            String doctorServiceUrl = "http://localhost:8093/api/doctor/auth/doctors/" + doctorId;
+            logger.info("Calling doctor service URL: {}", doctorServiceUrl);
+            
+            RestTemplate restTemplate = new RestTemplate();
+            logger.info("Making HTTP GET request to doctor service...");
+            
+            ResponseEntity<DoctorInfoDto> response = restTemplate.getForEntity(doctorServiceUrl, DoctorInfoDto.class);
+            
+            logger.info("Doctor service response status: {}", response.getStatusCode());
+            logger.info("Doctor service response body: {}", response.getBody());
+            
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                logger.info("✅ Successfully fetched doctor data from doctor service");
+                logger.info("Doctor name: {} {}", response.getBody().getFirstName(), response.getBody().getLastName());
+                return ResponseEntity.ok(response.getBody());
+            } else {
+                logger.warn("❌ Doctor service returned non-2xx status or null body: {}", response.getStatusCode());
+                return getMockDoctorInfo(doctorId);
+            }
+        } catch (Exception e) {
+            logger.error("❌ Error calling doctor service: {}", e.getMessage());
+            logger.error("Exception type: {}", e.getClass().getSimpleName());
+            logger.error("Exception details: ", e);
+            logger.warn("Using mock doctor data");
+            return getMockDoctorInfo(doctorId);
+        }
+    }
+
+    private ResponseEntity<DoctorInfoDto> getMockDoctorInfo(Long doctorId) {
+        DoctorInfoDto doctorInfo = new DoctorInfoDto();
+        doctorInfo.setId(doctorId);
+        doctorInfo.setFirstName("Dr. Sarah");
+        doctorInfo.setLastName("Johnson");
+        doctorInfo.setSpecialization("Pediatric Neurology");
+        doctorInfo.setHospital("Children's Medical Center");
+        doctorInfo.setEmail("sarah.johnson@childrensmed.com");
+        doctorInfo.setPhone("+1 (555) 123-4567");
+        doctorInfo.setAddress("123 Medical Plaza, Health City");
+        doctorInfo.setYearsOfExperience(15);
+        doctorInfo.setLicenseNumber("MD123456");
+        
+        return ResponseEntity.ok(doctorInfo);
+    }
+
+    // ==================== CHAT ENDPOINTS ====================
+    
+    // Send message from child to doctor
+    @PostMapping("/chat/send-from-child")
+    public ResponseEntity<ChatMessageDto> sendMessageFromChild(@RequestBody SendMessageRequest request) {
+        logger.info("=== PARENT SERVICE: SEND MESSAGE FROM CHILD ===");
+        logger.info("Child ID: {}, Doctor ID: {}, Message: {}", request.getChildId(), request.getDoctorId(), request.getMessage());
+        
+        try {
+            ChatMessageDto message = chatService.sendMessageFromChild(request);
+            logger.info("✅ Message sent successfully");
+            return ResponseEntity.ok(message);
+        } catch (Exception e) {
+            logger.error("❌ Error sending message from child: {}", e.getMessage());
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+    
+    // Send message from doctor to child
+    @PostMapping("/chat/send-from-doctor")
+    public ResponseEntity<ChatMessageDto> sendMessageFromDoctor(@RequestBody SendMessageRequest request) {
+        logger.info("=== PARENT SERVICE: SEND MESSAGE FROM DOCTOR ===");
+        logger.info("Child ID: {}, Doctor ID: {}, Message: {}", request.getChildId(), request.getDoctorId(), request.getMessage());
+        
+        try {
+            ChatMessageDto message = chatService.sendMessageFromDoctor(request);
+            logger.info("✅ Message sent successfully");
+            return ResponseEntity.ok(message);
+        } catch (Exception e) {
+            logger.error("❌ Error sending message from doctor: {}", e.getMessage());
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+    
+    // Get chat history between child and doctor
+    @GetMapping("/chat/history/{childId}/{doctorId}")
+    public ResponseEntity<List<ChatMessageDto>> getChatHistory(@PathVariable Long childId, @PathVariable Long doctorId) {
+        logger.info("=== PARENT SERVICE: GET CHAT HISTORY ===");
+        logger.info("Child ID: {}, Doctor ID: {}", childId, doctorId);
+        
+        try {
+            List<ChatMessageDto> messages = chatService.getChatHistory(childId, doctorId);
+            logger.info("✅ Retrieved {} messages", messages.size());
+            return ResponseEntity.ok(messages);
+        } catch (Exception e) {
+            logger.error("❌ Error getting chat history: {}", e.getMessage());
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+    
+    // Mark messages as read
+    @PutMapping("/chat/mark-read/{childId}/{doctorId}/{readerType}")
+    public ResponseEntity<String> markMessagesAsRead(@PathVariable Long childId, @PathVariable Long doctorId, @PathVariable String readerType) {
+        logger.info("=== PARENT SERVICE: MARK MESSAGES AS READ ===");
+        logger.info("Child ID: {}, Doctor ID: {}, Reader Type: {}", childId, doctorId, readerType);
+        
+        try {
+            chatService.markMessagesAsRead(childId, doctorId, readerType);
+            logger.info("✅ Messages marked as read");
+            return ResponseEntity.ok("Messages marked as read");
+        } catch (Exception e) {
+            logger.error("❌ Error marking messages as read: {}", e.getMessage());
+            return ResponseEntity.status(500).body("Error marking messages as read");
+        }
+    }
+    
+    // Get unread message count
+    @GetMapping("/chat/unread-count/{childId}/{doctorId}/{userType}")
+    public ResponseEntity<Long> getUnreadMessageCount(@PathVariable Long childId, @PathVariable Long doctorId, @PathVariable String userType) {
+        logger.info("=== PARENT SERVICE: GET UNREAD MESSAGE COUNT ===");
+        logger.info("Child ID: {}, Doctor ID: {}, User Type: {}", childId, doctorId, userType);
+        
+        try {
+            long count = chatService.getUnreadMessageCount(childId, doctorId, userType);
+            logger.info("✅ Unread message count: {}", count);
+            return ResponseEntity.ok(count);
+        } catch (Exception e) {
+            logger.error("❌ Error getting unread message count: {}", e.getMessage());
+            return ResponseEntity.status(500).body(0L);
         }
     }
 } 

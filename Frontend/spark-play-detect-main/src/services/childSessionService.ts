@@ -34,6 +34,8 @@ class ChildSessionService {
       const response = await makeAuthenticatedSchoolRequest(`${this.schoolServiceUrl}/child/${childId}/sessions`);
       if (response.ok) {
         const data = await response.json();
+        console.log('School service response for child', childId, ':', data);
+        // The school service returns sessions in the 'sessions' property
         return data.sessions || [];
       }
       return [];

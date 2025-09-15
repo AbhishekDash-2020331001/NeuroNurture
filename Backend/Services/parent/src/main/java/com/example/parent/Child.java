@@ -43,4 +43,10 @@ public class Child {
 
     @Column(name = "school_id")
     private Long schoolId;
+
+    @Column(name = "doctor_id")
+    private Long doctorId;
+
+    @Column(name = "problem")
+    private String problem;
 } 
