@@ -68,9 +68,6 @@ IMPORTANT: Format your response in PLAIN TEXT only. No markdown, HTML, bold text
             return "Database not connected"
         
         try:
-            # Ensure it's a SELECT query for safety
-            if not query.strip().upper().startswith('SELECT'):
-                return "Only SELECT queries are allowed"
             
             cursor = self.db_connection.cursor()
             cursor.execute(query)
@@ -89,6 +86,7 @@ IMPORTANT: Format your response in PLAIN TEXT only. No markdown, HTML, bold text
                 return "No data found"
             
             # Format results concisely
+            print("query data:", data)
             result_text = f"Found {len(data)} records:\n"
             for i, record in enumerate(data[:3]):  # Show only first 3 records
                 result_text += f"Record {i+1}: {record}\n"
@@ -153,6 +151,9 @@ IMPORTANT: Format your response in PLAIN TEXT only. No markdown, HTML, bold text
     
     def _build_user_context(self, user_type: str, user_id: int = None) -> str:
         """Build user-specific context for prompts"""
+        # Convert user_type to lowercase for consistent matching
+        user_type = user_type.lower()
+        
         if user_type == "parent" and user_id:
             try:
                 # Get parent's children information
@@ -211,6 +212,9 @@ IMPORTANT: Format your response in PLAIN TEXT only. No markdown, HTML, bold text
     
     def _get_access_rules(self, user_type: str) -> str:
         """Get access rules based on user type"""
+        # Convert user_type to lowercase for consistent matching
+        user_type = user_type.lower()
+        
         if user_type == "parent":
             return """
 ACCESS RESTRICTIONS FOR PARENT:
@@ -227,8 +231,6 @@ ACCESS RESTRICTIONS FOR PARENT:
 ACCESS RESTRICTIONS FOR SCHOOL:
 - You can ONLY access data about YOUR OWN SCHOOL and CHILDREN ENROLLED IN YOUR SCHOOL
 - You CANNOT access other schools' data or children from other schools
-- You CANNOT access parent information (except parent_id for enrolled children)
-- You CANNOT access children who are connected to doctors but not enrolled in your school
 - You CAN access educational game data for children enrolled in your school
 - You CAN get school-specific statistics and progress reports for your enrolled children
 - All database queries MUST include WHERE school_id = [school_id] or child_id IN (SELECT id FROM child WHERE school_id = [school_id])
@@ -316,10 +318,6 @@ SQL Generation Rules:
 1. Use only SELECT queries
 2. Use proper table and column names
 3. Add LIMIT clause for large results
-4. For PARENT users: ALL queries MUST include WHERE clauses to restrict to their children only
-5. For PARENT users: Use WHERE parent_id = {user_id} or WHERE child_id IN (SELECT id FROM child WHERE parent_id = {user_id})
-6. For SCHOOL users: ALL queries MUST include WHERE clauses to restrict to their school and enrolled children only
-7. For SCHOOL users: Use WHERE school_id = {user_id} or WHERE child_id IN (SELECT id FROM child WHERE school_id = {user_id})
 8. Return only the SQL query, nothing else
 
 Example for Admin: SELECT * FROM child LIMIT 10
@@ -345,43 +343,9 @@ Example for School: SELECT * FROM child WHERE school_id = {user_id}"""
             logger.error(f"Error generating SQL: {e}")
             return ""
     
-    def _detect_response_type(self, message: str) -> str:
-        """Detect the type of response needed based on user message"""
-        message_lower = message.lower().strip()
-        
-        # Greeting patterns
-        greeting_patterns = [
-            'hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening',
-            'greetings', 'howdy', 'what\'s up', 'how are you', 'how do you do'
-        ]
-        
-        # Explanation request patterns
-        explanation_patterns = [
-            'explain', 'what is', 'how does', 'why', 'tell me about', 'describe',
-            'can you explain', 'what does', 'how do', 'what are', 'why is'
-        ]
-        
-        # Question patterns
-        question_patterns = [
-            'what', 'how', 'when', 'where', 'who', 'which', 'can you', 'do you',
-            'is there', 'are there', 'will you', 'could you', 'would you'
-        ]
-        
-        if any(pattern in message_lower for pattern in greeting_patterns):
-            return "greeting"
-        elif any(pattern in message_lower for pattern in explanation_patterns):
-            return "explanation"
-        elif any(pattern in message_lower for pattern in question_patterns) or message_lower.endswith('?'):
-            return "question"
-        else:
-            return "direct"
-    
     def process_message(self, message: str, user_type: str = "admin", user_id: int = None, context: str = "") -> Dict[str, Any]:
         """Process user message with tool selection and user type restrictions"""
         try:
-            # Detect response type first
-            response_type = self._detect_response_type(message)
-            
             # Analyze intent with user type context
             intent = self._analyze_intent(message, user_type, user_id)
             logger.info(f"Intent analysis: {intent}")
@@ -405,100 +369,62 @@ Example for School: SELECT * FROM child WHERE school_id = {user_id}"""
                 search_result = self._web_search(message)
                 tool_results.append(f"Web Search Results:\n{search_result}")
             
-            # Generate response based on detected type
-            if response_type == "greeting":
-                # Simple greeting response
-                final_prompt = f"""Respond to this greeting with a brief, friendly greeting back. Keep it simple and conversational.
+            # Generate response with context
+            if tool_results:
+                tool_context = "\n\n".join(tool_results)
+                user_context = self._build_user_context(user_type, user_id)
+                access_rules = self._get_access_rules(user_type.lower())
+
+
+
+
+                
+                conversation_context = ""
+                if context:
+                    conversation_context = f"\n\nPrevious conversation context:\n({context})"
+                
+                final_prompt = f"""You are an AI assistant for the NeuroNurture educational platform. Provide a helpful response to the user's message.
+
+User Type: {user_type.upper()}
 
 User message: "{message}"
 
-Respond with just a greeting, nothing else."""
-                
-            elif response_type == "explanation":
-                # Detailed explanation response
-                if tool_results:
-                    tool_context = "\n\n".join(tool_results)
-                    user_context = self._build_user_context(user_type, user_id)
-                    access_rules = self._get_access_rules(user_type)
-                    
-                    conversation_context = ""
-                    if context:
-                        conversation_context = f"\n\nPrevious conversation context:\n{context}"
-                    
-                    final_prompt = f"""You are an AI assistant for the NeuroNurture educational platform. Provide a detailed explanation to the user's question.
-
-User Type: {user_type.upper()}
-{user_context}
-
-User question: "{message}"
-
 Context information:
 {tool_context}{conversation_context}
 
 {access_rules}
 
-Provide a comprehensive explanation that addresses the user's question thoroughly. Use clear, educational language and include relevant details."""
-                else:
-                    user_context = self._build_user_context(user_type, user_id)
-                    access_rules = self._get_access_rules(user_type)
-                    
-                    conversation_context = ""
-                    if context:
-                        conversation_context = f"\n\nPrevious conversation context:\n{context}"
-                    
-                    final_prompt = f"""You are an AI assistant for the NeuroNurture educational platform. Provide a detailed explanation to the user's question.
+Provide a clear, helpful response that addresses the user's message appropriately. Be informative and supportive.
+You should limit your response to in maximum 5 sentences.
+Don't use any kind of formating symbol like this: ** or __ or * or _ or - or # or > or ``` or any other markdown or html formatting
+Dont be very verbose. Keep it short and to the point. 
+Dont include anything irrelevant to the response. Be specific and concise about the user's needs.
 
-User Type: {user_type.upper()}
-{user_context}
-
-User question: "{message}"{conversation_context}
-
-{access_rules}
-
-Provide a comprehensive explanation that addresses the user's question thoroughly. Use clear, educational language and include relevant details."""
-                    
+"""
             else:
-                # Direct answer for questions and other queries
-                if tool_results:
-                    tool_context = "\n\n".join(tool_results)
-                    user_context = self._build_user_context(user_type, user_id)
-                    access_rules = self._get_access_rules(user_type)
-                    
-                    conversation_context = ""
-                    if context:
-                        conversation_context = f"\n\nPrevious conversation context:\n{context}"
-                    
-                    final_prompt = f"""You are an AI assistant for the NeuroNurture educational platform. Provide a direct, concise response to the user's question.
+                user_context = self._build_user_context(user_type, user_id)
+                access_rules = self._get_access_rules(user_type.lower())
+                
+                conversation_context = ""
+                if context:
+                    conversation_context = f"\n\nPrevious conversation context:\n{context}"
+                
+                final_prompt = f"""You are an AI assistant for the NeuroNurture educational platform. Provide a helpful response to the user's message.
 
 User Type: {user_type.upper()}
 {user_context}
 
-User question: "{message}"
-
-Context information:
-{tool_context}{conversation_context}
+User message: "{message}"{conversation_context}
 
 {access_rules}
 
-Provide a direct answer to the question. Be concise and focused on what was asked. No extra information unless relevant to the specific question."""
-                else:
-                    user_context = self._build_user_context(user_type, user_id)
-                    access_rules = self._get_access_rules(user_type)
-                    
-                    conversation_context = ""
-                    if context:
-                        conversation_context = f"\n\nPrevious conversation context:\n{context}"
-                    
-                    final_prompt = f"""You are an AI assistant for the NeuroNurture educational platform. Provide a direct, concise response to the user's question.
+Provide a clear, helpful response that addresses the user's message appropriately. Be informative and supportive.
+You should limit your response to in maximum 5 sentences.
+Don't use any kind of formating symbol like this: ** or __ or * or _ or - or # or > or ``` or any other markdown or html formatting
+Dont be very verbose. Keep it short and to the point. 
+Dont include anything irrelevant to the response. Be specific and concise about the user's needs.
 
-User Type: {user_type.upper()}
-{user_context}
-
-User question: "{message}"{conversation_context}
-
-{access_rules}
-
-Provide a direct answer to the question. Be concise and focused on what was asked. No extra information unless relevant to the specific question."""
+"""
             
             response = self.claude_client.messages.create(
                 model="claude-sonnet-4-20250514",
@@ -506,6 +432,9 @@ Provide a direct answer to the question. Be concise and focused on what was aske
                 temperature=0.7,
                 messages=[{"role": "user", "content": final_prompt}]
             )
+
+            print(f"Final Prompt:\n{final_prompt}")
+            print(f"AI Response:\n{response.content[0].text}")
             
             response_text = response.content[0].text
             
@@ -513,8 +442,7 @@ Provide a direct answer to the question. Be concise and focused on what was aske
                 "response": response_text,
                 "database_accessed": intent.get("needs_database", False),
                 "web_searched": intent.get("needs_web_search", False),
-                "tools_used": sum([intent.get("needs_database", False), intent.get("needs_web_search", False), intent.get("needs_schema", False)]),
-                "response_type": response_type
+                "tools_used": sum([intent.get("needs_database", False), intent.get("needs_web_search", False), intent.get("needs_schema", False)])
             }
             
         except Exception as e:
@@ -527,27 +455,12 @@ Provide a direct answer to the question. Be concise and focused on what was aske
     def get_ai_response(self, message: str) -> str:
         """Get direct AI response without tools"""
         try:
-            # Detect response type
-            response_type = self._detect_response_type(message)
-            
-            if response_type == "greeting":
-                prompt = f"""Respond to this greeting with a brief, friendly greeting back.
+            # Simple, direct response without type detection
+            prompt = f"""You are an AI assistant for the NeuroNurture educational platform. Provide a helpful response to the user's message.
 
 User message: "{message}"
 
-Respond with just a greeting, nothing else."""
-            elif response_type == "explanation":
-                prompt = f"""Provide a detailed explanation for this question.
-
-User question: "{message}"
-
-Provide a comprehensive explanation that addresses the question thoroughly."""
-            else:
-                prompt = f"""Provide a direct answer to this question.
-
-User question: "{message}"
-
-Provide a direct, concise answer. No extra information unless relevant."""
+Provide a clear, helpful response that addresses the user's message appropriately."""
             
             response = self.claude_client.messages.create(
                 model="claude-sonnet-4-20250514",

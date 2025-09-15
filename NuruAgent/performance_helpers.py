@@ -190,11 +190,11 @@ Performance Summary:
 - Repeat With Me Game: {performance_data['repeat_with_me']['sessions']} sessions, avg score: {performance_data['repeat_with_me']['average_score']:.1f}
 """
         
-        prompt = f"""As an AI assistant for NeuroNurture, analyze this child's performance data and provide a personalized, encouraging message for their parent.
+        prompt = f"""Analyze this child's educational game performance data and create a personalized parent report.
 
 {data_summary}
 
-Generate a warm, supportive message that:
+Create a supportive analysis that:
 
 dont give greetings or sign-offs like this "Dear Parent of Mehraz,"
 
