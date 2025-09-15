@@ -6,7 +6,8 @@ import { getCurrentChild } from '@/utils/childUtils';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ALIScoreModal from '@/components/child/ALIScoreModal';
-import { Brain, Trophy } from 'lucide-react';
+import PerformanceOverview from '@/components/child/PerformanceOverview';
+import { Brain, Trophy, HelpCircle } from 'lucide-react';
 
 interface ChildPlaygroundPageProps {
   username: string | null;
@@ -24,6 +25,8 @@ export default function ChildPlaygroundPage({ username }: ChildPlaygroundPagePro
   });
   const [isLoadingHeatmap, setIsLoadingHeatmap] = useState(true);
   const [isALIModalOpen, setIsALIModalOpen] = useState(false);
+  const [aliScore, setAliScore] = useState<number | null>(null);
+  const [hasPlayedAllGames, setHasPlayedAllGames] = useState(false);
 
   useEffect(() => {
     const childData = getCurrentChild();
@@ -32,6 +35,7 @@ export default function ChildPlaygroundPage({ username }: ChildPlaygroundPagePro
       // Load heatmap data if child is available
       if (childData.id) {
         loadHeatmapData(childData.id);
+        checkGameCompletion(childData.id);
       }
     }
   }, []);
@@ -81,6 +85,36 @@ export default function ChildPlaygroundPage({ username }: ChildPlaygroundPagePro
       return age - 1;
     }
     return age;
+  };
+
+  // Check if child has played all games at least once
+  const checkGameCompletion = async (childId: string) => {
+    try {
+      // For now, simulate checking if all games have been played
+      // In the future, this would call an API to check game completion status
+      const gameCompletionStatus = {
+        gestureGame: Math.random() > 0.3,
+        mirrorPosture: Math.random() > 0.3,
+        eyeGazeTracking: Math.random() > 0.3,
+        repeatWithMe: Math.random() > 0.3,
+        danceDoodle: Math.random() > 0.3
+      };
+      
+      const allGamesPlayed = Object.values(gameCompletionStatus).every(played => played);
+      setHasPlayedAllGames(allGamesPlayed);
+      
+      if (allGamesPlayed) {
+        // Simulate getting ALI score (would be from API)
+        const score = Math.floor(Math.random() * 100) + 1;
+        setAliScore(score);
+      } else {
+        setAliScore(null);
+      }
+    } catch (error) {
+      console.error('Error checking game completion:', error);
+      setHasPlayedAllGames(false);
+      setAliScore(null);
+    }
   };
 
   const games = [
@@ -139,15 +173,39 @@ export default function ChildPlaygroundPage({ username }: ChildPlaygroundPagePro
             </div>
           </div>
           
-          {/* ALI Score Button */}
-          <Button
-            onClick={() => setIsALIModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow-md transition-all duration-200"
-          >
-            <Brain className="w-4 h-4 mr-2" />
-            Get ALI Assessment
-            <Trophy className="w-4 h-4 ml-2" />
-          </Button>
+          {/* ALI Score Section */}
+          <div className="flex items-center gap-8">
+            {/* ALI Score Display */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-muted-foreground">ALI Score:</span>
+              {hasPlayedAllGames && aliScore !== null ? (
+                <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-bold">
+                  {aliScore*100}
+                </div>
+              ) : (
+                <div className="relative group">
+                  <div className="bg-gray-100 text-gray-500 px-3 py-1 rounded-full text-sm font-bold cursor-help flex items-center gap-1">
+                    {/* <HelpCircle className="w-3 h-3" /> */}
+                    ?
+                  </div>
+                  {/* Tooltip */}
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                    The child must play all games at least once to get this
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <Button
+              onClick={() => setIsALIModalOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow-md transition-all duration-200"
+            >
+              <Brain className="w-4 h-4 mr-2" />
+              Get ALI Score
+              <Trophy className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
         </div>
         
 
@@ -290,11 +348,8 @@ export default function ChildPlaygroundPage({ username }: ChildPlaygroundPagePro
         </h2>
         <Card className="card-playful p-6 backdrop-blur-sm bg-white/80">
           <div className="text-center mb-6">
-            <h3 className="text-lg font-bold text-primary mb-2">See Your Daily Learning Progress!</h3>
             <p className="text-sm text-muted-foreground font-comic mb-4">
-              This calendar shows how much you practiced each day for the last 12 weeks. 
-              <br />
-              <strong>Each square = 1 day</strong> • <strong>Darker green = More practice time</strong>
+              <strong>Each circle = 1 day</strong> • <strong>Darker circle = More practice time</strong>
             </p>
           </div>
           
@@ -385,68 +440,15 @@ export default function ChildPlaygroundPage({ username }: ChildPlaygroundPagePro
       {/* Spacing from calendar section */}
       <div className="h-8"></div>
 
-      {/* Message from Ella */}
-      <div>
-        <h2 className="text-2xl font-playful text-foreground mb-4 flex items-center">
-          <span className="mr-2">🤖</span>
-          Message from Ella
-        </h2>
-        <Card className="card-playful p-6 backdrop-blur-sm bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200">
-          <div className="flex items-start space-x-4">
-            {/* Ella's Avatar */}
-            <div className="flex-shrink-0">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-2xl">🤖</span>
-              </div>
-            </div>
-            
-            {/* Message Content */}
-            <div className="flex-1">
-              <div className="flex items-center space-x-2 mb-3">
-                <h3 className="text-lg font-bold text-purple-700">Ella - Your AI Learning Assistant</h3>
-                <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full">
-                  Online
-                </span>
-              </div>
-              
-              <div className="bg-white/80 p-4 rounded-lg shadow-sm border border-purple-100">
-                <p className="text-gray-700 leading-relaxed mb-3">
-                  Hi there! I'm Ella, your personal learning assistant! 🌟 I've been watching your amazing progress, and I'm so proud of how hard you've been working!
-                </p>
-                
-                <p className="text-gray-700 leading-relaxed mb-3">
-                  I noticed you've been doing really well with the <strong className="text-purple-600">Gesture Game</strong> and <strong className="text-blue-600">Eye Gaze Tracking</strong>! Your focus and concentration have improved so much! 🎯
-                </p>
-                
-                <p className="text-gray-700 leading-relaxed mb-3">
-                  Here's a special tip for you: Try to practice for at least 15 minutes every day. Even if you feel tired, just 5 minutes can make a big difference! Remember, every small step counts! 💪
-                </p>
-                
-                <p className="text-gray-700 leading-relaxed">
-                  Keep up the fantastic work! I believe in you, and I know you can achieve anything you set your mind to! 🌈✨
-                </p>
-              </div>
-              
-              {/* Action Buttons */}
-              <div className="flex space-x-3 mt-4">
-                <Button 
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105"
-                  onClick={() => console.log('Chat with Ella clicked')}
-                >
-                  💬 Chat with Ella
-                </Button>
-                <Button 
-                  variant="outline"
-                  className="border-purple-300 text-purple-700 hover:bg-purple-50 font-bold px-4 py-2 rounded-lg transition-all duration-300"
-                  onClick={() => console.log('View progress clicked')}
-                >
-                  📊 View My Progress
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
+      {/* AI Performance Insights */}
+      {selectedChild && (
+        <div className="mb-8">
+          <PerformanceOverview 
+            childId={selectedChild.id.toString()} 
+            childName={selectedChild.name} 
+          />
+        </div>
+      )}
 
       {/* ALI Score Modal */}
       <ALIScoreModal

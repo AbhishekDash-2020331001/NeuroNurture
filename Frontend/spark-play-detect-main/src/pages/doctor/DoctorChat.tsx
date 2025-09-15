@@ -260,7 +260,7 @@ const DoctorChat: React.FC = () => {
   };
 
   return (
-    <div className="h-screen flex bg-gray-50">
+    <div className="flex bg-gray-50" style={{ height: 'calc(100vh - 80px)' }}>
       {/* Error Display */}
       {error && (
         <div className="fixed top-4 right-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow-lg z-50">

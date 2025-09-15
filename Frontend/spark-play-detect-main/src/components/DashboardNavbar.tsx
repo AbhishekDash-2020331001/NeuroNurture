@@ -148,7 +148,7 @@ const DashboardNavbar = ({ onLogout, showLogout = true, activeTab, onTabChange }
                   </span>
                   <div className="flex flex-col items-center min-w-0">
                     <span className="text-xs sm:text-sm font-comic leading-none truncate">{tab.label}</span>
-                    <span className="text-xs opacity-80 leading-none hidden sm:block truncate">{tab.description}</span>
+                    {/* <span className="text-xs opacity-80 leading-none hidden sm:block truncate">{tab.description}</span> */}
                   </div>
                 </Button>
               ))}

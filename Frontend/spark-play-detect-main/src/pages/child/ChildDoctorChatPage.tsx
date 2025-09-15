@@ -132,17 +132,17 @@ export default function ChildDoctorChatPage({ childId, childName, doctorId, doct
   }
 
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto">
+    <div className="flex flex-col h-full max-w-7xl mx-auto">
       {/* Chat Header */}
       <Card className="mb-4">
         <CardContent className="p-4">
-          <div className="flex items-center space-x-3">
-            <div className="bg-blue-100 p-2 rounded-full">
-              <MessageCircle className="h-5 w-5 text-blue-600" />
+          <div className="flex items-center space-x-2">
+            <div className="bg-blue-100 p-1.5 rounded-full">
+              <MessageCircle className="h-4 w-4 text-blue-600" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">Chat with {doctorName}</h3>
-              <p className="text-sm text-gray-600">Patient: {childName}</p>
+              <h3 className="font-semibold text-gray-900 text-sm">Chat with {doctorName}</h3>
+              <p className="text-xs text-gray-600">Patient: {childName}</p>
             </div>
           </div>
         </CardContent>

@@ -27,7 +27,7 @@ public class ChatService {
     private final MessageRepository messageRepository;
     private final WebClient.Builder webClientBuilder;
     
-    private static final String NURU_AGENT_URL = "http://localhost:8010";
+    private static final String NURU_AGENT_URL = "http://localhost:8005";
     
     public ChatResponse processMessage(ChatRequest request) {
         try {

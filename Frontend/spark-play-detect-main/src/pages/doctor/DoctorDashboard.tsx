@@ -139,7 +139,7 @@ const DoctorDashboard: React.FC = () => {
       description: 'Review completed activities',
       icon: Clock,
       href: '/doctor/tasks/history',
-      color: 'bg-black text-white hover:bg-gray-800'
+      color: 'bg-purple-100 text-purple-700 hover:bg-purple-200'
     }
   ];
 
@@ -147,16 +147,16 @@ const DoctorDashboard: React.FC = () => {
   return (
     <div className="py-2">
         {/* Welcome Header */}
-        <div className="bg-gradient-to-r from-black via-red-600 to-red-700 rounded-2xl p-3 sm:p-4 text-white shadow-xl mb-4">
+        <div className="bg-gradient-to-r from-red-600 via-red-500 to-rose-400 rounded-2xl p-3 sm:p-4 text-white shadow-xl mb-4">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
             <div className="mb-4 lg:mb-0">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 text-white drop-shadow-sm">
                 Welcome back, Dr. {doctor?.name?.split(' ')[1] || 'Doctor'}!
               </h1>
-              <p className="text-purple-100 text-lg mb-4">
+              <p className="text-white/90 text-lg mb-4 drop-shadow-sm">
                 Here's your therapeutic practice overview for today
               </p>
-              <div className="flex flex-wrap gap-4 text-sm">
+              <div className="flex flex-wrap gap-4 text-sm text-white/90 drop-shadow-sm">
                 <div className="flex items-center">
                   <Calendar className="h-4 w-4 mr-2" />
                   <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
@@ -177,7 +177,7 @@ const DoctorDashboard: React.FC = () => {
               </Link>
               <Link
                 to="/doctor/chat"
-                className="inline-flex items-center justify-center px-6 py-3 bg-white text-purple-700 text-sm font-medium rounded-xl hover:bg-purple-50 transition-all duration-200 shadow-sm"
+                className="inline-flex items-center justify-center px-6 py-3 bg-white text-red-600 text-sm font-medium rounded-xl hover:bg-red-50 transition-all duration-200 shadow-sm"
               >
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Start Chat

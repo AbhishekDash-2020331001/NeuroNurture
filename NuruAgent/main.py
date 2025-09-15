@@ -3,7 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from config import settings
 from simple_langchain_agent import simple_langchain_agent
+from performance_helpers import (
+    get_child_performance_data,
+    generate_performance_insights
+)
 import logging
+from simple_langchain_agent import simple_langchain_agent
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -29,6 +34,7 @@ app.add_middleware(
 async def startup_event():
     """Initialize services on startup"""
     logger.info("Starting NeuroNurture AI Chatbot...")
+    logger.info(f"Database connection status: {simple_langchain_agent.db_connection is not None}")
     logger.info("Application started successfully")
 
 @app.get("/")
@@ -53,6 +59,7 @@ async def health_check():
 async def chat_endpoint(request: dict):
     """AI-powered chat endpoint"""
     try:
+        print("Received chat request")
         message = request.get("message", "")
         user_type = request.get("user_type", "admin")  # Default to admin
         user_id = request.get("user_id", None)  # Optional user ID
@@ -209,6 +216,79 @@ async def get_games():
         ]
     }
 
+@app.get("/child/{child_id}/performance-overview")
+async def get_child_performance_overview(child_id: str):
+    """Get AI-generated performance overview for a specific child"""
+    print(f"Generating performance overview for child {child_id}")
+    # return{
+    #     "overview": "No performance data available for this child yet. Encourage them to play the educational games to start tracking their progress!",
+    #     "has_data": False,
+    #     "child_info": "N/A"
+    # }
+    try:
+        logger.info(f"Generating performance overview for child {child_id}")
+        
+        # Get child's performance data across all games
+        performance_data = await get_child_performance_data(child_id)
+        
+        if not performance_data:
+            return {
+                "overview": "No performance data available for this child yet. Encourage them to play the educational games to start tracking their progress!",
+                "has_data": False,
+                "child_info": await get_child_basic_info(child_id)
+            }
+        
+        # Generate AI insights using the performance data
+        insights = await generate_performance_insights(child_id, performance_data)
+        
+        return {
+            "overview": insights,
+            "has_data": True,
+            "child_info": await get_child_basic_info(child_id),
+            "performance_summary": performance_data
+        }
+        
+    except Exception as e:
+        logger.error(f"Error generating performance overview for child {child_id}: {e}")
+        return {
+            "overview": "Unable to generate performance insights at this time. Please try again later.",
+            "has_data": False,
+            "error": str(e)
+        }
+
+
+
+
+async def get_child_basic_info(child_id: str):
+    """Get basic child information"""
+    try:
+        if not simple_langchain_agent.db_connection:
+            return None
+        
+        cursor = simple_langchain_agent.db_connection.cursor()
+        cursor.execute("""
+            SELECT c.name, c.date_of_birth, c.gender, c.parent_id, p.name as parent_name
+            FROM child c 
+            LEFT JOIN parent p ON c.parent_id = p.id
+            WHERE c.id = %s
+        """, (child_id,))
+        
+        child_info = cursor.fetchone()
+        cursor.close()
+        
+        if child_info:
+            return {
+                'name': child_info[0],
+                'date_of_birth': child_info[1],
+                'gender': child_info[2],
+                'parent_id': child_info[3],
+                'parent_name': child_info[4]
+            }
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error getting child basic info: {e}")
+        return None
 
 if __name__ == "__main__":
     uvicorn.run(

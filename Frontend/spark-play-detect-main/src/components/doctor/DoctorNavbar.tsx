@@ -40,7 +40,7 @@ const DoctorNavbar: React.FC = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-black shadow-lg border-b border-red-500">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow-lg border-b border-gray-200">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Left side - Logo and Brand */}
@@ -50,7 +50,7 @@ const DoctorNavbar: React.FC = () => {
               className="flex items-center hover:opacity-80 transition-opacity"
             >
               <Stethoscope className="h-8 w-8 text-red-500 mr-3" />
-              <span className="text-xl font-bold text-white">NeuroNurture</span>
+              <span className="text-xl font-bold text-gray-900">NeuroNurture</span>
             </Link>
           </div>
 
@@ -66,7 +66,7 @@ const DoctorNavbar: React.FC = () => {
                     className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                       isActive
                         ? 'bg-red-500 text-white'
-                        : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }`}
                   >
                     <item.icon className="mr-2 h-4 w-4" />
@@ -96,13 +96,13 @@ const DoctorNavbar: React.FC = () => {
             <div className="relative">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-800 transition-colors"
+                className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <div className="text-right">
-                  <p className="text-sm font-medium text-white">{doctor?.name}</p>
-                  <p className="text-xs text-gray-300">Doctor</p>
+                  <p className="text-sm font-medium text-gray-900">{doctor?.name}</p>
+                  <p className="text-xs text-gray-600">Doctor</p>
                 </div>
-                <ChevronDown className="h-4 w-4 text-gray-300" />
+                <ChevronDown className="h-4 w-4 text-gray-600" />
               </button>
 
               {/* Dropdown Menu */}
@@ -135,7 +135,7 @@ const DoctorNavbar: React.FC = () => {
             {/* Mobile menu button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-800"
+              className="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
             >
               <Menu className="h-6 w-6" />
             </button>
@@ -146,7 +146,7 @@ const DoctorNavbar: React.FC = () => {
       {/* Mobile menu */}
       {mobileMenuOpen && (
         <div className="lg:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-900 border-t border-red-500">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
@@ -156,7 +156,7 @@ const DoctorNavbar: React.FC = () => {
                   className={`flex items-center px-3 py-2 text-base font-medium rounded-md transition-colors ${
                     isActive
                       ? 'bg-red-500 text-white'
-                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
