@@ -313,6 +313,10 @@ const ChildProgressComparison: React.FC = () => {
   const [child1GameData, setChild1GameData] = useState<GameSession[]>([]);
   const [child2GameData, setChild2GameData] = useState<GameSession[]>([]);
   const [isLoadingGameData, setIsLoadingGameData] = useState(false);
+  
+  // Trends chart data state
+  const [trendsData, setTrendsData] = useState<any[]>([]);
+  const [isLoadingTrends, setIsLoadingTrends] = useState(false);
 
   // Convert SchoolChild to Child format for comparison
   const convertToChild = (schoolChild: SchoolChild): Child => {
@@ -528,6 +532,25 @@ const ChildProgressComparison: React.FC = () => {
     fetchGameDataForEachType();
   }, [selectedChild1, selectedChild2]);
 
+  // Fetch trends data when trends tab is active and children are selected
+  useEffect(() => {
+    const fetchTrendsData = async () => {
+      if (activeTab === 'trends' && selectedChild1 && selectedChild2 && selectedGames.length > 0) {
+        setIsLoadingTrends(true);
+        try {
+          const data = await getGraphData();
+          setTrendsData(data);
+        } catch (error) {
+          console.error('Error fetching trends data:', error);
+        } finally {
+          setIsLoadingTrends(false);
+        }
+      }
+    };
+
+    fetchTrendsData();
+  }, [activeTab, selectedChild1, selectedChild2, selectedGames]);
+
   // Handle game selection
   const handleGameSelection = (gameId: string) => {
     setSelectedGames(prev => 
@@ -537,31 +560,171 @@ const ChildProgressComparison: React.FC = () => {
     );
   };
 
-  // Generate session data for line graph
-  const generateSessionData = (child: Child, gameId: string) => {
-    const scoreHistory = child.performance[gameId].scoreHistory;
-    return scoreHistory.map((score, index) => ({
-      session: index + 1,
-      score: score
-    }));
+  // Fetch last 10 sessions with individual scores for trends chart
+  const fetchLast10SessionsForTrends = async (childId: string, gameType: string): Promise<{session: number, score: number}[]> => {
+    try {
+      let response;
+      let sessions;
+      
+      // Fetch sessions based on game type
+      switch (gameType) {
+        case 'gesture-control':
+          response = await fetch(`http://localhost:8084/api/gesture-game/child/${childId}`);
+          if (response.ok) {
+            sessions = await response.json();
+            return calculateGestureSessionScores(sessions);
+          }
+          break;
+        case 'mirror-posture':
+          response = await fetch(`http://localhost:8083/api/mirror-posture-game/child/${childId}`);
+          if (response.ok) {
+            sessions = await response.json();
+            return calculateMirrorSessionScores(sessions);
+          }
+          break;
+        case 'dance-doodle':
+          response = await fetch(`http://localhost:8087/api/dance-doodle/child/${childId}`);
+          if (response.ok) {
+            sessions = await response.json();
+            return calculateDanceSessionScores(sessions);
+          }
+          break;
+        case 'repeat-with-me':
+          response = await fetch(`http://localhost:8089/api/repeat-with-me-game/child/${childId}`);
+          if (response.ok) {
+            sessions = await response.json();
+            return calculateRepeatSessionScores(sessions);
+          }
+          break;
+        case 'gaze-tracking':
+          response = await fetch(`http://localhost:8086/api/gaze-game/child/${childId}`);
+          if (response.ok) {
+            sessions = await response.json();
+            return calculateGazeSessionScores(sessions);
+          }
+          break;
+      }
+    } catch (error) {
+      console.error(`Error fetching sessions for trends: ${gameType}`, error);
+    }
+    return [];
   };
 
-  // Get all session data for selected games
-  const getGraphData = () => {
+  // Calculate individual session scores for gesture game
+  const calculateGestureSessionScores = (sessions: any[]): {session: number, score: number}[] => {
+    return sessions.slice(-10).map((session, index) => {
+      const gestureFields = [
+        session.thumbs_up, session.thumbs_down, session.victory, session.butterfly,
+        session.spectacle, session.heart, session.pointing_up, session.iloveyou,
+        session.dua, session.closed_fist, session.open_palm
+      ];
+      
+      const validFields = gestureFields.filter(time => time !== null && time !== undefined);
+      const sessionScore = validFields.length > 0 ? validFields.reduce((sum, time) => sum + time, 0) : 0;
+      
+      return {
+        session: index + 1,
+        score: sessionScore
+      };
+    });
+  };
+
+  // Calculate individual session scores for mirror posture game
+  const calculateMirrorSessionScores = (sessions: any[]): {session: number, score: number}[] => {
+    return sessions.slice(-10).map((session, index) => {
+      const postureFields = [
+        session.lookingSideways, session.mouthOpen, session.showingTeeth, session.kiss
+      ];
+      
+      const validFields = postureFields.filter(time => time !== null && time !== undefined);
+      const sessionScore = validFields.length > 0 ? validFields.reduce((sum, time) => sum + time, 0) : 0;
+      
+      return {
+        session: index + 1,
+        score: sessionScore
+      };
+    });
+  };
+
+  // Calculate individual session scores for dance doodle game
+  const calculateDanceSessionScores = (sessions: any[]): {session: number, score: number}[] => {
+    return sessions.slice(-10).map((session, index) => {
+      const danceFields = [
+        session.cool_arms, session.open_wings, session.silly_boxer, session.happy_stand,
+        session.crossy_play, session.shh_fun, session.stretch
+      ];
+      
+      const validFields = danceFields.filter(time => time !== null && time !== undefined);
+      const sessionScore = validFields.length > 0 ? validFields.reduce((sum, time) => sum + time, 0) : 0;
+      
+      return {
+        session: index + 1,
+        score: sessionScore
+      };
+    });
+  };
+
+  // Calculate individual session scores for repeat with me game
+  const calculateRepeatSessionScores = (sessions: any[]): {session: number, score: number}[] => {
+    return sessions.slice(-10).map((session, index) => {
+      const roundFields = [
+        session.round1Score, session.round2Score, session.round3Score, session.round4Score,
+        session.round5Score, session.round6Score, session.round7Score, session.round8Score,
+        session.round9Score, session.round10Score, session.round11Score, session.round12Score
+      ];
+      
+      const validFields = roundFields.filter(score => score !== null && score !== undefined);
+      const sessionScore = validFields.length > 0 ? validFields.reduce((sum, score) => sum + score, 0) / validFields.length : 0;
+      
+      return {
+        session: index + 1,
+        score: sessionScore
+      };
+    });
+  };
+
+  // Calculate individual session scores for gaze game
+  const calculateGazeSessionScores = (sessions: any[]): {session: number, score: number}[] => {
+    return sessions.slice(-10).map((session, index) => {
+      const roundFields = [session.round1Count, session.round2Count, session.round3Count];
+      
+      const validFields = roundFields.filter(count => count !== null && count !== undefined);
+      const sessionScore = validFields.length > 0 ? validFields.reduce((sum, count) => sum + count, 0) : 0;
+      
+      return {
+        session: index + 1,
+        score: sessionScore
+      };
+    });
+  };
+
+  // Get all session data for selected games - NEW APPROACH: Use real data
+  const getGraphData = async () => {
     if (!selectedChild1 || !selectedChild2) return [];
     
     const data = [];
-    selectedGames.forEach(gameId => {
-      const child1Data = generateSessionData(selectedChild1, gameId);
-      const child2Data = generateSessionData(selectedChild2, gameId);
-      
-      data.push({
-        gameId,
-        gameName: gameNames[gameId],
-        child1: child1Data,
-        child2: child2Data
-      });
-    });
+    for (const gameId of selectedGames) {
+      try {
+        const child1Data = await fetchLast10SessionsForTrends(selectedChild1.id, gameId);
+        const child2Data = await fetchLast10SessionsForTrends(selectedChild2.id, gameId);
+        
+        data.push({
+          gameId,
+          gameName: gameNames[gameId],
+          child1: child1Data,
+          child2: child2Data
+        });
+      } catch (error) {
+        console.error(`Error fetching graph data for ${gameId}:`, error);
+        // Add empty data for failed requests
+        data.push({
+          gameId,
+          gameName: gameNames[gameId],
+          child1: [],
+          child2: []
+        });
+      }
+    }
     
     return data;
   };
@@ -685,7 +848,7 @@ const ChildProgressComparison: React.FC = () => {
 
   const fetchAndCalculateRepeatWithMeGameScore = async (childId: string): Promise<{score: number, sessions: number}> => {
     try {
-      const response = await fetch(`http://localhost:8086/api/repeat-with-me-game/child/${childId}`);
+      const response = await fetch(`http://localhost:8089/api/repeat-with-me-game/child/${childId}`);
       if (response.ok) {
         const sessions = await response.json();
         console.log(`Repeat with me sessions for child ${childId}:`, sessions);
@@ -724,7 +887,7 @@ const ChildProgressComparison: React.FC = () => {
 
   const fetchAndCalculateGazeGameScore = async (childId: string): Promise<{score: number, sessions: number}> => {
     try {
-      const response = await fetch(`http://localhost:8085/api/gaze-game/child/${childId}`);
+      const response = await fetch(`http://localhost:8086/api/gaze-game/child/${childId}`);
       if (response.ok) {
         const sessions = await response.json();
         console.log(`Gaze game sessions for child ${childId}:`, sessions);
@@ -759,13 +922,13 @@ const ChildProgressComparison: React.FC = () => {
 
   // Get calculated score for a specific game type - NEW APPROACH: Use pre-calculated scores
   const getCalculatedGameScore = (gameData: any, gameType: string): number => {
-    // Map game types to our internal keys
+    // Map gameNames keys to our internal keys
     const gameTypeMap: { [key: string]: string } = {
-      'gesture-game': 'gesture',
-      'mirror-posture-game': 'mirror',
+      'gesture-control': 'gesture',
+      'mirror-posture': 'mirror',
       'dance-doodle': 'dance',
-      'repeat-with-me-game': 'repeat',
-      'gaze-game': 'gaze'
+      'repeat-with-me': 'repeat',
+      'gaze-tracking': 'gaze'
     };
     
     const internalKey = gameTypeMap[gameType];
@@ -778,11 +941,11 @@ const ChildProgressComparison: React.FC = () => {
   // Get session count for a specific game type
   const getSessionCount = (gameData: any, gameType: string): number => {
     const gameTypeMap: { [key: string]: string } = {
-      'gesture-game': 'gesture',
-      'mirror-posture-game': 'mirror',
+      'gesture-control': 'gesture',
+      'mirror-posture': 'mirror',
       'dance-doodle': 'dance',
-      'repeat-with-me-game': 'repeat',
-      'gaze-game': 'gaze'
+      'repeat-with-me': 'repeat',
+      'gaze-tracking': 'gaze'
     };
     
     const internalKey = gameTypeMap[gameType];
@@ -844,21 +1007,21 @@ const ChildProgressComparison: React.FC = () => {
     if (score >= 90) return 'text-green-600 bg-green-50';
     if (score >= 80) return 'text-blue-600 bg-blue-50';
     if (score >= 70) return 'text-yellow-600 bg-yellow-50';
-    return 'text-red-600 bg-red-50';
+    return 'text-gray-600 bg-gray-50';
   };
 
   const getImprovementColor = (improvement: number) => {
     if (improvement > 10) return 'text-green-600';
     if (improvement > 5) return 'text-blue-600';
     if (improvement > 0) return 'text-yellow-600';
-    return 'text-red-600';
+    return 'text-gray-600';
   };
 
   const getALIColor = (ali: number) => {
     if (ali <= 10) return 'text-green-600 bg-green-50';
     if (ali <= 25) return 'text-yellow-600 bg-yellow-50';
     if (ali <= 50) return 'text-orange-600 bg-orange-50';
-    return 'text-red-600 bg-red-50';
+    return 'text-gray-600 bg-gray-50';
   };
 
   // Advanced comparison functions
@@ -1892,17 +2055,17 @@ const ChildProgressComparison: React.FC = () => {
 
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                       <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                        <XCircle className="h-5 w-5 text-red-600" />
+                        <XCircle className="h-5 w-5 text-gray-600" />
                         {selectedChild1.name}'s Areas for Improvement
                       </h3>
                       <div className="space-y-3">
                         {getStrengthsAndWeaknesses(selectedChild1).weaknesses.map((weakness, index) => (
-                          <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                          <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                             <div className="flex items-center gap-2">
-                              <Target className="h-4 w-4 text-red-600" />
+                              <Target className="h-4 w-4 text-gray-600" />
                               <span className="font-medium text-gray-900">{weakness.game}</span>
                             </div>
-                            <span className="text-sm font-medium text-red-600">{weakness.score}</span>
+                            <span className="text-sm font-medium text-gray-600">{weakness.score}</span>
                           </div>
                         ))}
                       </div>
@@ -1931,17 +2094,17 @@ const ChildProgressComparison: React.FC = () => {
 
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                       <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                        <XCircle className="h-5 w-5 text-red-600" />
+                        <XCircle className="h-5 w-5 text-gray-600" />
                         {selectedChild2.name}'s Areas for Improvement
                       </h3>
                       <div className="space-y-3">
                         {getStrengthsAndWeaknesses(selectedChild2).weaknesses.map((weakness, index) => (
-                          <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                          <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                             <div className="flex items-center gap-2">
-                              <Target className="h-4 w-4 text-red-600" />
+                              <Target className="h-4 w-4 text-gray-600" />
                               <span className="font-medium text-gray-900">{weakness.game}</span>
                             </div>
-                            <span className="text-sm font-medium text-red-600">{weakness.score}</span>
+                            <span className="text-sm font-medium text-gray-600">{weakness.score}</span>
                           </div>
                         ))}
                       </div>
@@ -2010,31 +2173,38 @@ const ChildProgressComparison: React.FC = () => {
                     {selectedGames.length > 0 ? (
                       <div>
                         {/* Legend */}
-                        <div className="mb-6 flex flex-wrap gap-4 justify-center">
-                          {getGraphData().map((gameData) => (
-                            <div key={gameData.gameId} className="flex items-center gap-2">
-                              <span className="text-lg">{gameIcons[gameData.gameId]}</span>
-                              <span className="text-sm font-medium text-gray-700">{gameData.gameName}</span>
-                              <div className="flex items-center gap-1">
-                                <div 
-                                  className="w-3 h-0.5" 
-                                  style={{ backgroundColor: gameColors[gameData.gameId] }}
-                                ></div>
-                                <span className="text-xs" style={{ color: gameColors[gameData.gameId] }}>
-                                  {selectedChild1.name}
-                                </span>
+                        <div className="mb-6">
+                          {isLoadingTrends ? (
+                            <div className="text-gray-500 text-center">Loading trends data...</div>
+                          ) : (
+                            <div className="space-y-4">
+                              {/* Line Style Legend */}
+                              <div className="flex items-center justify-center gap-6">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-4 h-0.5 bg-gray-600"></div>
+                                  <span className="text-sm text-gray-700">{selectedChild1.name}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-4 h-0.5 border-dashed border-t-2 border-gray-600"></div>
+                                  <span className="text-sm text-gray-700">{selectedChild2.name}</span>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <div 
-                                  className="w-3 h-0.5 border-dashed border-t-2" 
-                                  style={{ borderColor: gameColors[gameData.gameId] }}
-                                ></div>
-                                <span className="text-xs" style={{ color: gameColors[gameData.gameId] }}>
-                                  {selectedChild2.name}
-                                </span>
+                              
+                              {/* Game Colors */}
+                              <div className="flex flex-wrap gap-4 justify-center">
+                                {trendsData.map((gameData) => (
+                                  <div key={gameData.gameId} className="flex items-center gap-2">
+                                    <span className="text-lg">{gameIcons[gameData.gameId]}</span>
+                                    <span className="text-sm font-medium text-gray-700">{gameData.gameName}</span>
+                                    <div 
+                                      className="w-3 h-3 rounded-full" 
+                                      style={{ backgroundColor: gameColors[gameData.gameId] }}
+                                    ></div>
+                                  </div>
+                                ))}
                               </div>
                             </div>
-                          ))}
+                          )}
                         </div>
 
                         {/* Graph Container */}
@@ -2123,7 +2293,7 @@ const ChildProgressComparison: React.FC = () => {
                               </text>
                               
                               {/* Plot lines for each game */}
-                              {getGraphData().map((gameData) => {
+                              {trendsData.map((gameData) => {
                                 const gameColor = gameColors[gameData.gameId];
                                 
                                 // Calculate points for Child 1 (using absolute coordinates)

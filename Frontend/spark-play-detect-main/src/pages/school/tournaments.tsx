@@ -98,10 +98,31 @@ const Tournaments: React.FC = () => {
         if (statusFilter === 'active') {
             matchesStatus = tournamentStatus === 'ACTIVE';
         } else if (statusFilter === 'ended') {
-            matchesStatus = tournamentStatus === 'COMPLETED';
+            matchesStatus = tournamentStatus === 'COMPLETED' || tournamentStatus === 'OVERDUE';
         }
         
         return matchesSearch && matchesStatus;
+    }).sort((a, b) => {
+        // Sort by status priority: Active -> Upcoming -> Ended (Completed/Overdue)
+        const statusA = tournamentService.getTournamentStatus(a.startTime, a.endTime, a.status);
+        const statusB = tournamentService.getTournamentStatus(b.startTime, b.endTime, b.status);
+        
+        const statusPriority = {
+            'ACTIVE': 1,
+            'UPCOMING': 2,
+            'COMPLETED': 3,
+            'OVERDUE': 3
+        };
+        
+        const priorityA = statusPriority[statusA as keyof typeof statusPriority] || 4;
+        const priorityB = statusPriority[statusB as keyof typeof statusPriority] || 4;
+        
+        if (priorityA !== priorityB) {
+            return priorityA - priorityB;
+        }
+        
+        // If same priority, sort by start date (newest first)
+        return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
     });
 
     const getTournamentStatus = (startTime: string, endTime: string, status: string) => {
@@ -299,7 +320,10 @@ const Tournaments: React.FC = () => {
                                     <div className="ml-2">
                                         <p className="text-xs font-semibold text-gray-700">Ended</p>
                                         <p className="text-lg font-bold text-gray-800">
-                                            {tournaments.filter(t => getTournamentStatus(t.startTime, t.endTime, t.status) === 'COMPLETED').length}
+                                            {tournaments.filter(t => {
+                                                const status = getTournamentStatus(t.startTime, t.endTime, t.status);
+                                                return status === 'COMPLETED' || status === 'OVERDUE';
+                                            }).length}
                                         </p>
                                     </div>
                                 </div>
@@ -368,7 +392,7 @@ const Tournaments: React.FC = () => {
                                                     <div className={`px-3 py-1 rounded text-xs font-bold ${getStatusColor(tournamentStatus)}`}>
                                                         <div className="flex items-center space-x-1">
                                                             {getStatusIcon(tournamentStatus)}
-                                                            <span>{tournamentStatus.charAt(0).toUpperCase() + tournamentStatus.slice(1)}</span>
+                                                            <span>{tournamentStatus === 'OVERDUE' ? 'Ended' : tournamentStatus.charAt(0).toUpperCase() + tournamentStatus.slice(1)}</span>
                                                         </div>
                                                     </div>
                                                 </div>
