@@ -594,7 +594,7 @@ const RepeatWithMeGameplay: React.FC = () => {
       </div>
 
       {/* Game Content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-4 overflow-y-auto">
+      <div className={`flex-1 flex flex-col items-center p-4 overflow-y-auto ${gameState === 'finished' ? 'justify-start' : 'justify-center'}`}>
         {/* Idle State - Show start button */}
         {gameState === 'idle' && (
           <div className="text-center max-w-2xl">
@@ -779,28 +779,7 @@ const RepeatWithMeGameplay: React.FC = () => {
         {/* Game Finished - Enhanced Visual Design */}
         {gameState === 'finished' && (
           <div className="text-center max-w-5xl w-full">
-            {/* Enhanced completion animation */}
-            <div className="relative mb-6">
-              {showCompletionAnimation && (
-                <div className="text-6xl mb-4 animate-bounce bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
-                  🎉
-                </div>
-              )}
-              
-              {/* Celebration elements */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="absolute w-3 h-3 bg-yellow-400 rounded-full animate-bounce"
-                    style={{
-                      animationDelay: `${i * 0.2}s`,
-                      transform: `rotate(${i * 60}deg) translateY(-30px)`
-                    }}
-                  ></div>
-                ))}
-              </div>
-            </div>
+            
             
             <h2 className="text-4xl font-playful text-primary mb-6 bg-gradient-to-r from-yellow-600 via-orange-600 to-red-600 bg-clip-text text-transparent">
               🏆 Game Complete! 🏆
@@ -833,9 +812,12 @@ const RepeatWithMeGameplay: React.FC = () => {
                     </div>
                   </div>
                   
-                  {/* Enhanced Round Results - Compact */}
-                  <div className="grid gap-3">
-                    {Object.entries(gameResults).map(([roundNum, result]) => (
+                  {/* Enhanced Round Results - Compact with proper scrolling */}
+                  <div className="relative">
+                    <div className="grid gap-3 max-h-96 overflow-y-auto custom-scrollbar pr-2">
+                      {Object.entries(gameResults)
+                        .sort(([a], [b]) => parseInt(a) - parseInt(b)) // Ensure rounds are in order
+                        .map(([roundNum, result]) => (
                       <div key={roundNum} className="bg-gradient-to-br from-white to-gray-50 p-4 rounded-2xl border-2 border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
                         <div className="text-center mb-3">
                           <span className="text-xl font-playful text-primary bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
@@ -867,6 +849,16 @@ const RepeatWithMeGameplay: React.FC = () => {
                         </div>
                       </div>
                     ))}
+                    </div>
+                    
+                    {/* Scroll indicator when there are many rounds */}
+                    {Object.keys(gameResults).length > 6 && (
+                      <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none flex items-end justify-center">
+                        <div className="text-xs text-gray-500 font-comic mb-1 animate-bounce">
+                          📜 Scroll to see all rounds
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
                 

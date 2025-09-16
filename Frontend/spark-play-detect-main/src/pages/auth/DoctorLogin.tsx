@@ -1,3 +1,4 @@
+import LandingNavbar from '@/components/LandingNavbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -47,19 +48,47 @@ const DoctorLogin: React.FC = () => {
   const displayError = error?.message || loginError;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-violet-50 to-indigo-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="relative">
-              <Brain className="w-12 h-12 text-purple-600" />
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-violet-50 to-indigo-50">
+      {/* Navbar */}
+      <LandingNavbar />
+      
+      <div className="flex items-center justify-center p-4 min-h-screen">
+        <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+          {/* Left Side - Features */}
+          <div className="text-center lg:text-left">
+            <div className="mb-8">
+              <div className="flex justify-center lg:justify-start mb-4">
+                <div className="relative">
+                  <Brain className="w-16 h-16 text-purple-600" />
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 rounded-full animate-pulse"></div>
+                </div>
+              </div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">Doctor Features</h1>
+              <p className="text-lg text-gray-600">Comprehensive tools for medical professionals</p>
+            </div>
+            
+            <div className="space-y-4 text-left">
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span className="text-gray-700 text-base">Track patient's progress</span>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span className="text-gray-700 text-base">Assign task and track</span>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span className="text-gray-700 text-base">Chat with patient</span>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span className="text-gray-700 text-base">Dedicated AI Agent for getting insights of patient</span>
+              </div>
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">NeuroNurture</h1>
-          <p className="text-gray-600">Medical Portal</p>
-        </div>
+
+          {/* Right Side - Login Form */}
+          <div className="w-full max-w-md mx-auto">
 
         {/* Login Card */}
         <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
@@ -94,7 +123,7 @@ const DoctorLogin: React.FC = () => {
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="doctor@clinic.com"
+                    placeholder="Enter your email"
                     value={formData.email}
                     onChange={handleInputChange}
                     required
@@ -177,28 +206,6 @@ const DoctorLogin: React.FC = () => {
                 </Link>
               </p>
             </div>
-
-            {/* Demo Credentials */}
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h4 className="text-sm font-semibold text-blue-800 mb-2">Demo Credentials:</h4>
-              <div className="text-xs text-blue-700 space-y-1">
-                <p><strong>Option 1:</strong> doctor@example.com / password</p>
-                <p><strong>Option 2:</strong> doctor@clinic.com / doctor123</p>
-                <p><strong>Option 3:</strong> dr.smith@hospital.com / medical123</p>
-                <p><strong>Option 4:</strong> test@doctor.com / test123</p>
-              </div>
-            </div>
-
-            {/* Doctor Features Preview */}
-            <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
-              <h4 className="text-sm font-semibold text-purple-800 mb-2">Medical Features:</h4>
-              <ul className="text-xs text-purple-700 space-y-1">
-                <li>• Patient progress monitoring</li>
-                <li>• Therapeutic task assignment</li>
-                <li>• Clinical documentation</li>
-                <li>• Secure patient communication</li>
-              </ul>
-            </div>
           </CardContent>
         </Card>
 
@@ -211,6 +218,8 @@ const DoctorLogin: React.FC = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to role selection
           </Link>
+          </div>
+          </div>
         </div>
       </div>
     </div>

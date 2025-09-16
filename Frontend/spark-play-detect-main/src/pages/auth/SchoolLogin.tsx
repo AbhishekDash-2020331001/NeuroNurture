@@ -1,3 +1,4 @@
+import LandingNavbar from '@/components/LandingNavbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -89,19 +90,51 @@ const SchoolLoginForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="relative">
-              <Brain className="w-12 h-12 text-green-600" />
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
+      {/* Navbar */}
+      <LandingNavbar />
+      
+      <div className="flex items-center justify-center p-4 min-h-screen">
+        <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+          {/* Left Side - Features */}
+          <div className="text-center lg:text-left">
+            <div className="mb-8">
+              <div className="flex justify-center lg:justify-start mb-4">
+                <div className="relative">
+                  <Brain className="w-16 h-16 text-green-600" />
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 rounded-full animate-pulse"></div>
+                </div>
+              </div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">School Features</h1>
+              <p className="text-lg text-gray-600">Comprehensive tools for educational institutions</p>
+            </div>
+            
+            <div className="space-y-4 text-left">
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span className="text-gray-700 text-base">Track child's progress</span>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span className="text-gray-700 text-base">Arrange competition</span>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span className="text-gray-700 text-base">Assign task and track</span>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span className="text-gray-700 text-base">Compare among children</span>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span className="text-gray-700 text-base">Dedicated AI Agent for getting insights of enrolled child</span>
+              </div>
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">NeuroNurture</h1>
-          <p className="text-gray-600">School Portal</p>
-        </div>
+
+          {/* Right Side - Login Form */}
+          <div className="w-full max-w-md mx-auto">
 
         {/* Login Card */}
         <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
@@ -134,7 +167,7 @@ const SchoolLoginForm: React.FC = () => {
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="school@example.edu"
+                    placeholder="Enter your email"
                     value={formData.email}
                     onChange={handleInputChange}
                     required
@@ -214,17 +247,6 @@ const SchoolLoginForm: React.FC = () => {
                 </Link>
               </p>
             </div>
-
-            {/* School Features Preview */}
-            <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
-              <h4 className="text-sm font-semibold text-green-800 mb-2">School Features:</h4>
-                             <ul className="text-xs text-green-700 space-y-1">
-                 <li>• Child progress tracking</li>
-                 <li>• Competition organization</li>
-                 <li>• Performance analytics</li>
-                 <li>• Task assignment system</li>
-               </ul>
-            </div>
           </CardContent>
         </Card>
 
@@ -237,10 +259,12 @@ const SchoolLoginForm: React.FC = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to role selection
           </Link>
+          </div>
+          </div>
         </div>
-              </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
 export default SchoolLoginForm;

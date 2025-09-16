@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import LandingNavbar from '@/components/LandingNavbar';
 import {
   ArrowRight,
   Brain,
@@ -9,7 +10,15 @@ import {
   Stethoscope,
   Target,
   TrendingUp,
-  Users
+  Users,
+  Shield,
+  Clock,
+  BarChart3,
+  MessageSquare,
+  Zap,
+  Award,
+  Globe,
+  Lock
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -35,7 +44,15 @@ const LandingPage: React.FC = () => {
       color: 'from-blue-500 to-blue-700',
       bgColor: 'bg-blue-50',
       borderColor: 'border-blue-200',
-      features: ['Child Progress Tracking', 'Game Performance Analytics', 'Development Insights'],
+      features: [
+        'Detect child\'s autism through gameplay',
+        'Growth of cognitive skills',
+        'Track child\'s growth',
+        'Get AI insights',
+        'Connect with schools and doctors',
+        'Dedicated AI Agent for getting insights for all child',
+        'Advance comparison between child'
+      ],
       image: '/images/parent-illustration.svg'
     },
     {
@@ -46,7 +63,13 @@ const LandingPage: React.FC = () => {
       color: 'from-green-500 to-green-700',
       bgColor: 'bg-green-50',
       borderColor: 'border-green-200',
-      features: ['Student Management', 'Competition Organization', 'Progress Comparison'],
+      features: [
+        'Track child\'s progress',
+        'Arrange competition',
+        'Assign task and track',
+        'Compare among children',
+        'Dedicated AI Agent for getting insights of enrolled child'
+      ],
       image: '/images/school-illustration.svg'
     },
     {
@@ -57,13 +80,21 @@ const LandingPage: React.FC = () => {
       color: 'from-purple-500 to-purple-700',
       bgColor: 'bg-purple-50',
       borderColor: 'border-purple-200',
-      features: ['Patient Monitoring', 'Task Assignment', 'Therapeutic Tracking'],
+      features: [
+        'Track patient\'s progress',
+        'Assign task and track',
+        'Chat with patient',
+        'Dedicated AI Agent for getting insights of patient'
+      ],
       image: '/images/doctor-illustration.svg'
     }
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      {/* Navbar */}
+      <LandingNavbar />
+      
       {/* Header */}
       <header className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10"></div>
@@ -121,43 +152,50 @@ const LandingPage: React.FC = () => {
           {roleCards.map((role, index) => (
             <Card 
               key={role.id}
-              className={`${role.bgColor} ${role.borderColor} border-2 hover:shadow-2xl transition-all duration-500 cursor-pointer group hover:scale-105 ${
+              className={`${role.bgColor} ${role.borderColor} border-2 hover:shadow-2xl transition-all duration-500 cursor-pointer group hover:scale-105 h-full flex flex-col ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
               }`}
               style={{ transitionDelay: `${index * 100}ms` }}
               onClick={() => handleRoleSelection(role.id)}
             >
-              <CardContent className="p-8 text-center">
-                <div className="relative mb-6">
-                  <div className={`w-20 h-20 mx-auto rounded-full bg-gradient-to-r ${role.color} flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-300`}>
-                    <role.icon className="w-10 h-10 text-white" />
-                  </div>
-                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center">
-                    <ArrowRight className="w-3 h-3 text-gray-600 group-hover:text-blue-600 transition-colors" />
-                  </div>
-                </div>
-                
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                  {role.title}
-                </h3>
-                
-                <p className="text-gray-600 mb-6 leading-relaxed">
-                  {role.description}
-                </p>
-                
-                <div className="space-y-2">
-                  {role.features.map((feature, featureIndex) => (
-                    <div 
-                      key={featureIndex}
-                      className="text-sm text-gray-500 flex items-center justify-center gap-2"
-                    >
-                      <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
-                      {feature}
+              <CardContent className="p-8 flex flex-col h-full">
+                {/* Header Section */}
+                <div className="text-center mb-6">
+                  <div className="relative mb-6">
+                    <div className={`w-20 h-20 mx-auto rounded-full bg-gradient-to-r ${role.color} flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-300`}>
+                      <role.icon className="w-10 h-10 text-white" />
                     </div>
-                  ))}
+                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center">
+                      <ArrowRight className="w-3 h-3 text-gray-600 group-hover:text-blue-600 transition-colors" />
+                    </div>
+                  </div>
+                  
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                    {role.title}
+                  </h3>
+                  
+                  <p className="text-gray-600 leading-relaxed">
+                    {role.description}
+                  </p>
                 </div>
                 
-                <div className="mt-6">
+                {/* Features Section - Left Aligned */}
+                <div className="flex-1 mb-6">
+                  <div className="space-y-2 text-left">
+                    {role.features.map((feature, featureIndex) => (
+                      <div 
+                        key={featureIndex}
+                        className="text-sm text-gray-500 flex items-start gap-2"
+                      >
+                        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full mt-2 flex-shrink-0"></div>
+                        <span className="text-sm">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Button Section - Always at bottom */}
+                <div className="mt-auto">
                   <Button 
                     className={`w-full bg-gradient-to-r ${role.color} hover:shadow-lg transition-all duration-300 group-hover:scale-105`}
                     size="lg"
@@ -182,7 +220,7 @@ const LandingPage: React.FC = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="text-center group">
               <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-blue-500 to-blue-700 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <Brain className="w-8 h-8 text-white" />
@@ -205,6 +243,54 @@ const LandingPage: React.FC = () => {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Evidence-Based</h3>
               <p className="text-gray-600">Built on scientific research and validated methodologies for reliable developmental assessment.</p>
+            </div>
+
+            <div className="text-center group">
+              <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Shield className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Secure & Private</h3>
+              <p className="text-gray-600">Enterprise-grade security with end-to-end encryption to protect sensitive child development data.</p>
+            </div>
+
+            <div className="text-center group">
+              <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Clock className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Real-Time Monitoring</h3>
+              <p className="text-gray-600">Track progress and development milestones in real-time with instant updates.</p>
+            </div>
+
+            <div className="text-center group">
+              <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <BarChart3 className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Comprehensive Analytics</h3>
+              <p className="text-gray-600">Detailed reports and visualizations to track progress, identify patterns, and measure improvement.</p>
+            </div>
+
+            <div className="text-center group">
+              <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <MessageSquare className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Integrated Communication</h3>
+              <p className="text-gray-600">Built-in messaging for doctors and parents.</p>
+            </div>
+
+            <div className="text-center group">
+              <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Zap className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Fast & Responsive</h3>
+              <p className="text-gray-600">Lightning-fast performance with optimized gameplay .</p>
+            </div>
+
+            <div className="text-center group">
+              <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Award className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Proven Results</h3>
+              <p className="text-gray-600">Trusted by autism schools with measurable improvements in child development.</p>
             </div>
           </div>
         </div>
@@ -229,10 +315,18 @@ const LandingPage: React.FC = () => {
             <Button 
               size="lg" 
               variant="outline"
-              className="border-white text-white hover:bg-white hover:text-blue-600"
+              className="border-white text-white hover:bg-white hover:text-green-600 bg-transparent"
               onClick={() => handleRoleSelection('school')}
             >
               Join as School
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline"
+              className="border-white text-white hover:bg-white hover:text-purple-600 bg-transparent"
+              onClick={() => handleRoleSelection('doctor')}
+            >
+              Join as Doctor
             </Button>
           </div>
         </div>
@@ -246,7 +340,7 @@ const LandingPage: React.FC = () => {
               <Brain className="w-8 h-8 text-blue-400" />
             </div>
             <p className="text-gray-400">
-              © 2024 NeuroNurture. Empowering child development through technology.
+              © 2025 NeuroNurture. Empowering child development through technology.
             </p>
           </div>
         </div>

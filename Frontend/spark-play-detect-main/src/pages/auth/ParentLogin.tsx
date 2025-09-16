@@ -1,4 +1,5 @@
 import { AuthSuccessHandler } from '@/components/auth/AuthSuccessHandler';
+import LandingNavbar from '@/components/LandingNavbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -87,19 +88,59 @@ const ParentLogin: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="relative">
-              <Brain className="w-12 h-12 text-blue-600" />
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      {/* Navbar */}
+      <LandingNavbar />
+      
+      <div className="flex items-center justify-center p-4 min-h-screen">
+        <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+          {/* Left Side - Features */}
+          <div className="text-center lg:text-left">
+            <div className="mb-8">
+              <div className="flex justify-center lg:justify-start mb-4">
+                <div className="relative">
+                  <Brain className="w-16 h-16 text-blue-600" />
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 rounded-full animate-pulse"></div>
+                </div>
+              </div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">Parent Features</h1>
+              <p className="text-lg text-gray-600">Comprehensive tools for parents and families</p>
+            </div>
+            
+            <div className="space-y-4 text-left">
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span className="text-gray-700 text-base">Detect child's autism through gameplay</span>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span className="text-gray-700 text-base">Growth of cognitive skills</span>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span className="text-gray-700 text-base">Track child's growth</span>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span className="text-gray-700 text-base">Get AI insights</span>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span className="text-gray-700 text-base">Connect with schools and doctors</span>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span className="text-gray-700 text-base">Dedicated AI Agent for getting insights for all child</span>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span className="text-gray-700 text-base">Advance comparison between child</span>
+              </div>
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">NeuroNurture</h1>
-          <p className="text-gray-600">Parent Portal</p>
-        </div>
+
+          {/* Right Side - Login Form */}
+          <div className="w-full max-w-md mx-auto">
 
         {/* Login Card */}
         <Card className="shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
@@ -244,6 +285,8 @@ const ParentLogin: React.FC = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to role selection
           </Link>
+          </div>
+          </div>
         </div>
       </div>
     </div>
