@@ -19,7 +19,7 @@ public class EmailService {
         try {
             if (mailSender != null) {
                 SimpleMailMessage message = new SimpleMailMessage();
-                message.setFrom("abhishekdash997@gmail.com"); // Use your verified sender email
+                message.setFrom("tarekahmad484@gmail.com"); // Use your verified sender email
                 message.setTo(to);
                 message.setSubject("Verify your email - NeuroNurture");
                 message.setText(
@@ -50,7 +50,7 @@ public class EmailService {
         try {
             if (mailSender != null) {
                 SimpleMailMessage message = new SimpleMailMessage();
-                message.setFrom("abhishekdash997@gmail.com"); // Use your verified sender email
+                message.setFrom("tarekahmad484@gmail.com"); // Use your verified sender email
                 message.setTo(to);
                 message.setSubject("Reset your password - NeuroNurture");
                 message.setText(

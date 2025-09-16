@@ -25,12 +25,16 @@ import org.springframework.web.client.RestTemplate;
 import com.example.parent.dto.ChatMessageDto;
 import com.example.parent.dto.ChildDetailsDto;
 import com.example.parent.dto.ChildSchoolInfoDto;
+import com.example.parent.dto.CreateEnrollmentRequestDto;
 import com.example.parent.dto.DoctorEnrollmentRequest;
 import com.example.parent.dto.DoctorInfoDto;
+import com.example.parent.dto.EnrollmentRequestDto;
+import com.example.parent.dto.RespondToEnrollmentRequestDto;
 import com.example.parent.dto.SchoolEnrollmentRequest;
 import com.example.parent.dto.SchoolInfoDto;
 import com.example.parent.dto.SendMessageRequest;
 import com.example.parent.service.ChatService;
+import com.example.parent.service.EnrollmentRequestService;
 
 @RestController
 @RequestMapping("/api/parents")
@@ -41,6 +45,7 @@ public class ParentController {
     @Autowired private ChildRepository childRepository;
     @Autowired private RestTemplate restTemplate;
     @Autowired private ChatService chatService;
+    @Autowired private EnrollmentRequestService enrollmentRequestService;
 
     // Get all parents
     @GetMapping
@@ -734,6 +739,68 @@ public class ParentController {
         } catch (Exception e) {
             logger.error("❌ Error getting unread message count: {}", e.getMessage());
             return ResponseEntity.status(500).body(0L);
+        }
+    }
+
+    // ==================== ENROLLMENT REQUEST ENDPOINTS ====================
+
+    // Create enrollment request (called by school)
+    @PostMapping("/enrollment-requests")
+    public ResponseEntity<EnrollmentRequestDto> createEnrollmentRequest(@RequestBody CreateEnrollmentRequestDto requestDto) {
+        try {
+            EnrollmentRequestDto response = enrollmentRequestService.createEnrollmentRequest(requestDto);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Error creating enrollment request: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // Get enrollment requests for a child (called by child/parent)
+    @GetMapping("/children/{childId}/enrollment-requests")
+    public ResponseEntity<List<EnrollmentRequestDto>> getEnrollmentRequestsForChild(@PathVariable Long childId) {
+        try {
+            List<EnrollmentRequestDto> requests = enrollmentRequestService.getEnrollmentRequestsForChild(childId);
+            return ResponseEntity.ok(requests);
+        } catch (Exception e) {
+            logger.error("Error getting enrollment requests for child: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // Get enrollment requests for a school (called by school)
+    @GetMapping("/schools/{schoolId}/enrollment-requests")
+    public ResponseEntity<List<EnrollmentRequestDto>> getEnrollmentRequestsForSchool(@PathVariable Long schoolId) {
+        try {
+            List<EnrollmentRequestDto> requests = enrollmentRequestService.getEnrollmentRequestsForSchool(schoolId);
+            return ResponseEntity.ok(requests);
+        } catch (Exception e) {
+            logger.error("Error getting enrollment requests for school: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // Respond to enrollment request (called by child/parent)
+    @PutMapping("/enrollment-requests/respond")
+    public ResponseEntity<EnrollmentRequestDto> respondToEnrollmentRequest(@RequestBody RespondToEnrollmentRequestDto responseDto) {
+        try {
+            EnrollmentRequestDto response = enrollmentRequestService.respondToEnrollmentRequest(responseDto);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Error responding to enrollment request: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // Delete enrollment request (called by school)
+    @DeleteMapping("/enrollment-requests/{requestId}")
+    public ResponseEntity<Void> deleteEnrollmentRequest(@PathVariable Long requestId) {
+        try {
+            enrollmentRequestService.deleteEnrollmentRequest(requestId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            logger.error("Error deleting enrollment request: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
         }
     }
 } 

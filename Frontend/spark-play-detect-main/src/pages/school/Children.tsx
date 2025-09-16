@@ -235,7 +235,7 @@ const Children: React.FC = () => {
     }
   };
 
-  // Handle child enrollment
+  // Handle child enrollment request
   const handleEnrollChild = async () => {
     if (!childDetails || !school || !selectedEnrollmentGrade) {
       setError('Please select a grade for the child');
@@ -246,14 +246,17 @@ const Children: React.FC = () => {
     setError('');
 
     try {
-      const response = await fetch(`http://localhost:8082/api/parents/children/${childDetails.id}/enroll-school`, {
-        method: 'PUT',
+      const response = await fetch(`http://localhost:8082/api/parents/enrollment-requests`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          childId: childDetails.id,
           schoolId: parseInt(school.id),
-          grade: selectedEnrollmentGrade
+          schoolName: school.name,
+          grade: selectedEnrollmentGrade,
+          message: `Enrollment request for ${childDetails.name} to join ${school.name} as ${selectedEnrollmentGrade}`
         }),
       });
 
@@ -265,18 +268,14 @@ const Children: React.FC = () => {
         setSelectedEnrollmentGrade('');
         setError('');
         
-        // Refresh children list
-        const childrenData = await childrenService.getChildrenBySchool(parseInt(school.id));
-        setChildren(childrenData);
-        
-        alert(`Child enrolled successfully as ${selectedEnrollmentGrade}!`);
+        alert(`Enrollment request sent successfully! ${childDetails.name} will need to accept the request from their dashboard.`);
       } else {
         const errorText = await response.text();
-        setError(`Enrollment failed: ${errorText}`);
+        setError(`Enrollment request failed: ${errorText}`);
       }
     } catch (error) {
-      console.error('Error enrolling child:', error);
-      setError('Network error during enrollment. Please try again.');
+      console.error('Error sending enrollment request:', error);
+      setError('Network error during enrollment request. Please try again.');
     } finally {
       setIsEnrolling(false);
     }
@@ -580,13 +579,21 @@ const Children: React.FC = () => {
             <div className="p-6">
               {/* Modal Header */}
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Add New Child</h2>
+                <h2 className="text-2xl font-bold text-gray-900">Send Enrollment Request</h2>
                 <button
                   onClick={resetModal}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   <X className="h-6 w-6" />
                 </button>
+              </div>
+
+              {/* Description */}
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>How it works:</strong> Search for a child by their ID to send them an enrollment request. 
+                  The child will receive a notification and can accept or decline the request from their dashboard.
+                </p>
               </div>
 
               {/* Child ID Input */}
@@ -777,12 +784,12 @@ const Children: React.FC = () => {
                     {isEnrolling ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Enrolling...
+                        Sending Request...
                       </>
                     ) : (
                       <>
                         <CheckCircle className="h-4 w-4 mr-2" />
-                        Enroll as {selectedEnrollmentGrade || 'Grade'}
+                        Send Enrollment Request
                       </>
                     )}
                   </button>

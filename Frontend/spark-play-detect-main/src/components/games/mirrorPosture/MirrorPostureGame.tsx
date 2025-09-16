@@ -94,6 +94,7 @@ const MirrorPostureGame: React.FC<MirrorPostureGameProps> = ({ taskId, tournamen
   const [isRoundCountdownActive, setIsRoundCountdownActive] = useState<boolean>(false);
   const [consentData, setConsentData] = useState<ConsentData | null>(null);
   const [showConfetti, setShowConfetti] = useState<boolean>(false);
+  const [showSuccessSticker, setShowSuccessSticker] = useState<boolean>(false);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
@@ -441,10 +442,18 @@ const MirrorPostureGame: React.FC<MirrorPostureGameProps> = ({ taskId, tournamen
         score: prev.score + 1,
       }));
 
+      // Show success sticker
+      setShowSuccessSticker(true);
+      
       toast({
         title: "Correct! 🎉",
         description: "Great job! You got it right!",
       });
+
+      // Hide success sticker after 2 seconds
+      setTimeout(() => {
+        setShowSuccessSticker(false);
+      }, 2000);
 
       // Move to next round after delay
       setTimeout(() => {
@@ -957,7 +966,7 @@ const MirrorPostureGame: React.FC<MirrorPostureGameProps> = ({ taskId, tournamen
               <div className="relative w-[30rem] h-[26rem]">
                 {gameState !== 'finished' ? (
                   <>
-                    <div className="w-full h-[24rem] mb-2">
+                    <div className="w-full h-[24rem] mb-2 relative">
                       <WebcamCapture 
                         onCameraReady={setIsWebcamReady}
                         onExpressionDetected={handleExpressionDetected}
@@ -972,21 +981,25 @@ const MirrorPostureGame: React.FC<MirrorPostureGameProps> = ({ taskId, tournamen
                           </div>
                         </div>
                       )}
-                    </div>
-                    
-                    {/* Detected Expression Display */}
-                    {gameStats.detectedExpression && gameState === 'playing' && (
-                      <div className="bg-white/90 backdrop-blur-sm rounded-lg p-2 text-center shadow-lg border border-secondary">
-                        <div className="text-sm font-playful text-primary">
-                          Detected: {gameStats.detectedExpression === 'looking_left' && 'Looking Sideways 👀'}
-                          {gameStats.detectedExpression === 'looking_right' && 'Looking Sideways 👀'}
-                          {gameStats.detectedExpression === 'looking_sideways' && 'Looking Sideways 👀'}
-                          {gameStats.detectedExpression === 'mouth_open' && 'Mouth Open 😮'}
-                          {gameStats.detectedExpression === 'showing_teeth' && 'Showing Teeth 😁'}
-                          {gameStats.detectedExpression === 'kiss' && 'Kiss 😘'}
+                      
+                      {/* Success Sticker Overlay */}
+                      {showSuccessSticker && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                          <div className="animate-bounce">
+                            <div className="bg-gradient-to-r from-green-400 to-emerald-500 rounded-full p-6 shadow-2xl border-4 border-white">
+                              <div className="text-6xl animate-pulse">🎉</div>
+                            </div>
+                            <div className="text-center mt-4">
+                              <div className="bg-white/90 backdrop-blur-sm rounded-full px-6 py-2 shadow-lg border-2 border-green-400">
+                                <span className="text-2xl font-bold text-green-600 animate-pulse">
+                                  SUCCESS! ✨
+                                </span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </>
                 ) : (
                   // Game completion screen

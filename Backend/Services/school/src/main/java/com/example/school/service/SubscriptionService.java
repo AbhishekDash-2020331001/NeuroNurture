@@ -37,7 +37,7 @@ public class SubscriptionService {
     @PostConstruct
     public void init() {
         // Set Stripe API key from configuration
-        Stripe.apiKey = stripeSecretKey;
+        Stripe.apiKey =
     }
 
     public List<SubscriptionPlanDto> getAvailablePlans() {

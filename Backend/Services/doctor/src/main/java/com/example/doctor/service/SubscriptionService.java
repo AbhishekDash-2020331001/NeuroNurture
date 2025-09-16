@@ -31,7 +31,7 @@ public class SubscriptionService {
     public SubscriptionService(DoctorRepository doctorRepository) {
         this.doctorRepository = doctorRepository;
         // Set Stripe API key directly from config
-        Stripe.apiKey = "";
+        Stripe.apiKey = 
     }
 
     public List<SubscriptionPlanDto> getAvailablePlans() {

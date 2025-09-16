@@ -442,8 +442,8 @@ const ChildCompetitionPage: React.FC<ChildCompetitionPageProps> = ({ childId, ch
             const statusIcon = isActive ? '🔄' : isUpcoming ? '⏰' : '🏁';
 
             return (
-              <Card key={tournament.tournamentId} className="hover:shadow-lg transition-shadow border-l-4 border-l-yellow-200 relative overflow-hidden h-fit">
-                <CardHeader className="bg-gradient-to-r from-yellow-50 to-amber-50 relative p-4">
+              <Card key={tournament.tournamentId} className="hover:shadow-lg transition-shadow border-l-4 border-l-yellow-200 relative overflow-hidden h-full flex flex-col">
+                <CardHeader className="bg-gradient-to-r from-yellow-50 to-amber-50 relative p-4 flex-shrink-0">
                   {/* Trophy background pattern */}
                   <div className="absolute top-1 right-1 opacity-10">
                     <Trophy className="h-8 w-8 text-yellow-400" />
@@ -463,8 +463,8 @@ const ChildCompetitionPage: React.FC<ChildCompetitionPageProps> = ({ childId, ch
                     </Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="p-4">
-                  <div className="space-y-3">
+                <CardContent className="p-4 flex-1 flex flex-col">
+                  <div className="space-y-3 flex-1">
                     {/* Games - Compact */}
                     <div>
                       <h4 className="font-semibold text-gray-800 mb-2 flex items-center text-sm">
@@ -517,28 +517,28 @@ const ChildCompetitionPage: React.FC<ChildCompetitionPageProps> = ({ childId, ch
                         </div>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Action Buttons */}
-                    <div className="pt-1">
-                      {isActive && (
-                        <Button 
-                          onClick={() => handleEnterArena(tournament)}
-                          className="bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white shadow-md w-full text-sm py-2"
-                        >
-                          Enter Arena
-                        </Button>
-                      )}
-                      {isUpcoming && (
-                        <Button variant="outline" disabled className="border-yellow-300 text-yellow-600 bg-yellow-50 w-full text-sm py-2">
-                          Not Started
-                        </Button>
-                      )}
-                      {isCompleted && (
-                        <Button variant="outline" className="border-gray-300 text-gray-600 bg-gray-50 w-full text-sm py-2">
-                          View Results
-                        </Button>
-                      )}
-                    </div>
+                  {/* Action Buttons - Always at bottom */}
+                  <div className="pt-3 mt-auto">
+                    {isActive && (
+                      <Button 
+                        onClick={() => handleEnterArena(tournament)}
+                        className="bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white shadow-md w-full text-sm py-2"
+                      >
+                        Enter Arena
+                      </Button>
+                    )}
+                    {isUpcoming && (
+                      <Button variant="outline" disabled className="border-yellow-300 text-yellow-600 bg-yellow-50 w-full text-sm py-2">
+                        Not Started
+                      </Button>
+                    )}
+                    {isCompleted && (
+                      <Button variant="outline" className="border-gray-300 text-gray-600 bg-gray-50 w-full text-sm py-2">
+                        View Results
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>

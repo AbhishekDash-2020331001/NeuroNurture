@@ -7,7 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 // Initialize Stripe
-const stripePromise = loadStripe('');
+const stripePromise = loadStripe('pk_test_51S6l8D0EZDpckBwTmtFUk2EKtCa85tMHL0Uj4yBzTKclKnttvL0ILZ7NLRewbmlBCRTOBkkEy8IhLa7y4NHBRoZF00dWsOLlkx');
 
 interface SubscriptionPlan {
   id: string;

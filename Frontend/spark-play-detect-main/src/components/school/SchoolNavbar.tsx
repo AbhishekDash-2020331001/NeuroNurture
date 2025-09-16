@@ -141,9 +141,9 @@ const SchoolNavbar: React.FC = () => {
               >
                 <div className="text-right">
                   <p className="text-sm font-medium text-gray-900">{school.name}</p>
-                  <p className="text-xs text-gray-500">
+                  {/* <p className="text-xs text-gray-500">
                     {school.currentChildren} / {school.childrenLimit} children
-                  </p>
+                  </p> */}
                 </div>
                 <ChevronDown className="h-4 w-4 text-gray-400" />
               </button>

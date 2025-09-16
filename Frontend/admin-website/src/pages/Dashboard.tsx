@@ -145,8 +145,8 @@ function DashboardHome() {
               <Users className="h-6 w-6 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Users</p>
-              <p className="text-2xl font-semibold text-gray-900">1,234</p>
+              <p className="text-sm font-medium text-gray-600">Parents</p>
+              <p className="text-2xl font-semibold text-gray-900">2</p>
             </div>
           </div>
         </div>
@@ -158,7 +158,7 @@ function DashboardHome() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Schools</p>
-              <p className="text-2xl font-semibold text-gray-900">45</p>
+              <p className="text-2xl font-semibold text-gray-900">1</p>
             </div>
           </div>
         </div>
@@ -170,7 +170,7 @@ function DashboardHome() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Doctors</p>
-              <p className="text-2xl font-semibold text-gray-900">89</p>
+              <p className="text-2xl font-semibold text-gray-900">1</p>
             </div>
           </div>
         </div>
@@ -182,7 +182,7 @@ function DashboardHome() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Open Tickets</p>
-              <p className="text-2xl font-semibold text-gray-900">12</p>
+              <p className="text-2xl font-semibold text-gray-900">4</p>
             </div>
           </div>
         </div>
@@ -193,11 +193,11 @@ function DashboardHome() {
         <div className="space-y-3">
           <div className="flex items-center text-sm text-gray-600">
             <span className="w-2 h-2 bg-green-400 rounded-full mr-3"></span>
-            New school registration: ABC Elementary School
+            New school registration: Shahjalal School and College
           </div>
           <div className="flex items-center text-sm text-gray-600">
             <span className="w-2 h-2 bg-blue-400 rounded-full mr-3"></span>
-            Doctor subscription renewed: Dr. Sarah Johnson
+            Doctor subscription renewed: Dr. Dipok Debnath
           </div>
           <div className="flex items-center text-sm text-gray-600">
             <span className="w-2 h-2 bg-yellow-400 rounded-full mr-3"></span>

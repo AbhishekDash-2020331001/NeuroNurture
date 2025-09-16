@@ -7,6 +7,8 @@ import { GraduationCap, MapPin, BookOpen, Trophy, ClipboardList, User } from 'lu
 import { useEffect, useState } from 'react';
 import ChildCompetitionPage from './ChildCompetitionPage';
 import ChildTaskPage from './ChildTaskPage';
+import EnrollmentRequests from '@/components/EnrollmentRequests';
+import { enrollmentRequestService, EnrollmentRequest } from '@/services/enrollmentRequestService';
 
 export default function ChildSchoolPage() {
   const [selectedChild, setSelectedChild] = useState<any>(null);
@@ -15,6 +17,8 @@ export default function ChildSchoolPage() {
   const [activeSchoolTab, setActiveSchoolTab] = useState<'overview' | 'tasks' | 'competition'>('overview');
   const [schoolInfo, setSchoolInfo] = useState<ChildSchoolInfo | null>(null);
   const [isLoadingSchoolInfo, setIsLoadingSchoolInfo] = useState(false);
+  const [enrollmentRequests, setEnrollmentRequests] = useState<EnrollmentRequest[]>([]);
+  const [isLoadingRequests, setIsLoadingRequests] = useState(false);
 
   useEffect(() => {
     const childData = getCurrentChild();
@@ -67,6 +71,9 @@ export default function ChildSchoolPage() {
       // If enrolled, load school information
       if (status.enrolled && status.schoolId) {
         await loadSchoolInfo(childId);
+      } else {
+        // If not enrolled, load enrollment requests
+        await loadEnrollmentRequests(childId);
       }
     } catch (error) {
       console.error('Error loading school data:', error);
@@ -79,6 +86,19 @@ export default function ChildSchoolPage() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadEnrollmentRequests = async (childId: number) => {
+    try {
+      setIsLoadingRequests(true);
+      const requests = await enrollmentRequestService.getEnrollmentRequestsForChild(childId);
+      setEnrollmentRequests(requests);
+    } catch (error) {
+      console.error('Error loading enrollment requests:', error);
+      setEnrollmentRequests([]);
+    } finally {
+      setIsLoadingRequests(false);
     }
   };
 
@@ -132,6 +152,7 @@ export default function ChildSchoolPage() {
                     <span>Overview</span>
                   </div>
                 </button>
+
                 
                 <button
                   onClick={() => setActiveSchoolTab('tasks')}
@@ -188,9 +209,19 @@ export default function ChildSchoolPage() {
                   <GraduationCap className="w-10 h-10 text-blue-600" />
                 </div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-4">Academic Portal</h2>
-                <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
                   Connect with your school to access academic resources, track progress, and participate in educational activities.
                 </p>
+                
+                {/* Enrollment Requests Section - Only show if there are pending requests */}
+                {!isLoadingRequests && enrollmentRequests.filter(r => r.status === 'PENDING').length > 0 && (
+                  <div className="max-w-4xl mx-auto">
+                    <EnrollmentRequests 
+                      childId={selectedChild?.id || 0} 
+                      childName={selectedChild?.name || ''} 
+                    />
+                  </div>
+                )}
               </div>
             )}
 

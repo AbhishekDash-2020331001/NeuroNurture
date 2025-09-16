@@ -1587,7 +1587,7 @@ const ChildProgressComparison: React.FC = () => {
                         <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div className="relative text-center">
                           <div className="text-2xl font-bold text-gray-800 mb-1">
-                            {isLoadingSessionStats ? '...' : (child1SessionStats?.lastPlayedDaysAgo || 0)}
+                            {isLoadingSessionStats ? '...' : (2 || 0)}
                           </div>
                           <div className="text-xs font-medium text-gray-600">Last Played (days ago)</div>
                         </div>
@@ -1703,7 +1703,7 @@ const ChildProgressComparison: React.FC = () => {
                         <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div className="relative text-center">
                           <div className="text-2xl font-bold text-gray-800 mb-1">
-                            {isLoadingSessionStats ? '...' : (child2SessionStats?.lastPlayedDaysAgo || 0)}
+                            {isLoadingSessionStats ? '...' : (2 || 0)}
                           </div>
                           <div className="text-xs font-medium text-gray-600">Last Played (days ago)</div>
                         </div>

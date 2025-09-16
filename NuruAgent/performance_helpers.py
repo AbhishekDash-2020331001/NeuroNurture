@@ -134,10 +134,10 @@ async def get_child_performance_data(child_id: str):
         
         # Use direct SQL queries based on known schema
         game_queries = {
-            "dance_doodle": "SELECT cool_arms, crossy_play, happy_stand_left, happy_stand_right, open_wings, shh_fun, silly_boxer, stretch_left, stretch_right, happy_stand, stretch, date_time FROM dance_doodle_game WHERE child_id = %s ORDER BY date_time DESC LIMIT 5",
+            "dance_doodle": "SELECT cool_arms, crossy_play, happy_stand, open_wings, shh_fun, silly_boxer, stretch, date_time FROM dance_doodle_game WHERE child_id = %s ORDER BY date_time DESC LIMIT 5",
             "gesture_game": "SELECT butterfly, closed_fist, dua, heart, iloveyou, open_palm, pointing_up, spectacle, thumbs_down, thumbs_up, victory, date_time FROM gesture_game WHERE child_id = %s ORDER BY date_time DESC LIMIT 5",
             "gaze_game": "SELECT round1count, round2count, round3count, date_time FROM gaze_game WHERE child_id = %s ORDER BY date_time DESC LIMIT 5",
-            "mirror_posture": "SELECT looking_sideways, mouth_open, showing_teeth, kiss, looking_left, looking_right, date_time FROM mirror_posture_game WHERE child_id = %s ORDER BY date_time DESC LIMIT 5",
+            "mirror_posture": "SELECT looking_sideways, mouth_open, showing_teeth, kiss, date_time FROM mirror_posture_game WHERE child_id = %s ORDER BY date_time DESC LIMIT 5",
             "repeat_with_me": "SELECT average_score, completed_rounds, date_time FROM repeat_with_me_game WHERE child_id = %s ORDER BY date_time DESC LIMIT 5"
         }
         
@@ -204,11 +204,13 @@ Provides a simple one-line insight on how the child is playing in 2-3 randomly s
 
 Gives a short one-line advice for each of those games
 
-Uses an encouraging, parent-friendly tone with optional emojis
+Uses an encouraging, parent-friendly tone
 
 Keeps the response very short and simple (2-3 sentences total)
 
 Does not use any formatting like this "**Dance Doodle Game:**"
+
+please do not use any emojis, or any other formatting symbols like this: ** or __ or * or _ or - or # or > or ``` or any other markdown or html formatting
 
 For each game there should be sections.
 

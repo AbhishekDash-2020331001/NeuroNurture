@@ -16,6 +16,7 @@ start cmd /k "cd Backend\services\repeat_with_me_game && mvn spring-boot:run"
 start cmd /k "cd Backend\services\nuru_chat && mvn spring-boot:run"
 start cmd /k "cd Frontend\spark-play-detect-main && npm run dev"
 start cmd /k "cd Frontend\admin-website && npm run dev"
+start cmd /k "cd NuruAgent && python start.py"
 start cmd /k "conda activate tf_gpu && cd Games\model_server && python -m uvicorn app.main:app --reload"
 
 echo All services are starting in new windows...

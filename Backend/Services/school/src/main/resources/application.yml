@@ -12,9 +12,8 @@ jwt:
   expiration: 86400000
 
 stripe:
-  secret-key: 
+  secret-key:
   publishable-key: 
-
 
 
 

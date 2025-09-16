@@ -219,8 +219,8 @@ const ChildTaskPage: React.FC<ChildTaskPageProps> = ({ childId, childName }) => 
             const statusIcon = isEnded ? '🏁' : '🔄';
 
             return (
-              <Card key={task.taskId} className="hover:shadow-lg transition-shadow border-l-4 border-l-blue-200 relative overflow-hidden h-fit">
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 relative p-4">
+              <Card key={task.taskId} className="hover:shadow-lg transition-shadow border-l-4 border-l-blue-200 relative overflow-hidden h-full flex flex-col">
+                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 relative p-4 flex-shrink-0">
                   {/* Gamepad background pattern */}
                   <div className="absolute top-1 right-1 opacity-10">
                     <Gamepad2 className="h-8 w-8 text-blue-400" />
@@ -240,8 +240,8 @@ const ChildTaskPage: React.FC<ChildTaskPageProps> = ({ childId, childName }) => 
                     </Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="p-4">
-                  <div className="space-y-3">
+                <CardContent className="p-4 flex-1 flex flex-col">
+                  <div className="space-y-3 flex-1">
                     {/* Games - Compact Buttons */}
                     <div>
                       <h4 className="font-semibold text-gray-800 mb-2 flex items-center text-sm">
@@ -292,29 +292,29 @@ const ChildTaskPage: React.FC<ChildTaskPageProps> = ({ childId, childName }) => 
                         </div>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Action Buttons - Compact */}
-                    <div className="flex gap-2 pt-2">
-                      {!isEnded && task.status === 'IN_PROGRESS' && (
-                        <Button 
-                          onClick={() => handleCompleteTask(task)}
-                          size="sm"
-                          className="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white shadow-md text-xs"
-                        >
-                          Mark Complete
-                        </Button>
-                      )}
-                      {!isEnded && task.status === 'COMPLETED' && (
-                        <Button variant="outline" disabled size="sm" className="border-green-300 text-green-600 bg-green-50 text-xs">
-                          Completed
-                        </Button>
-                      )}
-                      {isEnded && (
-                        <Button variant="outline" disabled size="sm" className="text-gray-500 border-gray-300 bg-gray-50 text-xs">
-                          Ended
-                        </Button>
-                      )}
-                    </div>
+                  {/* Action Buttons - Always at bottom */}
+                  <div className="flex gap-2 pt-3 mt-auto">
+                    {!isEnded && task.status === 'IN_PROGRESS' && (
+                      <Button 
+                        onClick={() => handleCompleteTask(task)}
+                        size="sm"
+                        className="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white shadow-md text-xs"
+                      >
+                        Mark Complete
+                      </Button>
+                    )}
+                    {!isEnded && task.status === 'COMPLETED' && (
+                      <Button variant="outline" disabled size="sm" className="border-green-300 text-green-600 bg-green-50 text-xs">
+                        Completed
+                      </Button>
+                    )}
+                    {isEnded && (
+                      <Button variant="outline" disabled size="sm" className="text-gray-500 border-gray-300 bg-gray-50 text-xs">
+                        Ended
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>

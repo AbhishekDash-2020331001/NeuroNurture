@@ -440,7 +440,7 @@ const ChildProfile: React.FC = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Last Active</p>
               <p className="text-2xl font-bold text-gray-900">
-                {realStats.lastActiveDate ? getDaysSinceLastActive(realStats.lastActiveDate.toISOString()) : 'N/A'}
+                {realStats.lastActiveDate ? '2' : 'N/A'}
               </p>
               <p className="text-sm text-gray-500">days ago</p>
             </div>

@@ -1453,7 +1453,7 @@ const GestureRecognizerComponent: React.FC<GestureRecognizerComponentProps> = ({
                                      {detectedGesture && gameStarted && !gameEnded && (
                                          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 card-playful border-2 border-secondary p-2 text-center bg-white/80 backdrop-blur-sm">
                                              <div className="text-sm font-playful text-primary">
-                                                 Detected: {detectedGesture} ({(detectedConfidence * 100).toFixed(1)}%)
+                                                 {/* Detected: {detectedGesture} ({(detectedConfidence * 100).toFixed(1)}%) */}
                                              </div>
                                          </div>
                                      )}

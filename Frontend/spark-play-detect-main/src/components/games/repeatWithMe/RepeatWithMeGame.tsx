@@ -91,9 +91,9 @@ const RepeatWithMeGame: React.FC = () => {
 
             <div className="card-playful border-2 border-fun-yellow/20 p-6 text-center hover:scale-105 transition-all duration-300">
               <div className="text-6xl mb-4 animate-bounce">4️⃣</div>
-              <h4 className="text-2xl font-playful text-primary mb-3">Play 5 Rounds</h4>
+              <h4 className="text-2xl font-playful text-primary mb-3">Play 12 Rounds</h4>
                               <p className="text-lg text-muted-foreground font-comic">
-                  Try to repeat 5 different sentences. You have 10 seconds to record each one!
+                  Try to repeat 12 different sentences. You have 10 seconds to record each one!
                 </p>
             </div>
           </div>

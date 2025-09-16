@@ -605,12 +605,12 @@ const RepeatWithMeGameplay: React.FC = () => {
             <p className="text-xl text-muted-foreground font-comic mb-8 leading-relaxed">
               Listen to Bengali sentences and repeat them back! You'll have {totfiles} rounds to practice your pronunciation.
             </p>
-            <Button
+            {/* <Button
               onClick={startGame}
               className="btn-fun font-comic text-2xl py-4 px-8 bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white border-4 border-pink-300 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110"
             >
               🚀 Start Game
-            </Button>
+            </Button> */}
           </div>
         )}
 

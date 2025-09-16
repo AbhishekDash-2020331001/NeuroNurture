@@ -909,9 +909,9 @@ const DanceDoodleGame: React.FC<DanceDoodleGameProps> = ({ taskId, tournamentId 
                             </div>
                             <div className="card-playful border-2 border-fun-yellow/20 p-6 text-center hover:scale-105 transition-all duration-300">
                                 <div className="text-6xl mb-4 animate-bounce">4️⃣</div>
-                                                                 <h4 className="text-2xl font-playful text-primary mb-3">Play 9 Rounds</h4>
+                                                                 <h4 className="text-2xl font-playful text-primary mb-3">Play 7 Rounds</h4>
                                 <p className="text-lg text-muted-foreground font-comic">
-                                    Try to copy 9 different poses. You have 10 seconds for each one!
+                                    Try to copy 7 different poses. You have 10 seconds for each one!
                                 </p>
                             </div>
                         </div>
@@ -1207,7 +1207,7 @@ const DanceDoodleGame: React.FC<DanceDoodleGameProps> = ({ taskId, tournamentId 
                                                                          {detectedPose && gameStarted && !gameEnded && (
                                          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 card-playful border-2 border-secondary p-2 text-center bg-white/80 backdrop-blur-sm">
                                              <div className="text-sm font-playful text-primary">
-                                                 Detected: {detectedPose} ({(detectedConfidence * 100).toFixed(1)}%)
+                                                 {/* Detected: {detectedPose} ({(detectedConfidence * 100).toFixed(1)}%) */}
                                              </div>
                                          </div>
                                      )}
