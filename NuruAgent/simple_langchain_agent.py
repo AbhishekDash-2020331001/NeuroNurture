@@ -8,7 +8,7 @@ import json
 import logging
 import psycopg2
 from typing import Dict, List, Any, Optional
-from dotenv import load_dotenv 
+from dotenv import load_dotenv
 
 import anthropic
 import re
@@ -142,7 +142,7 @@ IMPORTANT: Format your response in PLAIN TEXT only. No markdown, HTML, bold text
                 for col in columns:
                     schema_text += f"  - {col['column']}: {col['type']} {'(nullable)' if col['nullable'] == 'YES' else '(not null)'}\n"
 
-            print(f"Database Schema:\n{schema_text}")
+            
             return schema_text
             
         except Exception as e:
@@ -312,6 +312,7 @@ User request: "{message}"
 Database schema:
 {schema}
 
+{access_rules}
 
 SQL Generation Rules:
 1. Use only SELECT queries
@@ -388,16 +389,17 @@ User Type: {user_type.upper()}
 
 User message: "{message}"
 
+Context information:
+{tool_context}{conversation_context}
 
-
-
+{access_rules}
 
 Provide a clear, helpful response that addresses the user's message appropriately. Be informative and supportive.
 You should limit your response to in maximum 5 sentences.
 Don't use any kind of formating symbol like this: ** or __ or * or _ or - or # or > or ``` or any other markdown or html formatting
 Dont be very verbose. Keep it short and to the point. 
 Dont include anything irrelevant to the response. Be specific and concise about the user's needs.
-You must give the answer. Don't say you don't know or you don't have the information.
+
 """
             else:
                 user_context = self._build_user_context(user_type, user_id)
@@ -412,14 +414,16 @@ You must give the answer. Don't say you don't know or you don't have the informa
 User Type: {user_type.upper()}
 {user_context}
 
-User message: "{message}"
+User message: "{message}"{conversation_context}
+
+{access_rules}
 
 Provide a clear, helpful response that addresses the user's message appropriately. Be informative and supportive.
 You should limit your response to in maximum 5 sentences.
 Don't use any kind of formating symbol like this: ** or __ or * or _ or - or # or > or ``` or any other markdown or html formatting
 Dont be very verbose. Keep it short and to the point. 
 Dont include anything irrelevant to the response. Be specific and concise about the user's needs.
-You must give the answer. Don't say you don't know or you don't have the information.
+
 """
             
             response = self.claude_client.messages.create(
