@@ -486,7 +486,7 @@ Your task is to:
 2. Rewrite the message to be clear, grammatically correct, and professional for admin review
 
 PRIORITY CLASSIFICATION GUIDELINES:
-- URGENT: System crashes, security issues, data loss, payment failures, critical bugs affecting multiple users
+- URGENT: Payment issues, Subscription issues, Login issues, System crashes, security issues, data loss, payment failures, critical bugs affecting multiple users
 - HIGH: Major feature broken, significant user experience issues, important functionality not working
 - MEDIUM: Minor bugs, feature requests, general questions, moderate user experience issues
 - LOW: Cosmetic issues, minor suggestions, informational requests, non-critical improvements
@@ -494,9 +494,12 @@ PRIORITY CLASSIFICATION GUIDELINES:
 MESSAGE REWRITING GUIDELINES:
 - Fix grammar and spelling errors
 - Improve clarity and structure
+- Don't be versbose. Just say the the specific message considering the user's needs.
 - Make it professional and concise
 - Preserve the original intent and details
 - Use proper technical terminology when appropriate
+- Rewrite in first person. As if you are the user.
+- Don't use any kind of formatting symbols like this: ** or __ or * or _ or - or # or > or ``` or any other markdown or html formatting
 
 User Type: {user_type}
 User ID: {user_id if user_id else 'Unknown'}
