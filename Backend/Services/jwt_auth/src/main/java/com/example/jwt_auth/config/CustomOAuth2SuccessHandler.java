@@ -9,11 +9,11 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
-import com.example.jwt_auth.JwtUtil;
-import com.example.jwt_auth.auth.AuthService;
-import com.example.jwt_auth.user.User;
-import com.example.jwt_auth.user.UserRepository;
-import com.example.jwt_auth.user.UserRole;
+import com.example.jwt_auth.entity.User;
+import com.example.jwt_auth.entity.UserRole;
+import com.example.jwt_auth.repository.UserRepository;
+import com.example.jwt_auth.service.AuthService;
+import com.example.jwt_auth.util.JwtUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

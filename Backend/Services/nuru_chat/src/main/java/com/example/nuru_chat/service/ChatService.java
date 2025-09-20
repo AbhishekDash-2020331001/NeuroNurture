@@ -1,22 +1,24 @@
 package com.example.nuru_chat.service;
 
-import com.example.nuru_chat.dto.ChatRequest;
-import com.example.nuru_chat.dto.ChatResponse;
-import com.example.nuru_chat.dto.ConversationListResponse;
-import com.example.nuru_chat.dto.MessageListResponse;
-import com.example.nuru_chat.model.Conversation;
-import com.example.nuru_chat.model.Message;
-import com.example.nuru_chat.repository.ConversationRepository;
-import com.example.nuru_chat.repository.MessageRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import com.example.nuru_chat.dto.ChatRequest;
+import com.example.nuru_chat.dto.ChatResponse;
+import com.example.nuru_chat.dto.ConversationListResponse;
+import com.example.nuru_chat.dto.MessageListResponse;
+import com.example.nuru_chat.entity.Conversation;
+import com.example.nuru_chat.entity.Message;
+import com.example.nuru_chat.repository.ConversationRepository;
+import com.example.nuru_chat.repository.MessageRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor

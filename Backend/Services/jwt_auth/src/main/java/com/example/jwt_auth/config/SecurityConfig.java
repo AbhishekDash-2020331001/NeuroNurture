@@ -23,7 +23,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import com.example.jwt_auth.user.UserRepository;
+import com.example.jwt_auth.filter.JwtFilter;
+import com.example.jwt_auth.repository.UserRepository;
 
 @Configuration
 @EnableMethodSecurity

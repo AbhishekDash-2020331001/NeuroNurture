@@ -2,9 +2,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import './App.css'
-import { AuthProvider, useAuth } from './contexts/AuthContext'
-import Dashboard from './pages/Dashboard'
-import LoginPage from './pages/LoginPage'
+import { AuthProvider, useAuth } from './features/auth/components/AuthContext'
+import LoginPage from './features/auth/pages/LoginPage'
+import Dashboard from './features/dashboard/pages/Dashboard'
 
 const queryClient = new QueryClient()
 

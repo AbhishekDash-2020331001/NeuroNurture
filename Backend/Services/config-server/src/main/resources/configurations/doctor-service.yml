@@ -23,7 +23,7 @@ spring:
 
 stripe:
   secret-key: 
-  publishable-key: pk_test_51S6l8D0EZDpckBwTmtFUk2EKtCa85tMHL0Uj4yBzTKclKnttvL0ILZ7NLRewbmlBCRTOBkkEy8IhLa7y4NHBRoZF00dWsOLlkx
+  publishable-key: 
 
 server:
   port: 8093

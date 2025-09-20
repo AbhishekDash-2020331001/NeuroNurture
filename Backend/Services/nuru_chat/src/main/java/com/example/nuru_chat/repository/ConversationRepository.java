@@ -1,11 +1,12 @@
 package com.example.nuru_chat.repository;
 
-import com.example.nuru_chat.model.Conversation;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import com.example.nuru_chat.entity.Conversation;
 
 @Repository
 public interface ConversationRepository extends MongoRepository<Conversation, String> {
