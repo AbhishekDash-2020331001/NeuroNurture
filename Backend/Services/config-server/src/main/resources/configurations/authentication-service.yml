@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/neuronurture
-    username: postgres
-    password: pscjscsschsc
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -18,18 +18,18 @@ spring:
       client:
         registration:
           google:
-            client-id: 1071741181540-qseioooi5rqsu488e1ac3c8um9ee2jbp.apps.googleusercontent.com
-            client-secret: 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
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
             scope:
               - email
               - profile
 
   # Email configuration - Using SendGrid for real verification
   mail:
-    host: smtp.sendgrid.net
-    port: 587
-    username: apikey  # This is always 'apikey' for SendGrid
-    password:  # Use environment variable
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${SENDGRID_API_KEY}
     properties:
       mail:
         smtp:
@@ -47,7 +47,7 @@ logging:
     com.example.jwt_auth: DEBUG
 
 jwt:
-  secret: 8cf840b09b43b5fc6a7d3cfb8311200b67ff362f449e7b3cbde066e56abccd10a99981544fb73910833668fe470b22f6e7e30d2acb66d84e82bc960ac404c63d
+  secret: ${JWT_SECRET}
 
 server:
   port: 8080

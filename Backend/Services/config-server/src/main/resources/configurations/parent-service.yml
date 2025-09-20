@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/neuronurture
-    username: postgres
-    password: pscjscsschsc
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -14,15 +14,15 @@ spring:
         format_sql: true
   data:
     mongodb:
-      uri: mongodb+srv://abhishekcse4:pscjscsschsc@cluster0.dqxwxgp.mongodb.net/neuronurture_tickets?retryWrites=true&w=majority&appName=Cluster0
+      uri: ${MONGODB_URI}
 
 server:
   port: 8082
 
 sendgrid:
-  api-key: 
-  from-email: tarekahmad484@gmail.com
-  from-name: NeuroNurture
+  api-key: ${SENDGRID_API_KEY}
+  from-email: ${SENDGRID_FROM_EMAIL}
+  from-name: ${SENDGRID_FROM_NAME}
 
 
 
