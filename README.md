@@ -21,13 +21,19 @@ NeuroNurture combines cutting-edge AI technology with engaging gameplay to creat
 - **Progress Tracking**: Monitor and track the progress of all enrolled children
 - **Child Comparison**: Compare development metrics between different students
 - **Task Assignment**: Create and assign educational tasks to children
+- **Dedicated AI Agent**: Personalized AI assistant for tracking and supporting childs' growth journey
 - **Subscription Model**: Paid subscription required for schools enrolling more than 10 children
 
 ### Doctor Features
 - **Patient Progress Tracking**: Monitor the development progress of child patients
 - **Dedicated Chat System**: Maintain secure, one-on-one communication with each child patient
 - **Task Management**: Assign and track therapeutic tasks for children
+- **Dedicated AI Agent**: Personalized AI assistant for tracking and supporting your patient's growth journey
 - **Professional Subscription**: Paid subscription required for doctors supervising more than 3 children
+
+### Doctor Features
+- **User Management** : Seamless  user managemet
+- **AI Agent** : Get insights for business
 
 ### Platform Features
 - **AI-Powered Issue Tracking**: Intelligent ticket system for support and feedback
