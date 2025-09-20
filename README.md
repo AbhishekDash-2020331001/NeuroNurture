@@ -32,7 +32,7 @@ NeuroNurture combines cutting-edge AI technology with engaging gameplay to creat
 - **Professional Subscription**: Paid subscription required for doctors supervising more than 3 children
 
 ### Doctor Features
-- **User Management** : Seamless  user managemet
+- **User Management** : Seamless  user management
 - **AI Agent** : Get insights for business
 
 ### Platform Features
